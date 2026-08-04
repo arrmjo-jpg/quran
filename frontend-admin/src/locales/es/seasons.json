@@ -1,0 +1,16 @@
+{
+  "title": "Gestión de Temporadas",
+  "subtitle": "Control de períodos de inscripción y destacar la temporada activa",
+  "list_title": "Lista de Temporadas",
+  "total_count": "Total de Temporadas: {{count}}",
+  "year": "Año de Temporada",
+  "slug": "Identificador Slug",
+  "reg_start": "Inicio de Inscripción",
+  "reg_end": "Fin de Inscripción",
+  "status": "Estado",
+  "actions": "Acciones",
+  "open_reg": "Abrir Inscripción",
+  "close_reg": "Cerrar Inscripción",
+  "open_success": "Inscripción abierta con éxito",
+  "close_success": "Inscripción cerrada con éxito"
+}

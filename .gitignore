@@ -1,0 +1,11 @@
+backup.sql
+
+# frontend-admin
+frontend-admin/node_modules/
+frontend-admin/dist/
+frontend-admin/.env
+frontend-admin/tsconfig.tsbuildinfo
+
+# backend runtime/cache (source-controlled parts already covered by backend/.gitignore)
+backend/storage/framework/
+backend/storage/logs/

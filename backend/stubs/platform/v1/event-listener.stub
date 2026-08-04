@@ -1,0 +1,31 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-event
+// @adr ADR-008, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Application\Listeners;
+
+use Modules\{{ModuleName}}\Domain\Events\{{EventName}};
+use Illuminate\Support\Facades\Log;
+
+/**
+ * {{EventName}}Subscriber
+ *
+ * Idempotent outbox listener per ADR-008.
+ * Must handle duplicate events gracefully using idempotency key verification.
+ */
+final class {{EventName}}Subscriber
+{
+    public function handle({{EventName}} $event): void
+    {
+        Log::info("[Outbox] Handling event: {{EventName}}", [
+            'aggregate_id' => $event->aggregateId,
+            'occurred_at' => $event->occurredAt,
+        ]);
+
+        // TODO: Implement subscriber logic (Notifications, Search indexing, etc.)
+    }
+}

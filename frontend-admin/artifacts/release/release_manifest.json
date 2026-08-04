@@ -1,0 +1,19 @@
+{
+  "manifest_version": 1,
+  "schema_version": 1,
+  "version": "v1.0.0-rc1",
+  "git_commit": "unknown",
+  "build_time": "2026-08-03T21:13:39.866Z",
+  "total_gates": 6,
+  "completed_gates": 2,
+  "ready_for_release": false,
+  "gates": {
+    "functional": "PASS",
+    "security": "PASS",
+    "e2e": "PENDING",
+    "performance": "PENDING",
+    "reliability": "PENDING",
+    "observability": "PENDING"
+  },
+  "manifest_hash": "907651205dace86dff377841acfa204179feba26fdc36e2341f31132c9ea7d03"
+}

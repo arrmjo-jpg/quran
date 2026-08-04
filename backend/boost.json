@@ -1,0 +1,14 @@
+{
+    "agents": [
+        "claude_code"
+    ],
+    "cloud": true,
+    "skills": [
+        "laravel-best-practices",
+        "configuring-horizon",
+        "scout-development",
+        "socialite-development",
+        "pest-testing",
+        "deploying-laravel-cloud"
+    ]
+}

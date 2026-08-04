@@ -1,0 +1,43 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-usecase
+// @adr ADR-004, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Presentation\HTTP\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Modules\{{ModuleName}}\Application\Commands\{{UseCaseName}}Command;
+use Modules\{{ModuleName}}\Application\UseCases\{{UseCaseName}}UseCase;
+use Modules\{{ModuleName}}\Presentation\HTTP\Requests\{{UseCaseName}}Request;
+
+/**
+ * {{UseCaseName}}Controller
+ *
+ * Thin HTTP controller per ADR-004 & ADR-009.
+ * Responsibilities: validate input → build Command → call UseCase → return response.
+ * No business logic lives here.
+ */
+final class {{UseCaseName}}Controller
+{
+    public function __construct(
+        private readonly {{UseCaseName}}UseCase $useCase,
+    ) {}
+
+    public function __invoke({{UseCaseName}}Request $request): JsonResponse
+    {
+        $command = new {{UseCaseName}}Command(
+            id: $request->validated('id'),
+            // TODO: Map remaining validated fields
+        );
+
+        $this->useCase->execute($command);
+
+        return response()->json([
+            'meta' => ['code' => 200, 'message' => 'Success'],
+            'data' => null,
+        ]);
+    }
+}

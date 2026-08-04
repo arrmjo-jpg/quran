@@ -1,0 +1,20 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-contract
+// @adr ADR-002, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Contracts;
+
+/**
+ * {{ContractName}}
+ *
+ * Public boundary interface for {{ModuleName}} module.
+ * Per ADR-002: Other modules MUST depend only on this contract interface.
+ */
+interface {{ContractName}}
+{
+    // TODO: Define public methods exposed to other modules
+}

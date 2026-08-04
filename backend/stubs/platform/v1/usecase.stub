@@ -1,0 +1,44 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-usecase
+// @adr ADR-005, ADR-008, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Application\UseCases;
+
+use Illuminate\Support\Facades\DB;
+use Modules\{{ModuleName}}\Application\Commands\{{UseCaseName}}Command;
+use Modules\{{ModuleName}}\Domain\Repositories\{{EntityName}}RepositoryContract;
+
+/**
+ * {{UseCaseName}}UseCase
+ *
+ * Orchestrates the {{UseCaseName}} business operation.
+ * Per ADR-009: All state mutations happen inside DB::transaction().
+ * Per ADR-008: Domain Events are released from the aggregate and recorded via Outbox.
+ */
+final readonly class {{UseCaseName}}UseCase
+{
+    public function __construct(
+        private {{EntityName}}RepositoryContract $repository,
+    ) {}
+
+    public function execute({{UseCaseName}}Command $command): void
+    {
+        DB::transaction(function () use ($command): void {
+            // 1. Load Aggregate
+            $entity = $this->repository->findOrFail($command->id);
+
+            // 2. Apply Business Logic
+            // $entity->doSomething($command);
+
+            // 3. Persist
+            $this->repository->save($entity);
+
+            // 4. TODO: Dispatch Domain Events via Outbox
+            // OutboxEventBus::record($entity->releaseEvents());
+        });
+    }
+}
