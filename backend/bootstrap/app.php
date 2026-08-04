@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditLoggingMiddleware;
 use App\Http\Middleware\CorrelationIdMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(CorrelationIdMiddleware::class);
+        $middleware->append(AuditLoggingMiddleware::class);
 
         // API-only app: no "login" route exists, so the auth middleware must
         // never attempt a redirect on a guest — that crashed with a 500

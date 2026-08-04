@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Monolog\Handler\TestHandler;
 use Symfony\Component\Uid\Uuid;
+
+uses(RefreshDatabase::class);
 
 it('generates a correlation id when the client sends none', function (): void {
     $response = $this->getJson('/up');

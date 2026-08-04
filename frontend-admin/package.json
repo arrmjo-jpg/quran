@@ -11,7 +11,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "manifest:generate": "npx tsx scripts/generate-release-manifest.ts",
     "gate:functional": "npx tsx scripts/record-gate-result.ts functional \"npm run typecheck && npm run build\"",
-    "gate:security": "npx tsx scripts/record-gate-result.ts security \"docker exec quran_platform_app php artisan test tests/Feature/MfaAndSessionsTest.php tests/Feature/PhoneOtpTest.php tests/Feature/DeviceTrustTest.php tests/Feature/RateLimitingTest.php tests/Feature/CorrelationIdMiddlewareTest.php\"",
+    "gate:security": "npx tsx scripts/record-gate-result.ts security \"docker exec quran_platform_app php artisan test tests/Feature/MfaAndSessionsTest.php tests/Feature/PhoneOtpTest.php tests/Feature/DeviceTrustTest.php tests/Feature/RateLimitingTest.php tests/Feature/CorrelationIdMiddlewareTest.php tests/Feature/AuditLoggingMiddlewareTest.php\"",
     "gate:e2e": "echo 'Running E2E Playwright Gate verification...'",
     "gate:performance": "echo 'Running Performance Gate verification...'",
     "gate:reliability": "echo 'Running Reliability Gate verification...'",
