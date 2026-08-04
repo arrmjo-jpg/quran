@@ -1,9 +1,9 @@
 {
   "gate": "functional",
   "status": "PASS",
-  "started_at": "2026-08-03T16:42:33.264Z",
-  "finished_at": "2026-08-03T16:42:45.520Z",
-  "duration_ms": 12256,
+  "started_at": "2026-08-04T17:38:55.622Z",
+  "finished_at": "2026-08-04T17:39:43.192Z",
+  "duration_ms": 47570,
   "artifacts": [
     "artifacts/reports/functional/result.json"
   ]

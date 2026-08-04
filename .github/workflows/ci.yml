@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'security/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  gates:
+    name: Functional & Security Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_mysql, pdo_sqlite, sqlite3, redis, gd, intl, zip, bcmath, pcntl, posix
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare backend .env
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # docker-compose's "app" service environment block overrides these
+      # for the running container regardless of what's in .env; this only
+      # needs to satisfy Laravel's own boot requirements (APP_KEY, etc).
+      - name: Start platform stack
+        run: docker compose up -d --build
+
+      - name: Wait for the app container to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec quran_platform_app php artisan --version >/dev/null 2>&1; then
+              echo "App container ready."
+              exit 0
+            fi
+            echo "Waiting for app container... ($i/30)"
+            sleep 2
+          done
+          echo "App container did not become ready in time."
+          docker compose logs app
+          exit 1
+
+      - name: Install frontend-admin dependencies
+        working-directory: frontend-admin
+        run: npm ci
+
+      - name: Run functional gate
+        working-directory: frontend-admin
+        run: npm run gate:functional
+
+      - name: Run security gate
+        working-directory: frontend-admin
+        run: npm run gate:security
+
+      - name: Regenerate release manifest
+        working-directory: frontend-admin
+        run: npm run manifest:generate
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-artifacts
+          path: frontend-admin/artifacts/
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose logs
