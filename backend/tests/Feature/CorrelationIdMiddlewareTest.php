@@ -25,15 +25,20 @@ it('preserves the correlation id sent by the client', function (): void {
     expect($response->headers->get('X-Correlation-ID'))->toBe($clientId);
 });
 
-it('always returns the correlation id header, even on error responses', function (): void {
-    $response = $this->getJson('/api/v1/this-route-does-not-exist');
+it('returns a consistent JSON envelope with the correlation id on an unknown route (404)', function (): void {
+    $clientId = (string) Uuid::v4();
 
-    $response->assertStatus(404);
+    $response = $this->getJson('/api/v1/this-route-does-not-exist', ['X-Correlation-ID' => $clientId]);
 
-    $correlationId = $response->headers->get('X-Correlation-ID');
-
-    expect($correlationId)->not->toBeNull();
-    expect(Uuid::isValid($correlationId))->toBeTrue();
+    $response->assertStatus(404)
+        ->assertHeader('X-Correlation-ID', $clientId)
+        ->assertJson([
+            'success' => false,
+            'error' => [
+                'code' => 'NOT_FOUND',
+                'correlation_id' => $clientId,
+            ],
+        ]);
 });
 
 it('shares the correlation id with the log context', function (): void {
@@ -99,32 +104,59 @@ it('never reflects a path-traversal-like correlation id', function (): void {
         ->and(Uuid::isValid($returned))->toBeTrue();
 });
 
-it('attaches the correlation id to a validation exception (422) response', function (): void {
+it('returns a consistent JSON envelope with the correlation id on a validation exception (422)', function (): void {
     $clientId = (string) Uuid::v4();
 
     $response = $this->postJson('/api/v1/auth/login', [], ['X-Correlation-ID' => $clientId]);
 
-    $response->assertStatus(422);
-    expect($response->headers->get('X-Correlation-ID'))->toBe($clientId);
+    $response->assertStatus(422)
+        ->assertHeader('X-Correlation-ID', $clientId)
+        ->assertJson([
+            'success' => false,
+            'error' => [
+                'code' => 'VALIDATION_ERROR',
+                'correlation_id' => $clientId,
+            ],
+        ]);
 });
 
-it('attaches the correlation id to an authentication exception response', function (): void {
+it('returns a consistent JSON envelope with the correlation id when a guest hits a protected route (401), with no redirect', function (): void {
     $clientId = (string) Uuid::v4();
 
-    $response = $this->getJson('/api/v1/me', ['X-Correlation-ID' => $clientId]);
+    // Deliberately omit an explicit Accept header — this is exactly the
+    // request shape that used to crash with a 500 (RouteNotFoundException
+    // from the auth middleware's default redirect-to-login behaviour).
+    $response = $this->call('GET', '/api/v1/me', server: [
+        'HTTP_X_CORRELATION_ID' => $clientId,
+    ]);
 
-    expect($response->headers->get('X-Correlation-ID'))->toBe($clientId);
+    $response->assertStatus(401)
+        ->assertHeader('X-Correlation-ID', $clientId)
+        ->assertJson([
+            'success' => false,
+            'error' => [
+                'code' => 'UNAUTHENTICATED',
+                'correlation_id' => $clientId,
+            ],
+        ]);
 });
 
-it('attaches the correlation id to an authorization exception (403) response', function (): void {
-    Route::middleware('web')->get('/__test-authz-probe', function (): void {
+it('returns a consistent JSON envelope with the correlation id when a user lacks permission (403)', function (): void {
+    Route::middleware('api')->get('/api/v1/__test-authz-probe', function (): void {
         throw new AuthorizationException('Not allowed for this test.');
     });
 
     $clientId = (string) Uuid::v4();
 
-    $response = $this->getJson('/__test-authz-probe', ['X-Correlation-ID' => $clientId]);
+    $response = $this->getJson('/api/v1/__test-authz-probe', ['X-Correlation-ID' => $clientId]);
 
-    $response->assertStatus(403);
-    expect($response->headers->get('X-Correlation-ID'))->toBe($clientId);
+    $response->assertStatus(403)
+        ->assertHeader('X-Correlation-ID', $clientId)
+        ->assertJson([
+            'success' => false,
+            'error' => [
+                'code' => 'FORBIDDEN',
+                'correlation_id' => $clientId,
+            ],
+        ]);
 });
