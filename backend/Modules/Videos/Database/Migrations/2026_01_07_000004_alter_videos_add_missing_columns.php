@@ -68,11 +68,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('videos', function (Blueprint $table): void {
-            $table->dropColumnIfExists('application_id');
-            $table->dropColumnIfExists('raw_media_asset_id');
-            $table->dropColumnIfExists('hls_master_playlist_path');
-            $table->dropColumnIfExists('thumbnail_path');
-            $table->dropColumnIfExists('variants');
+            $columns = array_filter(
+                ['application_id', 'raw_media_asset_id', 'hls_master_playlist_path', 'thumbnail_path', 'variants'],
+                fn (string $column): bool => Schema::hasColumn('videos', $column)
+            );
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };

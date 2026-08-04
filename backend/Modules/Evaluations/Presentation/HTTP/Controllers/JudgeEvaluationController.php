@@ -162,7 +162,7 @@ final class JudgeEvaluationController extends Controller
         EvaluationModel::query()
             ->where('id', $id)
             ->update([
-                'notes' => $request->validated('notes') ?? $evaluation->notes,
+                'notes' => $request->validated('notes') ?? $evaluation->getNotes(),
                 'total_score' => $totalScore,
             ]);
 

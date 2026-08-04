@@ -57,6 +57,11 @@ final class Evaluation
         return $this->totalScore;
     }
 
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
     /** @return array<string, float> */
     public function getCriteriaScores(): array
     {
