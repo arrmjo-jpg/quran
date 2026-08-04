@@ -3,7 +3,7 @@
   "schema_version": 1,
   "version": "v1.0.0-rc1",
   "git_commit": "unknown",
-  "build_time": "2026-08-04T17:29:21.401Z",
+  "build_time": "2026-08-04T17:36:02.447Z",
   "total_gates": 6,
   "completed_gates": 2,
   "ready_for_release": false,
@@ -15,5 +15,5 @@
     "reliability": "PENDING",
     "observability": "PENDING"
   },
-  "manifest_hash": "38646867eb7a0c9a1b0c85ad76745e50c8329e34c70cd7654fa7a912c8d50d98"
+  "manifest_hash": "32433d8fc79239392e34cd117a2ec56f352a146d1a4df60768fc744058849d86"
 }

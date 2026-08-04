@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Modules\Core\Infrastructure\Database\Models\AuditLogModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Symfony\Component\Uid\Uuid;
@@ -94,4 +96,20 @@ it('never logs sensitive values such as passwords, tokens, OTP codes or recovery
         ->and($entry->getAttributes())->not->toHaveKey('token')
         ->and($entry->getAttributes())->not->toHaveKey('otp')
         ->and($entry->getAttributes())->not->toHaveKey('recovery_codes');
+});
+
+it('does not fail the real response when the audit write itself fails', function (): void {
+    Log::spy();
+
+    Schema::drop('audit_logs');
+
+    $response = $this->getJson('/api/v1/languages');
+
+    $response->assertStatus(200);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context): bool => $message === 'Audit log write failed.'
+            && array_key_exists('exception', $context)
+        );
 });
