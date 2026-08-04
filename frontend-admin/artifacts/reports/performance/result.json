@@ -1,0 +1,113 @@
+{
+  "gate": "performance",
+  "status": "MEASURED",
+  "baseline": true,
+  "note": "Baseline stage — thresholds are candidates only and do not gate status yet. Re-run with PERF_ENFORCE=1 once real staging numbers have been reviewed and the thresholds confirmed.",
+  "threshold_candidates": {
+    "lighthouseDesktopPerf": 80,
+    "lighthouseMobilePerf": 60,
+    "accessibility": 90,
+    "bestPractices": 90,
+    "lcpMs": 2500,
+    "clsScore": 0.1,
+    "inpMs": 200,
+    "apiP95Ms": 300,
+    "apiP99Ms": 500,
+    "initialJsKb": 400
+  },
+  "would_fail_if_enforced": [
+    "API p95 786ms > 300ms",
+    "API p99 837.9ms > 500ms"
+  ],
+  "metrics": {
+    "lighthouse": {
+      "desktop": {
+        "performance": 100,
+        "accessibility": 98,
+        "best_practices": 100,
+        "seo": 91,
+        "lcp_ms": 660,
+        "cls": 0.0000798550914981175,
+        "inp_ms": null
+      },
+      "mobile": {
+        "performance": 90,
+        "accessibility": 98,
+        "best_practices": 100,
+        "seo": 91,
+        "lcp_ms": 2960,
+        "cls": 0,
+        "inp_ms": null
+      }
+    },
+    "core_web_vitals": {
+      "lcp_ms": 660,
+      "cls": 0.0000798550914981175,
+      "inp_ms": null
+    },
+    "api": {
+      "p50_ms": 199.8,
+      "p95_ms": 786,
+      "p99_ms": 837.9,
+      "samples": 200,
+      "warmup_requests": 20,
+      "endpoints": [
+        "/up",
+        "/api/v1/languages"
+      ]
+    },
+    "bundle": {
+      "initial_js_kb": 138.9,
+      "largest_chunks": [
+        {
+          "file": "assets/index-bRaA-2lv.js",
+          "gzip_kb": 138.9
+        },
+        {
+          "file": "assets/Input-DxHHXFKL.js",
+          "gzip_kb": 23
+        },
+        {
+          "file": "assets/DataTable-BUKd610I.js",
+          "gzip_kb": 14.5
+        },
+        {
+          "file": "assets/VideoPlayer-DZFftmWd.js",
+          "gzip_kb": 9.2
+        },
+        {
+          "file": "assets/useQuery-CPzHqeil.js",
+          "gzip_kb": 3.6
+        },
+        {
+          "file": "assets/ContestantsPage-CDZZxtUA.js",
+          "gzip_kb": 3.1
+        },
+        {
+          "file": "assets/DashboardPage-BobZG3lD.js",
+          "gzip_kb": 3
+        },
+        {
+          "file": "assets/FilePlayer-Bd69QPFj.js",
+          "gzip_kb": 3
+        },
+        {
+          "file": "assets/StreamingPage-JMbI6Mhf.js",
+          "gzip_kb": 2.4
+        },
+        {
+          "file": "assets/SeasonsPage-C9uC_gya.js",
+          "gzip_kb": 2.3
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    "artifacts/reports/performance/result.json",
+    "artifacts/reports/performance/lighthouse-desktop.json",
+    "artifacts/reports/performance/lighthouse-mobile.json",
+    "artifacts/reports/performance/api-latency.json",
+    "artifacts/reports/performance/bundle-analysis.html"
+  ],
+  "measured_at": "2026-08-04T22:12:31.509Z"
+}

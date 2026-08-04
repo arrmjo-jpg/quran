@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-export type GateStatus = 'PENDING' | 'RUNNING' | 'PASS' | 'FAIL';
+export type GateStatus = 'PENDING' | 'RUNNING' | 'MEASURED' | 'PASS' | 'FAIL';
 
 export interface GateResult {
   gate:          string;

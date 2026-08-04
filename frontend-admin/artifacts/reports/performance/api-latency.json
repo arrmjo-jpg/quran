@@ -1,0 +1,11 @@
+{
+  "p50_ms": 199.8,
+  "p95_ms": 786,
+  "p99_ms": 837.9,
+  "samples": 200,
+  "warmup_requests": 20,
+  "endpoints": [
+    "/up",
+    "/api/v1/languages"
+  ]
+}
