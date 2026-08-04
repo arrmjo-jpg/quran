@@ -1,0 +1,25 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-event
+// @adr ADR-008, ADR-011
+
+declare(strict_types=1);
+
+uses()->group('{{moduleLower}}', 'unit', 'events');
+
+test('{{eventSnake}} event produces valid primitive payload', function (): void {
+    $event = new \Modules\{{ModuleName}}\Domain\Events\{{EventName}}(
+        aggregateId: fake()->uuid(),
+        occurredAt: now()->toIso8601String(),
+    );
+
+    $payload = $event->toPayload();
+
+    expect($payload)
+        ->toHaveKey('aggregate_id')
+        ->toHaveKey('occurred_at');
+
+    expect($payload['aggregate_id'])->toBeString();
+    expect($payload['occurred_at'])->toBeString();
+});

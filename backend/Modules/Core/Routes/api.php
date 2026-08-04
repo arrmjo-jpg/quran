@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Route;
+use Modules\Core\Presentation\HTTP\Controllers\AuthController;
+use Modules\Core\Presentation\HTTP\Controllers\HealthCheckController;
+use Modules\Core\Presentation\HTTP\Controllers\PublicSettingsController;
+
+Route::prefix('auth')->group(function (): void {
+    Route::post('register', [AuthController::class, 'register'])->name('auth.register');
+    Route::post('login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('phone/send-otp', [AuthController::class, 'sendPhoneOtp'])->name('auth.phone.send_otp');
+    Route::post('phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->name('auth.phone.verify_otp');
+});
+
+Route::prefix('admin/auth')->group(function (): void {
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('admin.auth.login');
+});
+
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('me', [AuthController::class, 'me'])->name('auth.me');
+    Route::patch('me', [AuthController::class, 'updateProfile'])->name('auth.update_profile');
+    Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+    Route::get('admin/auth/me', [AuthController::class, 'me'])->name('admin.auth.me');
+    Route::post('admin/auth/logout', [AuthController::class, 'logout'])->name('admin.auth.logout');
+
+    // MFA & Session Revocation Routes
+    Route::post('admin/auth/mfa/setup', [AuthController::class, 'mfaSetup'])->name('admin.auth.mfa.setup');
+    Route::post('admin/auth/mfa/verify', [AuthController::class, 'mfaVerify'])->middleware('throttle:mfa-verify')->name('admin.auth.mfa.verify');
+    Route::post('admin/auth/mfa/recovery', [AuthController::class, 'mfaRecovery'])->middleware('throttle:recovery-code')->name('admin.auth.mfa.recovery');
+    Route::post('admin/auth/login/mfa-challenge', [AuthController::class, 'loginMfaChallenge'])->name('admin.auth.login.mfa_challenge');
+
+    Route::get('admin/auth/sessions', [AuthController::class, 'listSessions'])->name('admin.auth.sessions.list');
+    Route::delete('admin/auth/sessions/other', [AuthController::class, 'revokeOtherSessions'])->name('admin.auth.sessions.revoke_other');
+    Route::delete('admin/auth/sessions/{id}', [AuthController::class, 'revokeSession'])->name('admin.auth.sessions.revoke');
+
+    // Device Trust Routes
+    Route::post('admin/auth/devices/trust', [AuthController::class, 'trustDevice'])->name('admin.auth.devices.trust');
+    Route::get('admin/auth/devices', [AuthController::class, 'listTrustedDevices'])->name('admin.auth.devices.list');
+    Route::delete('admin/auth/devices/{id}', [AuthController::class, 'revokeTrustedDevice'])->name('admin.auth.devices.revoke');
+});
+
+Route::get('languages', [PublicSettingsController::class, 'languages'])->name('settings.languages');
+Route::get('settings/public', [PublicSettingsController::class, 'settings'])->name('settings.public');
+Route::get('health', HealthCheckController::class)->name('health');

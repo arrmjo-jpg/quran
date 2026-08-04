@@ -1,0 +1,23 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-usecase
+// @adr ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Application\Commands;
+
+/**
+ * {{UseCaseName}}Command
+ *
+ * Readonly DTO carrying all input data for the {{UseCaseName}} use case.
+ * Per ADR-009: Commands are immutable value objects — no setters, no logic.
+ */
+final readonly class {{UseCaseName}}Command
+{
+    public function __construct(
+        public readonly string $id,
+        // TODO: Add fields matching the validated FormRequest
+    ) {}
+}

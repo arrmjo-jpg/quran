@@ -1,0 +1,20 @@
+{
+  "app": {
+    "title": "Quran Competition Platform",
+    "subtitle": "Central Administration Console"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create New",
+    "search": "Search...",
+    "filter": "Filter",
+    "actions": "Actions",
+    "status": "Status",
+    "loading": "Loading...",
+    "no_data": "No data available",
+    "confirm_delete": "Are you sure? This action will be logged in system audit logs."
+  }
+}

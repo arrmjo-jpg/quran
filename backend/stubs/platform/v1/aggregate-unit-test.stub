@@ -1,0 +1,32 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-aggregate
+// @adr ADR-009, ADR-011
+
+declare(strict_types=1);
+
+uses()->group('{{moduleLower}}', 'unit', 'domain');
+
+/**
+ * Unit Test: {{EntityName}} Domain Entity
+ *
+ * Per ADR-009: Unit tests cover pure domain logic with NO database,
+ * NO framework, and NO HTTP layer. Fast and isolated.
+ */
+test('{{entitySnake}} can be instantiated with valid id', function (): void {
+    $entity = new \Modules\{{ModuleName}}\Domain\Entities\{{EntityName}}(
+        id: fake()->uuid(),
+    );
+
+    expect($entity->id)->toBeString()->not->toBeEmpty();
+});
+
+test('{{entitySnake}} releases domain events correctly', function (): void {
+    $entity = new \Modules\{{ModuleName}}\Domain\Entities\{{EntityName}}(
+        id: fake()->uuid(),
+    );
+
+    // No events should be pending on a fresh entity
+    expect($entity->releaseEvents())->toBeEmpty();
+});

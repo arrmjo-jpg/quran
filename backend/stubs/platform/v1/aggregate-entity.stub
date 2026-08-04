@@ -1,0 +1,49 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-aggregate
+// @adr ADR-005, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Domain\Entities;
+
+/**
+ * {{EntityName}}
+ *
+ * Aggregate Root for the {{EntityName}} domain concept.
+ *
+ * Per ADR-009 Clean Architecture Rules:
+ * - NO framework imports (no Illuminate\*, no Modules\*).
+ * - Business invariants are enforced inside this class only.
+ * - Domain Events are collected via $this->recordEvent() and released
+ *   by the UseCase after successful persistence.
+ */
+final class {{EntityName}}
+{
+    /** @var array<int, object> */
+    private array $domainEvents = [];
+
+    public function __construct(
+        public readonly string $id,
+        // TODO: Add value objects and properties per ERD.md
+    ) {}
+
+    /**
+     * Release all collected domain events and clear the buffer.
+     *
+     * @return array<int, object>
+     */
+    public function releaseEvents(): array
+    {
+        $events             = $this->domainEvents;
+        $this->domainEvents = [];
+
+        return $events;
+    }
+
+    protected function recordEvent(object $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+}

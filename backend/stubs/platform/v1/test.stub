@@ -1,0 +1,45 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-usecase
+// @adr ADR-009, ADR-011
+
+declare(strict_types=1);
+
+uses()->group('{{moduleLower}}', 'feature', 'usecases');
+
+/**
+ * Feature Test: {{UseCaseName}}
+ *
+ * Per ADR-009: Feature tests hit the full HTTP stack.
+ * Database state MUST be asserted (not just response codes).
+ * Outbox events MUST be asserted when the use case publishes events.
+ */
+test('{{useCaseSnake}} returns 200 on valid input', function (): void {
+    // Arrange
+    // $model = \Modules\{{ModuleName}}\Infrastructure\Database\Models\{{EntityName}}Model::factory()->create();
+
+    // Act
+    $response = $this->actingAs(
+        \App\Models\User::factory()->create()
+    )->postJson('/api/v1/admin/{{useCaseSnake}}', [
+        'id' => fake()->uuid(),
+    ]);
+
+    // Assert
+    $response->assertOk()
+        ->assertJsonPath('meta.code', 200);
+})->todo();
+
+test('{{useCaseSnake}} returns 422 on invalid input', function (): void {
+    $response = $this->actingAs(
+        \App\Models\User::factory()->create()
+    )->postJson('/api/v1/admin/{{useCaseSnake}}', []);
+
+    $response->assertUnprocessable();
+})->todo();
+
+test('{{useCaseSnake}} writes outbox event on success', function (): void {
+    // Arrange + Act + Assert outbox_events table
+    // $this->assertDatabaseHas('outbox_events', ['status' => 'pending']);
+})->todo();

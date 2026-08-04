@@ -1,0 +1,45 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-aggregate
+// @adr ADR-005, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Infrastructure\Database\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * {{EntityName}}Model
+ *
+ * Eloquent read/write model for the {{tableName}} table.
+ *
+ * Per ADR-005:
+ * - Primary key is UUID v7 (CHAR 36), not auto-increment.
+ * - SoftDeletes applied per Delete Policy Matrix.
+ *
+ * Per ADR-009:
+ * - Models are Infrastructure-layer only. They MUST NOT be returned from
+ *   Controllers or Use Cases. Use DTOs and JsonResources instead.
+ */
+final class {{EntityName}}Model extends Model
+{
+    use SoftDeletes;
+
+    protected $table = '{{tableName}}';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id',
+        // TODO: Add fillable fields per MIGRATION-SPECIFICATION.md
+    ];
+
+    protected $casts = [
+        // TODO: Add casts per column types
+    ];
+}

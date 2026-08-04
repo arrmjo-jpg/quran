@@ -1,0 +1,14 @@
+{
+  "tag": "baseline/security-pre-sprint3",
+  "commit": "19a9a3d",
+  "branch": "security/rc1.1",
+  "created_at": "2026-08-04",
+  "tests": {
+    "passed": 194,
+    "failed": 0,
+    "assertions": 1879
+  },
+  "larastan_level5_errors": 108,
+  "composer_audit": "PASS",
+  "pint": "PASS"
+}

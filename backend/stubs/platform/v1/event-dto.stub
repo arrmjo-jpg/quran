@@ -1,0 +1,47 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-event
+// @adr ADR-008, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Domain\Events;
+
+/**
+ * {{EventName}}
+ *
+ * Domain Event DTO — Outbox-compatible per ADR-008.
+ *
+ * Rules per ADR-008:
+ * - Event names MUST be in past tense (something that already happened).
+ * - Payload MUST use primitives only (string, int, bool, float, null).
+ * - No objects, no Eloquent models, no Carbon instances in payload.
+ * - Timestamps use ISO 8601 string format.
+ * - IDs use UUID v7 string format.
+ */
+final readonly class {{EventName}}
+{
+    /** Canonical event type identifier — used as outbox_events.event_type */
+    public const TYPE = '{{eventType}}';
+
+    public function __construct(
+        public readonly string $aggregateId,
+        public readonly string $occurredAt,   // ISO 8601 — e.g. now()->toIso8601String()
+        // TODO: Add primitive payload fields per ADR-008 payload standards
+    ) {}
+
+    /**
+     * Serialize to Outbox-compatible array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPayload(): array
+    {
+        return [
+            'aggregate_id' => $this->aggregateId,
+            'occurred_at'  => $this->occurredAt,
+            // TODO: Add all fields
+        ];
+    }
+}

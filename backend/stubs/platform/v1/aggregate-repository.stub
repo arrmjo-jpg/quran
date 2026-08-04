@@ -1,0 +1,68 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-aggregate
+// @adr ADR-005, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Infrastructure\Database\Repositories;
+
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Modules\{{ModuleName}}\Domain\Entities\{{EntityName}};
+use Modules\{{ModuleName}}\Domain\Repositories\{{EntityName}}RepositoryContract;
+use Modules\{{ModuleName}}\Infrastructure\Database\Models\{{EntityName}}Model;
+
+/**
+ * {{EntityName}}Repository
+ *
+ * Eloquent implementation of {{EntityName}}RepositoryContract.
+ * Per ADR-009: Maps Eloquent Models to Domain Entities and vice versa.
+ * No business logic lives here — only persistence operations.
+ */
+final class {{EntityName}}Repository implements {{EntityName}}RepositoryContract
+{
+    public function findOrFail(string $id): {{EntityName}}
+    {
+        $model = {{EntityName}}Model::query()->findOrFail($id);
+
+        return $this->toDomain($model);
+    }
+
+    public function find(string $id): ?{{EntityName}}
+    {
+        $model = {{EntityName}}Model::query()->find($id);
+
+        return $model ? $this->toDomain($model) : null;
+    }
+
+    public function save({{EntityName}} $entity): void
+    {
+        {{EntityName}}Model::query()->updateOrCreate(
+            ['id' => $entity->id],
+            $this->toArray($entity)
+        );
+    }
+
+    public function delete(string $id): void
+    {
+        {{EntityName}}Model::query()->where('id', $id)->delete();
+    }
+
+    private function toDomain({{EntityName}}Model $model): {{EntityName}}
+    {
+        return new {{EntityName}}(
+            id: $model->id,
+            // TODO: Map remaining fields from model to domain entity
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function toArray({{EntityName}} $entity): array
+    {
+        return [
+            'id' => $entity->id,
+            // TODO: Map remaining domain entity fields to array
+        ];
+    }
+}

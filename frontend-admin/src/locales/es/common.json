@@ -1,0 +1,20 @@
+{
+  "app": {
+    "title": "Plataforma de Competiciones del Corán",
+    "subtitle": "Consola Central de Administración"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear Nuevo",
+    "search": "Buscar...",
+    "filter": "Filtrar",
+    "actions": "Acciones",
+    "status": "Estado",
+    "loading": "Cargando...",
+    "no_data": "No hay datos disponibles",
+    "confirm_delete": "¿Está seguro? Esta acción se registrará en los registros de auditoría."
+  }
+}

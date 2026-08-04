@@ -1,0 +1,10 @@
+{
+  "gate": "security",
+  "status": "PASS",
+  "started_at": "2026-08-03T21:11:19.992Z",
+  "finished_at": "2026-08-03T21:12:18.410Z",
+  "duration_ms": 58418,
+  "artifacts": [
+    "artifacts/reports/security/result.json"
+  ]
+}

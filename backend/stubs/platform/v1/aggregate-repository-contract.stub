@@ -1,0 +1,29 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-aggregate
+// @adr ADR-005, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Domain\Repositories;
+
+use Modules\{{ModuleName}}\Domain\Entities\{{EntityName}};
+
+/**
+ * {{EntityName}}RepositoryContract
+ *
+ * Per ADR-009: The Domain layer defines the repository interface.
+ * The Infrastructure layer provides the Eloquent implementation.
+ * UseCases depend ONLY on this interface (Dependency Inversion Principle).
+ */
+interface {{EntityName}}RepositoryContract
+{
+    public function findOrFail(string $id): {{EntityName}};
+
+    public function find(string $id): ?{{EntityName}};
+
+    public function save({{EntityName}} $entity): void;
+
+    public function delete(string $id): void;
+}

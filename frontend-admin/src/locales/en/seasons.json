@@ -1,0 +1,16 @@
+{
+  "title": "Seasons Management",
+  "subtitle": "Control registration periods and feature active competition season",
+  "list_title": "Seasons List",
+  "total_count": "Total Seasons: {{count}}",
+  "year": "Season Year",
+  "slug": "Slug Identifier",
+  "reg_start": "Registration Start",
+  "reg_end": "Registration End",
+  "status": "Status",
+  "actions": "Actions",
+  "open_reg": "Open Registration",
+  "close_reg": "Close Registration",
+  "open_success": "Registration opened successfully",
+  "close_success": "Registration closed successfully"
+}

@@ -1,0 +1,37 @@
+<?php
+
+// @stub-version 1.0.0
+// @generated-by make:platform-usecase
+// @adr ADR-004, ADR-009, ADR-011
+
+declare(strict_types=1);
+
+namespace Modules\{{ModuleName}}\Presentation\HTTP\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+/**
+ * {{UseCaseName}}Request
+ *
+ * Per ADR-004: All validation lives exclusively in FormRequest classes.
+ * Per ADR-009: authorize() delegates to Policy, never returns hard-coded true in production.
+ */
+final class {{UseCaseName}}Request extends FormRequest
+{
+    public function authorize(): bool
+    {
+        // TODO: Replace with Gate::allows() or Policy check
+        return true;
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public function rules(): array
+    {
+        return [
+            'id' => ['required', 'uuid'],
+            // TODO: Add fields matching ADR-004 API Inventory
+        ];
+    }
+}
