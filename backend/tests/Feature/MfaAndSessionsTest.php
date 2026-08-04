@@ -60,7 +60,13 @@ final class MfaAndSessionsTest extends TestCase
     public function test_admin_can_verify_mfa_and_encrypt_secret_at_rest(): void
     {
         $totpService = new TotpService;
-        $secret = $totpService->generateSecret();
+
+        // The secret is now issued and stored server-side by mfaSetup() —
+        // mfaVerify() no longer trusts a client-supplied secret, so the
+        // test must go through the real setup step to get one.
+        $setupResponse = $this->actingAs($this->adminUser)
+            ->postJson('/api/v1/admin/auth/mfa/setup');
+        $secret = $setupResponse->json('data.secret');
 
         $reflection = new \ReflectionClass($totpService);
         $method = $reflection->getMethod('calculateTotp');
@@ -69,7 +75,6 @@ final class MfaAndSessionsTest extends TestCase
 
         $response = $this->actingAs($this->adminUser)
             ->postJson('/api/v1/admin/auth/mfa/verify', [
-                'secret' => $secret,
                 'code' => $validCode,
             ]);
 
@@ -196,23 +201,30 @@ final class MfaAndSessionsTest extends TestCase
 
     public function test_mfa_negative_cases_reject_invalid_code_length_and_malformed_input(): void
     {
-        $totpService = new TotpService;
-        $secret = $totpService->generateSecret();
-
         // 1. Invalid TOTP code length (less than 6 digits) -> 422 Unprocessable
         $this->actingAs($this->adminUser)
-            ->postJson('/api/v1/admin/auth/mfa/verify', ['secret' => $secret, 'code' => '123'])
+            ->postJson('/api/v1/admin/auth/mfa/verify', ['code' => '123'])
             ->assertStatus(422);
 
         // 2. Alphabetic string code -> 422 Unprocessable
         $this->actingAs($this->adminUser)
-            ->postJson('/api/v1/admin/auth/mfa/verify', ['secret' => $secret, 'code' => 'abcdef'])
+            ->postJson('/api/v1/admin/auth/mfa/verify', ['code' => 'abcdef'])
             ->assertStatus(422);
 
-        // 3. Invalid 6-digit OTP code -> 422 Unprocessable
+        // 3. No pending setup at all -> 422 MFA_SETUP_EXPIRED
         $this->actingAs($this->adminUser)
-            ->postJson('/api/v1/admin/auth/mfa/verify', ['secret' => $secret, 'code' => '000000'])
-            ->assertStatus(422);
+            ->postJson('/api/v1/admin/auth/mfa/verify', ['code' => '000000'])
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'MFA_SETUP_EXPIRED');
+
+        // 4. A pending setup exists, but the submitted code doesn't match it -> 422 INVALID_MFA_CODE
+        $this->actingAs($this->adminUser)
+            ->postJson('/api/v1/admin/auth/mfa/setup');
+
+        $this->actingAs($this->adminUser)
+            ->postJson('/api/v1/admin/auth/mfa/verify', ['code' => '000000'])
+            ->assertStatus(422)
+            ->assertJsonPath('error.code', 'INVALID_MFA_CODE');
     }
 
     public function test_single_use_recovery_code_reuse_is_denied(): void

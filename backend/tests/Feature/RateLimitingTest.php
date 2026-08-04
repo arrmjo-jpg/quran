@@ -36,4 +36,24 @@ final class RateLimitingTest extends TestCase
 
         $response->assertStatus(429);
     }
+
+    public function test_general_login_rate_limiting_throttles_after_max_attempts(): void
+    {
+        // The general /api/v1/auth/login route had no throttle at all —
+        // unlimited brute-force was possible against it. Same limiter,
+        // same 5/min budget as the admin route.
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/auth/login', [
+                'email' => 'nobody@quran.test',
+                'password' => 'WrongPass',
+            ])->assertStatus(401);
+        }
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'nobody@quran.test',
+            'password' => 'WrongPass',
+        ]);
+
+        $response->assertStatus(429);
+    }
 }

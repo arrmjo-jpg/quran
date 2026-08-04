@@ -44,7 +44,7 @@ final class ContestantsServiceProvider extends ServiceProvider
         }
 
         if (file_exists(__DIR__.'/../Routes/admin.php')) {
-            Route::middleware(['api', 'auth:sanctum'])
+            Route::middleware(['api', 'auth:sanctum', 'admin'])
                 ->prefix('api/v1/admin')
                 ->group(__DIR__.'/../Routes/admin.php');
         }

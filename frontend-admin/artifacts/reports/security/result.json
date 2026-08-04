@@ -1,9 +1,9 @@
 {
   "gate": "security",
   "status": "PASS",
-  "started_at": "2026-08-04T17:34:54.515Z",
-  "finished_at": "2026-08-04T17:35:55.287Z",
-  "duration_ms": 60772,
+  "started_at": "2026-08-04T22:39:39.717Z",
+  "finished_at": "2026-08-04T22:40:53.050Z",
+  "duration_ms": 73333,
   "artifacts": [
     "artifacts/reports/security/result.json"
   ]
