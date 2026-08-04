@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Crypt;
+use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Core\Application\Commands\CreateUserCommand;
 use Modules\Core\Application\UseCases\CreateUserUseCase;
 use Modules\Core\Domain\ValueObjects\Email;
@@ -234,7 +235,7 @@ final class AuthController extends Controller
     {
         $user = $request->user();
         $currentToken = $user->currentAccessToken();
-        $currentTokenId = (object) $currentToken && property_exists($currentToken, 'id') ? $currentToken->id : null;
+        $currentTokenId = $currentToken instanceof PersonalAccessToken ? $currentToken->id : null;
 
         $tokens = $user->tokens()->latest()->get()->map(function ($token) use ($currentTokenId) {
             return [
@@ -267,7 +268,7 @@ final class AuthController extends Controller
     {
         $user = $request->user();
         $currentToken = $user->currentAccessToken();
-        $currentTokenId = (object) $currentToken && property_exists($currentToken, 'id') ? $currentToken->id : null;
+        $currentTokenId = $currentToken instanceof PersonalAccessToken ? $currentToken->id : null;
 
         if ($currentTokenId) {
             $user->tokens()->where('id', '!=', $currentTokenId)->delete();
