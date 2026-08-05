@@ -12,6 +12,7 @@ use Modules\Judges\Domain\Repositories\JudgeRepositoryContract;
 use Modules\Judges\Infrastructure\Database\Models\JudgeModel;
 use Modules\Judges\Presentation\HTTP\Requests\CreateJudgeRequest;
 use Modules\Judges\Presentation\HTTP\Resources\JudgeResource;
+use Symfony\Component\Uid\Uuid;
 
 final class JudgeController extends Controller
 {
@@ -47,7 +48,7 @@ final class JudgeController extends Controller
     public function store(CreateJudgeRequest $request): JsonResponse
     {
         $judge = Judge::create(
-            id: fake()->uuid(),
+            id: (string) Uuid::v7(),
             userId: $request->validated('user_id'),
             fullName: $request->validated('full_name'),
             specialization: $request->validated('specialization'),

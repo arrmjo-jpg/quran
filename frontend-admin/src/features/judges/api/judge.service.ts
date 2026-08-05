@@ -1,14 +1,6 @@
 import { http } from '@/core/api/http';
 import type { ApiSuccess } from '@/core/types';
-
-export interface Judge {
-  id:             string;
-  user_id:        string;
-  full_name:      string;
-  specialization: string;
-  title?:         string;
-  bio?:           string;
-}
+import type { Judge } from '../types';
 
 export const judgeService = {
   async getJudges(): Promise<Judge[]> {
@@ -16,7 +8,7 @@ export const judgeService = {
     return data.data;
   },
 
-  async createJudge(payload: Omit<Judge, 'id'>): Promise<Judge> {
+  async createJudge(payload: Pick<Judge, 'user_id' | 'full_name' | 'specialization'> & Partial<Pick<Judge, 'title' | 'bio'>>): Promise<Judge> {
     const { data } = await http.post<ApiSuccess<Judge>>('/admin/judges', payload);
     return data.data;
   },

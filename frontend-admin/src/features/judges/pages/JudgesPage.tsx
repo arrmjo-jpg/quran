@@ -4,12 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { DataTable } from '@/ui/datatable/DataTable';
 import Badge from '@/ui/Badge';
-import Button from '@/ui/Button';
 import StatCard from '@/ui/StatCard';
 import { judgeService } from '../api/judge.service';
 import type { Judge } from '../types';
-import { Award, Users, CheckCircle, Clock } from 'lucide-react';
-import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
+import { Award } from 'lucide-react';
 
 export default function JudgesPage(): React.JSX.Element {
   const { data: judges, isLoading, refetch } = useQuery({
@@ -34,26 +32,11 @@ export default function JudgesPage(): React.JSX.Element {
       cell: ({ row }) => <Badge variant="info">{row.original.specialization}</Badge>,
     },
     {
-      accessorKey: 'assigned_contestants',
-      header: 'المكلف بهم',
-      cell: ({ row }) => <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{row.original.assigned_contestants ?? 12}</span>,
-    },
-    {
-      accessorKey: 'completed_evaluations',
-      header: 'المنجز',
-      cell: ({ row }) => <span className="font-mono text-emerald-600 font-bold">{row.original.completed_evaluations ?? 10}</span>,
-    },
-    {
-      accessorKey: 'pending_evaluations',
-      header: 'المتبقي',
-      cell: ({ row }) => <span className="font-mono text-amber-600 font-bold">{row.original.pending_evaluations ?? 2}</span>,
-    },
-    {
-      accessorKey: 'is_online',
-      header: 'الحالة الآن',
+      accessorKey: 'is_active',
+      header: 'الحالة',
       cell: ({ row }) => (
-        <Badge variant={row.original.is_online !== false ? 'success' : 'neutral'}>
-          {row.original.is_online !== false ? 'متصل الآن' : 'غير متصل'}
+        <Badge variant={row.original.is_active ? 'success' : 'neutral'}>
+          {row.original.is_active ? 'نشط' : 'غير نشط'}
         </Badge>
       ),
     },
@@ -67,9 +50,7 @@ export default function JudgesPage(): React.JSX.Element {
     >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <StatCard title="إجمالي المحكمين" value={judges?.length ?? 0} icon={<Award className="w-5 h-5" />} color="brand" />
-        <StatCard title="إجمالي المكلفين" value={48} icon={<Users className="w-5 h-5" />} color="amber" />
-        <StatCard title="التقييمات المنجزة" value={40} icon={<CheckCircle className="w-5 h-5" />} color="emerald" />
-        <StatCard title="متوسط زمن التقييم" value="4.2 دقيقة" icon={<Clock className="w-5 h-5" />} color="purple" />
+        <StatCard title="الحكام النشطون" value={judges?.filter((j) => j.is_active).length ?? 0} icon={<Award className="w-5 h-5" />} color="emerald" />
       </div>
 
       <DataTable<Judge>
