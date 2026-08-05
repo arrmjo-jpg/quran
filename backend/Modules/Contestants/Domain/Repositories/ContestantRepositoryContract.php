@@ -15,5 +15,13 @@ interface ContestantRepositoryContract
 
     public function findByUserId(string $userId): ?Contestant;
 
+    /**
+     * Search contestants by full name, phone number, or national ID.
+     * An empty/null query returns all contestants.
+     *
+     * @return array<int, Contestant>
+     */
+    public function search(?string $query): array;
+
     public function save(Contestant $contestant): void;
 }

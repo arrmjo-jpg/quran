@@ -4,7 +4,7 @@ import type { ContestantProfile, ContestantSearchFilters } from '../types';
 
 export const contestantService = {
   async searchContestants(filters?: ContestantSearchFilters): Promise<ContestantProfile[]> {
-    const { data } = await http.get<ApiSuccess<ContestantProfile[]>>('/search', { params: { q: filters?.query ?? '' } });
+    const { data } = await http.get<ApiSuccess<ContestantProfile[]>>('/admin/contestants', { params: { q: filters?.query ?? '' } });
     return data.data;
   },
 

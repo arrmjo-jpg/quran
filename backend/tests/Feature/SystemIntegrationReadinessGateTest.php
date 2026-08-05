@@ -136,12 +136,9 @@ test('IRG-001 Pillar 1 — Contestant E2E: Register → Profile → Eligibility 
     ]);
     $profileResponse->assertStatus(200)->assertJsonPath('success', true);
 
-    // ── Step 4: Check Eligibility ─────────────────────────────────────────────
-    $eligibilityResponse = $this->actingAs($contestantUser)->getJson('/api/v1/contestant/eligibility');
-    $eligibilityResponse->assertStatus(200)->assertJsonPath('success', true);
-    expect($eligibilityResponse->json('data.is_eligible'))->toBeTrue();
-
     // ── Setup Admin + Season + Stage ──────────────────────────────────────────
+    // Must happen before the eligibility check below: eligibility is evaluated
+    // against the active season's start date, so a season needs to be open.
     $admin = irg_user('irg-p1-admin@quranplatform.test', 'admin');
     $seasonId = irg_create_season($this, $admin, 'irg-p1-season');
 
@@ -151,6 +148,11 @@ test('IRG-001 Pillar 1 — Contestant E2E: Register → Profile → Eligibility 
         ->assertJsonPath('data.status', 'registration_open');
 
     $stageId = irg_create_stage($seasonId);
+
+    // ── Step 4: Check Eligibility ─────────────────────────────────────────────
+    $eligibilityResponse = $this->actingAs($contestantUser)->getJson('/api/v1/contestant/eligibility');
+    $eligibilityResponse->assertStatus(200)->assertJsonPath('success', true);
+    expect($eligibilityResponse->json('data.is_eligible'))->toBeTrue();
 
     // ── Step 5: Upload Media & Submit Application ────────────────────────────
     $videoFile = UploadedFile::fake()->create('recitation.mp4', 5000, 'video/mp4');

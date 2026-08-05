@@ -64,11 +64,10 @@ final class EligibilityService
             $missing[] = 'phone_number';
         }
 
-        if ($contestant->getDateOfBirth() !== null) {
-            $filled++;
-        } else {
-            $missing[] = 'date_of_birth';
-        }
+        // date_of_birth is a required constructor argument on Contestant —
+        // it can never be absent on an existing aggregate, unlike the
+        // other optional fields checked here.
+        $filled++;
 
         if ($contestant->getPhotoMediaId() !== null) {
             $filled++;

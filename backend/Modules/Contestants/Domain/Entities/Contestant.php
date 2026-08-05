@@ -75,6 +75,11 @@ final class Contestant
         return $this->phoneNumber;
     }
 
+    public function getNationalId(): ?string
+    {
+        return $this->nationalId;
+    }
+
     public function getPhotoMediaId(): ?string
     {
         return $this->photoMediaId;
