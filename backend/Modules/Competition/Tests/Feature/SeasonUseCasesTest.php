@@ -16,6 +16,7 @@ use Modules\Competition\Domain\Events\SeasonRegistrationOpened;
 use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
+use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
 use Modules\Competition\Infrastructure\Database\Models\JudgeScoreSystemModel;
@@ -120,6 +121,23 @@ test('OpenSeasonRegistrationUseCase freezes a fully configured season, persists 
 
     Event::assertDispatched(SeasonRegistrationOpened::class);
     Event::assertDispatched(SeasonRulesFrozen::class);
+});
+
+test('a season reloaded from the repository after freezing still rejects configuration edits', function (): void {
+    $seasonId = seedFullyConfiguredSeason();
+    app(OpenSeasonRegistrationUseCase::class)->execute($seasonId);
+
+    // Simulate a later, unrelated request: fetch the season fresh from the
+    // repository (not the same in-memory instance the use case mutated)
+    // and confirm frozen_at round-tripped correctly enough that the guard
+    // still fires — proving the lock survives a real persist+reload, not
+    // just the in-memory object graph within one request.
+    $reloaded = app(SeasonRepositoryContract::class)->findOrFail($seasonId);
+
+    expect($reloaded->isFrozen())->toBeTrue();
+    expect(fn () => $reloaded->setAgeRange(5, 10))->toThrow(SeasonAlreadyFrozenException::class);
+    expect(fn () => $reloaded->setParticipationType('some-other-id'))->toThrow(SeasonAlreadyFrozenException::class);
+    expect(fn () => $reloaded->setTranslation(new SeasonTranslation('ar', 'x', 'y')))->toThrow(SeasonAlreadyFrozenException::class);
 });
 
 test('OpenSeasonRegistrationUseCase deactivates the previously active season atomically', function (): void {
