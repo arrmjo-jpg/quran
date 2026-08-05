@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $season_id
  * @property string $locale
  * @property string $title
+ * @property string|null $public_name
+ * @property string|null $public_short_name
  * @property string|null $description
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonTranslationModel newModelQuery()
@@ -39,6 +41,8 @@ final class SeasonTranslationModel extends Model
         'season_id',
         'locale',
         'title',
+        'public_name',
+        'public_short_name',
         'description',
     ];
 }

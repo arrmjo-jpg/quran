@@ -45,9 +45,20 @@ final class Season
 {
     use HasDomainEvents;
 
-    /** @var array<string, SeasonTranslation> locale => translation, populated only via setTranslation() */
-    private array $translationsByLocale = [];
+    /** @var array<string, SeasonTranslation> locale => translation */
+    private array $translationsByLocale;
 
+    /**
+     * @param  array<string, string>  $translations  Legacy locale => title map from the original
+     *                                               pre-v2 Season entity. Superseded by $translationsByLocale
+     *                                               (SeasonTranslation VOs) but kept, unused, so
+     *                                               AdminSeasonController::store() — not yet migrated
+     *                                               to the new translation model — keeps compiling.
+     * @param  array<string, SeasonTranslation>  $translationsByLocale  Repository hydration path: reconstructs
+     *                                                                  a previously `setTranslation()`-populated
+     *                                                                  season without going through the guarded
+     *                                                                  setter (which would reject a frozen season).
+     */
     public function __construct(
         public readonly string $id,
         private string $slug,
@@ -67,7 +78,10 @@ final class Season
         private ?string $archivedAtIso = null,
         private ?string $archivedByUserId = null,
         private ?string $archiveReason = null,
-    ) {}
+        array $translationsByLocale = [],
+    ) {
+        $this->translationsByLocale = $translationsByLocale;
+    }
 
     public static function create(
         string $id,

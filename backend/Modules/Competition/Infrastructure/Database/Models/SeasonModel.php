@@ -23,6 +23,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $end_date
  * @property string $status
  * @property bool $is_active
+ * @property int|null $min_age
+ * @property int|null $max_age
+ * @property string|null $participation_type_id
+ * @property string|null $tajweed_level_id
+ * @property Carbon|null $frozen_at
+ * @property Carbon|null $archived_at
+ * @property string|null $archived_by_user_id
+ * @property string|null $archive_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, SeasonTranslationModel> $translations
@@ -63,6 +71,14 @@ final class SeasonModel extends Model
         'end_date',
         'status',
         'is_active',
+        'min_age',
+        'max_age',
+        'participation_type_id',
+        'tajweed_level_id',
+        'frozen_at',
+        'archived_at',
+        'archived_by_user_id',
+        'archive_reason',
     ];
 
     protected $casts = [
@@ -71,6 +87,10 @@ final class SeasonModel extends Model
         'registration_end' => 'datetime',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'min_age' => 'integer',
+        'max_age' => 'integer',
+        'frozen_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function translations(): HasMany
