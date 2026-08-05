@@ -12,9 +12,21 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Competition\Contracts\CompetitionServiceContract;
 use Modules\Competition\Contracts\RuleEngineContract;
+use Modules\Competition\Domain\Repositories\JudgeScoreSystemRepositoryContract;
+use Modules\Competition\Domain\Repositories\ParticipationTypeRepositoryContract;
+use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Domain\Repositories\SeasonRuleVersionRepositoryContract;
+use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
+use Modules\Competition\Domain\Repositories\TajweedLevelRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
+use Modules\Competition\Infrastructure\Database\Repositories\JudgeScoreSystemRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\ParticipationTypeRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\SeasonCountryRepository;
 use Modules\Competition\Infrastructure\Database\Repositories\SeasonRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\SeasonRuleVersionRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\SeasonStageRuleRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\TajweedLevelRepository;
 use Modules\Competition\Infrastructure\Services\CompetitionService;
 
 final class CompetitionServiceProvider extends ServiceProvider
@@ -24,6 +36,36 @@ final class CompetitionServiceProvider extends ServiceProvider
         $this->app->singleton(
             SeasonRepositoryContract::class,
             SeasonRepository::class
+        );
+
+        $this->app->singleton(
+            ParticipationTypeRepositoryContract::class,
+            ParticipationTypeRepository::class
+        );
+
+        $this->app->singleton(
+            TajweedLevelRepositoryContract::class,
+            TajweedLevelRepository::class
+        );
+
+        $this->app->singleton(
+            JudgeScoreSystemRepositoryContract::class,
+            JudgeScoreSystemRepository::class
+        );
+
+        $this->app->singleton(
+            SeasonCountryRepositoryContract::class,
+            SeasonCountryRepository::class
+        );
+
+        $this->app->singleton(
+            SeasonStageRuleRepositoryContract::class,
+            SeasonStageRuleRepository::class
+        );
+
+        $this->app->singleton(
+            SeasonRuleVersionRepositoryContract::class,
+            SeasonRuleVersionRepository::class
         );
 
         $this->app->singleton(
