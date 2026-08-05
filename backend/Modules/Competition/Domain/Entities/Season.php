@@ -15,6 +15,7 @@ use Modules\Competition\Domain\Events\SeasonRegistrationClosed;
 use Modules\Competition\Domain\Events\SeasonRegistrationOpened;
 use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
+use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\Services\SeasonStateMachine;
@@ -331,9 +332,18 @@ final class Season
      * Archive a season that ran its full course. Only reachable from
      * 'completed' — see cancel() for ending a season before registration
      * ever opened.
+     *
+     * The state machine's own transition table allows 'draft' -> 'archived'
+     * too (that edge exists for cancel()'s sake), so archive() cannot rely
+     * on the machine alone to enforce "completed-only" — this explicit
+     * guard is what actually does it.
      */
     public function archive(SeasonStateMachine $machine, ?string $reason, ?string $byUserId): void
     {
+        if ($this->status !== 'completed') {
+            throw new InvalidSeasonTransitionException($this->status, 'archived', []);
+        }
+
         $this->status = $machine->transition($this->status, 'archived');
         $this->isActive = false;
         $this->archivedAtIso = now()->toIso8601String();
