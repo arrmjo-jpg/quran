@@ -17,9 +17,9 @@ final class SubmitApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'season_id' => ['required', 'string', 'uuid'],
-            'stage_id' => ['required', 'string', 'uuid'],
-            'video_media_asset_id' => ['required', 'string', 'uuid'],
+            'season_id' => ['required', 'string', 'uuid', 'exists:seasons,id'],
+            'stage_id' => ['required', 'string', 'uuid', 'exists:stages,id'],
+            'video_media_asset_id' => ['required', 'string', 'uuid', 'exists:media_assets,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

@@ -14,5 +14,7 @@ interface ApplicationRepositoryContract
 
     public function findByNumber(string $appNumber): ?Application;
 
+    public function findByContestantSeasonStage(string $contestantId, string $seasonId, string $stageId): ?Application;
+
     public function save(Application $application): void;
 }

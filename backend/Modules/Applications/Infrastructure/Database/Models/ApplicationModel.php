@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $video_media_id
  * @property string $application_number
  * @property string $status
+ * @property string|null $reupload_reason
  * @property Carbon|null $submitted_at
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
@@ -62,6 +63,7 @@ final class ApplicationModel extends Model
         'video_media_id',
         'application_number',
         'status',
+        'reupload_reason',
         'submitted_at',
     ];
 
