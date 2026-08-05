@@ -48,6 +48,11 @@ final class SeasonRepository implements SeasonRepositoryContract
         );
     }
 
+    public function deactivateOthers(string $exceptId): void
+    {
+        SeasonModel::query()->where('id', '!=', $exceptId)->update(['is_active' => false]);
+    }
+
     private function toDomain(SeasonModel $model): Season
     {
         $translations = $model->translations->pluck('title', 'locale')->toArray();

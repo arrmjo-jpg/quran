@@ -15,4 +15,11 @@ interface SeasonRepositoryContract
     public function findActiveSeason(): ?Season;
 
     public function save(Season $season): void;
+
+    /**
+     * Deactivate every season except the given one. Only one season may
+     * be is_active=true at a time — findActiveSeason() and the public
+     * "current season" endpoint assume exactly one result.
+     */
+    public function deactivateOthers(string $exceptId): void;
 }

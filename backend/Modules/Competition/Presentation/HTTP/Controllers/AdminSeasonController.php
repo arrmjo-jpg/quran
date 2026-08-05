@@ -12,6 +12,7 @@ use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
+use Symfony\Component\Uid\Uuid;
 
 final class AdminSeasonController extends Controller
 {
@@ -23,7 +24,7 @@ final class AdminSeasonController extends Controller
     public function store(CreateSeasonRequest $request): JsonResponse
     {
         $season = Season::create(
-            id: fake()->uuid(),
+            id: (string) Uuid::v7(),
             slug: $request->validated('slug'),
             year: (int) $request->validated('year'),
             regStartIso: $request->validated('registration_start'),
@@ -59,6 +60,10 @@ final class AdminSeasonController extends Controller
         }
 
         $this->repository->save($season);
+
+        // Only one season may be active at a time — findActiveSeason() and
+        // the public "current season" endpoint both assume exactly one.
+        $this->repository->deactivateOthers($season->id);
 
         return response()->json([
             'success' => true,
