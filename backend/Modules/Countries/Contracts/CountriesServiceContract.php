@@ -17,6 +17,13 @@ namespace Modules\Countries\Contracts;
  */
 interface CountriesServiceContract
 {
-    // Define public methods that other modules may call.
-    // Keep this interface minimal — expose only what cross-module consumers need.
+    /**
+     * Resolve a batch of country ids to their id/iso2/translated-name
+     * shape in one call, for consumers (e.g. Competition's season
+     * eligible-countries snapshot) that need several at once.
+     *
+     * @param  array<int, string>  $ids
+     * @return array<int, ResolvedCountryDTO>
+     */
+    public function findResolvedByIds(array $ids): array;
 }
