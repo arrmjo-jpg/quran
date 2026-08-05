@@ -11,9 +11,9 @@ namespace Modules\Competition\Domain\Events;
  * repository/application layer's responsibility — this event only
  * carries the data, it does not write anything itself.
  */
-final readonly class SeasonFrozen
+final readonly class SeasonRulesFrozen
 {
-    public const TYPE = 'season_frozen';
+    public const TYPE = 'season_rules_frozen';
 
     /**
      * @param  array<string, mixed>  $snapshot

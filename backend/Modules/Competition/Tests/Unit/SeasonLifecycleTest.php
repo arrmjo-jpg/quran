@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Events\SeasonArchived;
-use Modules\Competition\Domain\Events\SeasonFrozen;
+use Modules\Competition\Domain\Events\SeasonCancelled;
+use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
@@ -147,13 +148,13 @@ test('freeze() can only be called from draft', function (): void {
         ->toThrow(InvalidSeasonTransitionException::class);
 });
 
-test('freeze() records a SeasonFrozen event carrying version 1 and the resolved snapshot', function (): void {
+test('freeze() records a SeasonRulesFrozen event carrying version 1 and the resolved snapshot', function (): void {
     $machine = new SeasonStateMachine;
     $season = makeReadyToFreezeSeason();
     $season->freeze($machine, new SeasonRuleSnapshotFactory, fullyConfiguredResolvedRules());
 
     $events = $season->releaseEvents();
-    $frozenEvents = array_values(array_filter($events, fn ($e) => $e instanceof SeasonFrozen));
+    $frozenEvents = array_values(array_filter($events, fn ($e) => $e instanceof SeasonRulesFrozen));
 
     expect($frozenEvents)->toHaveCount(1);
     expect($frozenEvents[0]->version)->toBe(1);
@@ -203,9 +204,24 @@ test('a draft season can be cancelled with a reason', function (): void {
     expect($season->getArchiveReason())->toBe('Competition postponed indefinitely.');
 
     $events = $season->releaseEvents();
-    $archived = array_values(array_filter($events, fn ($e) => $e instanceof SeasonArchived));
-    expect($archived)->toHaveCount(1);
-    expect($archived[0]->wasCancelled)->toBeTrue();
+    $cancelled = array_values(array_filter($events, fn ($e) => $e instanceof SeasonCancelled));
+    expect($cancelled)->toHaveCount(1);
+    expect($cancelled[0]->reason)->toBe('Competition postponed indefinitely.');
+});
+
+test('a completed season being archived records SeasonArchived, not SeasonCancelled', function (): void {
+    $machine = new SeasonStateMachine;
+    $season = makeReadyToFreezeSeason();
+    $season->freeze($machine, new SeasonRuleSnapshotFactory, fullyConfiguredResolvedRules());
+    $season->closeRegistration();
+    $season->startCompetition($machine);
+    $season->openJudging($machine);
+    $season->complete($machine);
+    $season->archive($machine, reason: null, byUserId: 'admin-1');
+
+    $events = $season->releaseEvents();
+    expect(array_filter($events, fn ($e) => $e instanceof SeasonArchived))->toHaveCount(1);
+    expect(array_filter($events, fn ($e) => $e instanceof SeasonCancelled))->toHaveCount(0);
 });
 
 test('cancel() requires a non-empty reason', function (): void {

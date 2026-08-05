@@ -5,20 +5,22 @@ declare(strict_types=1);
 namespace Modules\Competition\Domain\Entities;
 
 use InvalidArgumentException;
-use Modules\Competition\Domain\Events\CompetitionStarted;
-use Modules\Competition\Domain\Events\JudgingStarted;
-use Modules\Competition\Domain\Events\RegistrationClosed;
-use Modules\Competition\Domain\Events\RegistrationOpened;
 use Modules\Competition\Domain\Events\SeasonArchived;
+use Modules\Competition\Domain\Events\SeasonCancelled;
+use Modules\Competition\Domain\Events\SeasonCompetitionStarted;
 use Modules\Competition\Domain\Events\SeasonCompleted;
 use Modules\Competition\Domain\Events\SeasonCreated;
-use Modules\Competition\Domain\Events\SeasonFrozen;
+use Modules\Competition\Domain\Events\SeasonJudgingStarted;
+use Modules\Competition\Domain\Events\SeasonRegistrationClosed;
+use Modules\Competition\Domain\Events\SeasonRegistrationOpened;
+use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\Services\SeasonStateMachine;
 use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
 use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
+use Modules\Core\Domain\Concerns\HasDomainEvents;
 
 /**
  * Season Aggregate Root
@@ -41,8 +43,7 @@ use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
  */
 final class Season
 {
-    /** @var array<int, object> */
-    private array $domainEvents = [];
+    use HasDomainEvents;
 
     /** @var array<string, SeasonTranslation> locale => translation, populated only via setTranslation() */
     private array $translationsByLocale = [];
@@ -136,6 +137,13 @@ final class Season
         return $this->endDateIso;
     }
 
+    /**
+     * @deprecated Use freeze() instead — it performs this same transition
+     * plus the mandatory translation/rules-completeness guard and the
+     * rule snapshot, all atomically in-memory. Kept working, unchanged,
+     * until AdminSeasonController is migrated to call freeze() with real
+     * repository-resolved data (Phase 3) — do not call this from new code.
+     */
     public function openRegistration(): void
     {
         if ($this->status !== 'draft') {
@@ -144,9 +152,16 @@ final class Season
 
         $this->status = 'registration_open';
         $this->isActive = true;
-        $this->recordEvent(new RegistrationOpened($this->id, now()->toIso8601String()));
+        $this->recordEvent(new SeasonRegistrationOpened($this->id, now()->toIso8601String()));
     }
 
+    /**
+     * @deprecated No replacement needed yet — closeRegistration() itself
+     * is not part of what freeze() subsumes. Marked alongside
+     * openRegistration() only because the two are conventionally called
+     * as a pair; safe to keep calling until Phase 3 revisits the pair
+     * together.
+     */
     public function closeRegistration(): void
     {
         if ($this->status !== 'registration_open') {
@@ -154,7 +169,7 @@ final class Season
         }
 
         $this->status = 'registration_closed';
-        $this->recordEvent(new RegistrationClosed($this->id, now()->toIso8601String()));
+        $this->recordEvent(new SeasonRegistrationClosed($this->id, now()->toIso8601String()));
     }
 
     public function isRegistrationOpen(): bool
@@ -253,7 +268,7 @@ final class Season
      * machine, freezes it (frozen_at, and — from this point on —
      * assertMutableSettings() rejects any further change to age range,
      * participation type, tajweed level, or translations), and records a
-     * SeasonFrozen event carrying the resolved rule snapshot (version 1).
+     * SeasonRulesFrozen event carrying the resolved rule snapshot (version 1).
      * Persisting the season row and the season_rule_versions row from
      * that event, atomically in one transaction, is the repository/
      * application layer's job — this method only ever mutates in-memory
@@ -276,20 +291,20 @@ final class Season
             rules: $rules,
         );
 
-        $this->recordEvent(new RegistrationOpened($this->id, $this->frozenAtIso));
-        $this->recordEvent(new SeasonFrozen($this->id, 1, $snapshot, $this->frozenAtIso));
+        $this->recordEvent(new SeasonRegistrationOpened($this->id, $this->frozenAtIso));
+        $this->recordEvent(new SeasonRulesFrozen($this->id, 1, $snapshot, $this->frozenAtIso));
     }
 
     public function startCompetition(SeasonStateMachine $machine): void
     {
         $this->status = $machine->transition($this->status, 'competition_running');
-        $this->recordEvent(new CompetitionStarted($this->id, now()->toIso8601String()));
+        $this->recordEvent(new SeasonCompetitionStarted($this->id, now()->toIso8601String()));
     }
 
     public function openJudging(SeasonStateMachine $machine): void
     {
         $this->status = $machine->transition($this->status, 'judging');
-        $this->recordEvent(new JudgingStarted($this->id, now()->toIso8601String()));
+        $this->recordEvent(new SeasonJudgingStarted($this->id, now()->toIso8601String()));
     }
 
     public function complete(SeasonStateMachine $machine): void
@@ -310,7 +325,7 @@ final class Season
         $this->archivedAtIso = now()->toIso8601String();
         $this->archivedByUserId = $byUserId;
         $this->archiveReason = $reason;
-        $this->recordEvent(new SeasonArchived($this->id, wasCancelled: false, reason: $reason, byUserId: $byUserId, occurredAt: $this->archivedAtIso));
+        $this->recordEvent(new SeasonArchived($this->id, reason: $reason, byUserId: $byUserId, occurredAt: $this->archivedAtIso));
     }
 
     /**
@@ -330,21 +345,7 @@ final class Season
         $this->archivedAtIso = now()->toIso8601String();
         $this->archivedByUserId = $byUserId;
         $this->archiveReason = $reason;
-        $this->recordEvent(new SeasonArchived($this->id, wasCancelled: true, reason: $reason, byUserId: $byUserId, occurredAt: $this->archivedAtIso));
-    }
-
-    /** @return array<int, object> */
-    public function releaseEvents(): array
-    {
-        $events = $this->domainEvents;
-        $this->domainEvents = [];
-
-        return $events;
-    }
-
-    protected function recordEvent(object $event): void
-    {
-        $this->domainEvents[] = $event;
+        $this->recordEvent(new SeasonCancelled($this->id, reason: $reason, byUserId: $byUserId, occurredAt: $this->archivedAtIso));
     }
 
     private function assertMutableSettings(string $field): void

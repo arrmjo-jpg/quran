@@ -6,6 +6,7 @@ namespace Modules\Applications\Domain\Entities;
 
 use Modules\Applications\Domain\Events\ApplicationCreated;
 use Modules\Applications\Domain\Events\ApplicationSubmitted;
+use Modules\Core\Domain\Concerns\HasDomainEvents;
 
 /**
  * Application Aggregate Root
@@ -14,8 +15,7 @@ use Modules\Applications\Domain\Events\ApplicationSubmitted;
  */
 final class Application
 {
-    /** @var array<int, object> */
-    private array $domainEvents = [];
+    use HasDomainEvents;
 
     public function __construct(
         public readonly string $id,
@@ -95,19 +95,5 @@ final class Application
     public function markReadyForJudging(): void
     {
         $this->status = 'ready_for_judging';
-    }
-
-    /** @return array<int, object> */
-    public function releaseEvents(): array
-    {
-        $events = $this->domainEvents;
-        $this->domainEvents = [];
-
-        return $events;
-    }
-
-    protected function recordEvent(object $event): void
-    {
-        $this->domainEvents[] = $event;
     }
 }

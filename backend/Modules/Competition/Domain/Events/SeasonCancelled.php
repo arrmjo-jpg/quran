@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Modules\Competition\Domain\Events;
 
 /**
- * Recorded when a season that ran its full course (completed -> archived)
- * is archived. See SeasonCancelled for the separate, draft-only-reachable
- * "ended before it ever began" case.
+ * Recorded when a season is cancelled before registration ever opened
+ * (draft -> archived). A distinct event type from SeasonArchived so
+ * consumers (audit trail, notifications) can tell "never launched" apart
+ * from "ran its full course" without inspecting a flag.
  */
-final readonly class SeasonArchived
+final readonly class SeasonCancelled
 {
-    public const TYPE = 'season_archived';
+    public const TYPE = 'season_cancelled';
 
     public function __construct(
         public string $seasonId,
-        public ?string $reason,
+        public string $reason,
         public ?string $byUserId,
         public string $occurredAt,
     ) {}

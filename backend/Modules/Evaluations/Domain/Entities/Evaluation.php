@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Evaluations\Domain\Entities;
 
+use Modules\Core\Domain\Concerns\HasDomainEvents;
 use Modules\Evaluations\Domain\Events\EvaluationApproved;
 use Modules\Evaluations\Domain\Events\EvaluationSubmitted;
 use Modules\Evaluations\Domain\Services\EvaluationStateMachine;
@@ -17,8 +18,7 @@ use Modules\Evaluations\Domain\ValueObjects\EvaluationId;
  */
 final class Evaluation
 {
-    /** @var array<int, object> */
-    private array $domainEvents = [];
+    use HasDomainEvents;
 
     /**
      * @param  array<string, float>  $criteriaScores  Map of criterion_id => score
@@ -96,19 +96,5 @@ final class Evaluation
         $this->status = $stateMachine->transition($this->status, 'approved');
 
         $this->recordEvent(new EvaluationApproved($this->id->value, $this->applicationId, now()->toIso8601String()));
-    }
-
-    /** @return array<int, object> */
-    public function releaseEvents(): array
-    {
-        $events = $this->domainEvents;
-        $this->domainEvents = [];
-
-        return $events;
-    }
-
-    protected function recordEvent(object $event): void
-    {
-        $this->domainEvents[] = $event;
     }
 }

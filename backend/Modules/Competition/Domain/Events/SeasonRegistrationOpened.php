@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Competition\Domain\Events;
 
-final readonly class RegistrationOpened
+final readonly class SeasonRegistrationOpened
 {
-    public const TYPE = 'registration_opened';
+    public const TYPE = 'season_registration_opened';
 
     public function __construct(
         public string $seasonId,
