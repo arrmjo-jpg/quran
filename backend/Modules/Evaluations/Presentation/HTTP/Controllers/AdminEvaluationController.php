@@ -15,6 +15,7 @@ use Modules\Evaluations\Infrastructure\Database\Models\EvaluationModel;
 use Modules\Evaluations\Infrastructure\Database\Models\StageResultModel;
 use Modules\Evaluations\Presentation\HTTP\Requests\PublishResultsRequest;
 use Modules\Evaluations\Presentation\HTTP\Resources\EvaluationResource;
+use Symfony\Component\Uid\Uuid;
 
 final class AdminEvaluationController extends Controller
 {
@@ -75,27 +76,36 @@ final class AdminEvaluationController extends Controller
             ], 422);
         }
 
-        // 2. Aggregate average scores per application
+        // 2. Aggregate average scores per application from the real
+        // per-criterion breakdown each judge submitted (evaluation_scores),
+        // grouped by evaluation_criteria.code ('tajweed', 'memorization',
+        // 'voice', 'performance' — only the first three feed tie-breaking).
         $applicationScores = [];
         foreach ($applicationIds as $appId) {
-            $evals = EvaluationModel::query()
+            $evalIds = EvaluationModel::query()
                 ->where('application_id', $appId)
                 ->where('status', 'submitted')
-                ->get();
+                ->pluck('id');
 
-            if ($evals->isEmpty()) {
+            if ($evalIds->isEmpty()) {
                 continue;
             }
 
-            $avgTotal = (float) $evals->avg('total_score');
+            $avgTotal = (float) EvaluationModel::query()->whereIn('id', $evalIds)->avg('total_score');
 
-            // Decompose total into weighted criteria averages (proxy — full implementation reads evaluation_scores)
+            $categoryAverages = DB::table('evaluation_scores')
+                ->join('evaluation_criteria', 'evaluation_scores.criterion_id', '=', 'evaluation_criteria.id')
+                ->whereIn('evaluation_scores.evaluation_id', $evalIds)
+                ->selectRaw('evaluation_criteria.code as code, AVG(evaluation_scores.score) as avg_score')
+                ->groupBy('evaluation_criteria.code')
+                ->pluck('avg_score', 'code');
+
             $applicationScores[] = [
                 'application_id' => $appId,
                 'total_score' => round($avgTotal, 2),
-                'tajweed_score' => round($avgTotal * 0.40, 2),
-                'memorization_score' => round($avgTotal * 0.40, 2),
-                'voice_score' => round($avgTotal * 0.20, 2),
+                'tajweed_score' => round((float) ($categoryAverages['tajweed'] ?? 0.0), 2),
+                'memorization_score' => round((float) ($categoryAverages['memorization'] ?? 0.0), 2),
+                'voice_score' => round((float) ($categoryAverages['voice'] ?? 0.0), 2),
             ];
         }
 
@@ -110,31 +120,47 @@ final class AdminEvaluationController extends Controller
         $minThreshold = (float) $request->input('min_qualification_threshold', 80.0);
         $rankings = $this->rankingService->calculateStageRankings($applicationScores, $minThreshold);
 
-        // 4. Persist per-application results into `results` table
-        DB::transaction(function () use ($rankings, $stageId): void {
+        // 4. Persist per-application results into `results` table.
+        // Not using updateOrInsert()/updateOrCreate() with a fresh id in the
+        // values array: on an existing row that silently overwrites the
+        // primary key (and resets created_at) on every recalculation.
+        $scoresByApplication = collect($applicationScores)->keyBy('application_id');
+
+        DB::transaction(function () use ($rankings, $scoresByApplication, $stageId): void {
             foreach ($rankings as $item) {
-                DB::table('results')->updateOrInsert(
-                    ['application_id' => $item['application_id']],
-                    [
-                        'id' => fake()->uuid(),
-                        'final_score' => $item['final_score'],
-                        'tajweed_score' => 0.0,
-                        'memorization_score' => 0.0,
-                        'voice_score' => 0.0,
-                        'rank' => $item['rank'],
-                        'status' => $item['qualification_status'],
-                        'manual_tie_break_flag' => $item['manual_tie_break_flag'] ? 1 : 0,
+                $breakdown = $scoresByApplication[$item['application_id']];
+                $attributes = [
+                    'final_score' => $item['final_score'],
+                    'tajweed_score' => $breakdown['tajweed_score'],
+                    'memorization_score' => $breakdown['memorization_score'],
+                    'voice_score' => $breakdown['voice_score'],
+                    'rank' => $item['rank'],
+                    'status' => $item['qualification_status'],
+                    'manual_tie_break_flag' => $item['manual_tie_break_flag'] ? 1 : 0,
+                    'updated_at' => now(),
+                ];
+
+                $existingId = DB::table('results')->where('application_id', $item['application_id'])->value('id');
+
+                if ($existingId) {
+                    DB::table('results')->where('id', $existingId)->update($attributes);
+                } else {
+                    DB::table('results')->insert($attributes + [
+                        'id' => (string) Uuid::v7(),
+                        'application_id' => $item['application_id'],
                         'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
 
-            // Upsert stage_results header as draft
-            StageResultModel::query()->updateOrCreate(
-                ['stage_id' => $stageId],
-                ['id' => fake()->uuid(), 'status' => 'draft']
-            );
+            // Upsert stage_results header as draft, preserving the id/created_at
+            // of an existing row instead of regenerating them on every run.
+            $stageResult = StageResultModel::query()->firstOrNew(['stage_id' => $stageId]);
+            if (! $stageResult->exists) {
+                $stageResult->id = (string) Uuid::v7();
+            }
+            $stageResult->status = 'draft';
+            $stageResult->save();
         });
 
         return response()->json([

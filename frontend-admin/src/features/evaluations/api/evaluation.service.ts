@@ -23,4 +23,8 @@ export const evaluationService = {
   async publishResults(stageId: string): Promise<void> {
     await http.post(`/admin/stages/${stageId}/publish-results`);
   },
+
+  async reopenResults(stageId: string): Promise<void> {
+    await http.post(`/admin/stages/${stageId}/reopen-results`);
+  },
 };

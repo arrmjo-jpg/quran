@@ -82,17 +82,15 @@ final class JudgeEvaluationController extends Controller
             return response()->json(['success' => false, 'error' => ['code' => 'FORBIDDEN', 'message' => 'Access denied.']], 403);
         }
 
-        if ($evaluation->getStatus() !== 'draft') {
+        try {
+            $evaluation->beginReview($this->stateMachine);
+        } catch (\InvalidArgumentException $e) {
             return response()->json(['success' => false, 'error' => ['code' => 'INVALID_STATE', 'message' => 'Evaluation already started.']], 409);
         }
 
-        // Transition to in_progress by saving a draft with status changed
-        // Re-save with in_progress status via raw model update
-        EvaluationModel::query()
-            ->where('id', $id)
-            ->update(['status' => 'in_progress']);
+        $this->repo->save($evaluation);
 
-        return response()->json(['success' => true, 'message' => 'Evaluation started.', 'data' => ['id' => $id, 'status' => 'in_progress']]);
+        return response()->json(['success' => true, 'message' => 'Evaluation started.', 'data' => ['id' => $id, 'status' => $evaluation->getStatus()]]);
     }
 
     /**
@@ -122,6 +120,8 @@ final class JudgeEvaluationController extends Controller
             );
         } catch (\DomainException $e) {
             return response()->json(['success' => false, 'error' => ['code' => 'DOMAIN_ERROR', 'message' => $e->getMessage()]], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'error' => ['code' => 'INVALID_STATE_TRANSITION', 'message' => $e->getMessage()]], 409);
         }
 
         return response()->json([

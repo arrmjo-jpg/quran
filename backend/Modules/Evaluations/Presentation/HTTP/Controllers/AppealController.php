@@ -7,11 +7,13 @@ namespace Modules\Evaluations\Presentation\HTTP\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Applications\Domain\Repositories\ApplicationRepositoryContract;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
 use Modules\Evaluations\Infrastructure\Database\Models\AppealModel;
 use Modules\Evaluations\Presentation\HTTP\Requests\ResolveAppealRequest;
 use Modules\Evaluations\Presentation\HTTP\Requests\SubmitAppealRequest;
 use Modules\Evaluations\Presentation\HTTP\Resources\AppealResource;
+use Symfony\Component\Uid\Uuid;
 
 final class AppealController extends Controller
 {
@@ -25,8 +27,14 @@ final class AppealController extends Controller
             return response()->json(['success' => false, 'error' => ['code' => 'PROFILE_REQUIRED', 'message' => 'Contestant profile required.']], 422);
         }
 
+        $application = app(ApplicationRepositoryContract::class)->findOrFail($request->validated('application_id'));
+
+        if ($application->contestantId !== (string) $contestant->id->value) {
+            return response()->json(['success' => false, 'error' => ['code' => 'FORBIDDEN', 'message' => 'This application does not belong to you.']], 403);
+        }
+
         $appeal = AppealModel::query()->create([
-            'id' => fake()->uuid(),
+            'id' => (string) Uuid::v7(),
             'application_id' => $request->validated('application_id'),
             'contestant_id' => (string) $contestant->id->value,
             'reason' => $request->validated('reason'),

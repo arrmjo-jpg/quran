@@ -9,7 +9,7 @@ use InvalidArgumentException;
 final class EvaluationStateMachine
 {
     private const TRANSITIONS = [
-        'pending' => ['in_progress'],
+        'draft' => ['in_progress'],
         'in_progress' => ['submitted'],
         'submitted' => ['locked'],
         'locked' => ['returned_for_revision', 'approved'],

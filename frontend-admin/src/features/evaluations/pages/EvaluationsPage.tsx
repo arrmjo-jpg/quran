@@ -8,13 +8,14 @@ import Button from '@/ui/Button';
 import StatCard from '@/ui/StatCard';
 import { ConfirmDialog } from '@/ui/dialog/Dialog';
 import { evaluationService, type EvaluationItem } from '../api/evaluation.service';
-import { Award, Calculator, CheckCircle2, RotateCcw, Download, Users, TrendingUp } from 'lucide-react';
+import { Award, Calculator, CheckCircle2, RotateCcw, Users, TrendingUp } from 'lucide-react';
 import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
 import { toast } from 'sonner';
 
 export default function EvaluationsPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [confirmReopen, setConfirmReopen] = useState(false);
+  const [stageId, setStageId] = useState('');
 
   const { data: evaluations, isLoading, refetch } = useQuery({
     queryKey: ['evaluations'],
@@ -22,20 +23,37 @@ export default function EvaluationsPage(): React.JSX.Element {
   });
 
   const calculateMutation = useMutation({
-    mutationFn: () => evaluationService.calculateResults('default-stage-id'),
+    mutationFn: () => evaluationService.calculateResults(stageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluations'] });
       toast.success('تم احتساب نتائج وتصنيف المرحلة بنجاح وفق محرك RankingService');
     },
+    onError: () => toast.error('تعذر احتساب النتائج، تحقق من رقم المرحلة'),
   });
 
   const publishMutation = useMutation({
-    mutationFn: () => evaluationService.publishResults('default-stage-id'),
+    mutationFn: () => evaluationService.publishResults(stageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluations'] });
       toast.success('تم نشر نتائج المرحلة رسميًا وتأهيل المتسابقين الفائزين');
     },
+    onError: () => toast.error('تعذر نشر النتائج، تحقق من رقم المرحلة'),
   });
+
+  const reopenMutation = useMutation({
+    mutationFn: () => evaluationService.reopenResults(stageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['evaluations'] });
+      toast.success('تمت إعادة فتح نتائج المرحلة');
+      setConfirmReopen(false);
+    },
+    onError: () => {
+      toast.error('تعذر إعادة فتح النتائج، تحقق من رقم المرحلة');
+      setConfirmReopen(false);
+    },
+  });
+
+  const stageActionsDisabled = stageId.trim().length === 0;
 
   const columns: ColumnDef<EvaluationItem>[] = [
     {
@@ -81,9 +99,17 @@ export default function EvaluationsPage(): React.JSX.Element {
       actions={
         <PermissionWrapper role="admin">
           <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={stageId}
+              onChange={(e) => setStageId(e.target.value)}
+              placeholder="معرف المرحلة (Stage ID)"
+              className="w-56 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
             <Button
               variant="outline"
               size="sm"
+              disabled={stageActionsDisabled}
               isLoading={calculateMutation.isPending}
               onClick={() => calculateMutation.mutate()}
             >
@@ -93,6 +119,7 @@ export default function EvaluationsPage(): React.JSX.Element {
             <Button
               variant="primary"
               size="sm"
+              disabled={stageActionsDisabled}
               isLoading={publishMutation.isPending}
               onClick={() => publishMutation.mutate()}
             >
@@ -102,6 +129,7 @@ export default function EvaluationsPage(): React.JSX.Element {
             <Button
               variant="danger"
               size="sm"
+              disabled={stageActionsDisabled}
               onClick={() => setConfirmReopen(true)}
             >
               <RotateCcw className="w-4 h-4" />
@@ -114,9 +142,18 @@ export default function EvaluationsPage(): React.JSX.Element {
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <StatCard title="إجمالي التقييمات" value={evaluations?.length ?? 0} icon={<Award className="w-5 h-5" />} color="brand" />
-        <StatCard title="الحكام المنجزون" value="5 / 5" icon={<Users className="w-5 h-5" />} color="emerald" />
-        <StatCard title="متوسط المرحلة" value="91.4 / 100" icon={<TrendingUp className="w-5 h-5" />} color="amber" />
-        <StatCard title="حالة النشر" value="جاهز للنشر" icon={<CheckCircle2 className="w-5 h-5" />} color="purple" />
+        <StatCard title="التقييمات المكتملة" value={evaluations?.filter((e) => e.status === 'submitted').length ?? 0} icon={<Users className="w-5 h-5" />} color="emerald" />
+        <StatCard
+          title="متوسط الدرجات المكتملة"
+          value={(() => {
+            const submitted = evaluations?.filter((e) => e.status === 'submitted') ?? [];
+            if (submitted.length === 0) return '—';
+            const avg = submitted.reduce((sum, e) => sum + e.total_score, 0) / submitted.length;
+            return `${avg.toFixed(1)} / 100`;
+          })()}
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="amber"
+        />
       </div>
 
       <DataTable<EvaluationItem>
@@ -135,10 +172,8 @@ export default function EvaluationsPage(): React.JSX.Element {
           title="تأكيد إعادة فتح نتائج المرحلة"
           description="هل أنت متأكد من إلغاء نشر نتائج هذه المرحلة وإتاحتها للعد والتعديل من جديد؟ سيتم تسجيل هذا الإجراء في Audit Logs."
           confirmLabel="إعادة الفتح"
-          onConfirm={() => {
-            toast.success('تمت إعادة فتح نتائج المرحلة');
-            setConfirmReopen(false);
-          }}
+          isLoading={reopenMutation.isPending}
+          onConfirm={() => reopenMutation.mutate()}
         />
       )}
     </PageLayout>
