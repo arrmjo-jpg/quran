@@ -50,11 +50,6 @@ final class Season
     private array $translationsByLocale;
 
     /**
-     * @param  array<string, string>  $translations  Legacy locale => title map from the original
-     *                                               pre-v2 Season entity. Superseded by $translationsByLocale
-     *                                               (SeasonTranslation VOs) but kept, unused, so
-     *                                               AdminSeasonController::store() — not yet migrated
-     *                                               to the new translation model — keeps compiling.
      * @param  array<string, SeasonTranslation>  $translationsByLocale  Repository hydration path: reconstructs
      *                                                                  a previously `setTranslation()`-populated
      *                                                                  season without going through the guarded
@@ -70,7 +65,6 @@ final class Season
         private string $endDateIso,
         private string $status = 'draft', // 'draft', 'registration_open', 'registration_closed', 'active', 'completed'
         private bool $isActive = false,
-        private array $translations = [],
         private ?int $minAge = null,
         private ?int $maxAge = null,
         private ?string $participationTypeId = null,
@@ -92,7 +86,6 @@ final class Season
         string $regEndIso,
         string $startDateIso,
         string $endDateIso,
-        array $translations = []
     ): self {
         $season = new self(
             id: $id,
@@ -104,7 +97,6 @@ final class Season
             endDateIso: $endDateIso,
             status: 'draft',
             isActive: false,
-            translations: $translations
         );
 
         $season->recordEvent(new SeasonCreated($id, $slug, $year, now()->toIso8601String()));

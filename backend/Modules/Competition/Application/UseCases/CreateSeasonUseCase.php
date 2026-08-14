@@ -7,6 +7,7 @@ namespace Modules\Competition\Application\UseCases;
 use Illuminate\Support\Facades\DB;
 use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
 
 /**
  * CreateSeasonUseCase
@@ -18,14 +19,17 @@ use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
  * every season ever created via the API. Same shape as
  * ArchiveSeasonUseCase/CancelSeasonUseCase.
  *
- * NOTE: $translations is passed straight through to Season::create()
- * unchanged from the Controller's previous behavior — it populates the
- * legacy translations property, not the translationsByLocale map
- * setTranslation()/assertTranslationsComplete() read from, so title_ar/
- * title_en are not yet actually persisted as SeasonTranslation rows.
- * That gap (and the missing title_es/public_name_* fields it would also
- * need) is pre-existing, not introduced here, and is explicitly out of
- * scope for this Use Case — see Step 9 verification report.
+ * $translations carries real SeasonTranslation data (title + public_name
+ * per locale) that gets applied via setTranslation() before save() — this
+ * replaces the previous behavior of passing title_ar/title_en straight
+ * into Season::create()'s legacy $translations property, which
+ * getTranslation()/SeasonRepository::save() never actually read from
+ * (title_ar/title_en were silently dropped on every season ever created).
+ * public_short_name/description are not collected yet — a season created
+ * through this Use Case still needs those (or none, since they're
+ * optional) added before it can pass assertTranslationsComplete(), same
+ * as age range/participation type/tajweed level/countries/stages, which
+ * remain out of scope here pending the Season Rules API.
  */
 final readonly class CreateSeasonUseCase
 {
@@ -34,7 +38,7 @@ final readonly class CreateSeasonUseCase
     ) {}
 
     /**
-     * @param  array<string, string>  $translations
+     * @param  array<string, array{title: string, public_name: string}>  $translations  locale => translation fields
      */
     public function execute(
         string $id,
@@ -55,8 +59,15 @@ final readonly class CreateSeasonUseCase
                 regEndIso: $registrationEndIso,
                 startDateIso: $startDateIso,
                 endDateIso: $endDateIso,
-                translations: $translations,
             );
+
+            foreach ($translations as $locale => $fields) {
+                $season->setTranslation(new SeasonTranslation(
+                    locale: $locale,
+                    title: $fields['title'],
+                    publicName: $fields['public_name'],
+                ));
+            }
 
             $this->seasons->save($season);
 

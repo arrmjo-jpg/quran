@@ -78,6 +78,10 @@ test('Competition API Readiness Gate: complete season lifecycle state machine an
         'end_date' => '2026-09-30 23:59:59',
         'title_ar' => 'موسم عام 2026',
         'title_en' => 'Season 2026',
+        'title_es' => 'Temporada 2026',
+        'public_name_ar' => 'موسم القرآن 2026',
+        'public_name_en' => 'Quran Season 2026',
+        'public_name_es' => 'Temporada del Corán 2026',
     ]);
 
     $createResponse->assertStatus(201)

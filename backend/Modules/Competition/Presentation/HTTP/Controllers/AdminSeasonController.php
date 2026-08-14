@@ -38,8 +38,9 @@ final class AdminSeasonController extends Controller
             startDateIso: $request->validated('start_date'),
             endDateIso: $request->validated('end_date'),
             translations: [
-                'ar' => $request->validated('title_ar'),
-                'en' => $request->validated('title_en'),
+                'ar' => ['title' => $request->validated('title_ar'), 'public_name' => $request->validated('public_name_ar')],
+                'en' => ['title' => $request->validated('title_en'), 'public_name' => $request->validated('public_name_en')],
+                'es' => ['title' => $request->validated('title_es'), 'public_name' => $request->validated('public_name_es')],
             ],
         );
 

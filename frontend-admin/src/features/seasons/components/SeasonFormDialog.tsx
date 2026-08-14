@@ -31,6 +31,10 @@ export function SeasonFormDialog({ isOpen, onClose }: SeasonFormDialogProps): Re
       end_date: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
       title_ar: '',
       title_en: '',
+      title_es: '',
+      public_name_ar: '',
+      public_name_en: '',
+      public_name_es: '',
     },
   });
 
@@ -91,7 +95,7 @@ export function SeasonFormDialog({ isOpen, onClose }: SeasonFormDialogProps): Re
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Input
             label="عنوان الموسم (عربي)"
             {...register('title_ar')}
@@ -101,6 +105,29 @@ export function SeasonFormDialog({ isOpen, onClose }: SeasonFormDialogProps): Re
             label="عنوان الموسم (إنجليزي)"
             {...register('title_en')}
             error={errors.title_en?.message}
+          />
+          <Input
+            label="عنوان الموسم (إسباني)"
+            {...register('title_es')}
+            error={errors.title_es?.message}
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Input
+            label="الاسم المعلن (عربي)"
+            {...register('public_name_ar')}
+            error={errors.public_name_ar?.message}
+          />
+          <Input
+            label="الاسم المعلن (إنجليزي)"
+            {...register('public_name_en')}
+            error={errors.public_name_en?.message}
+          />
+          <Input
+            label="الاسم المعلن (إسباني)"
+            {...register('public_name_es')}
+            error={errors.public_name_es?.message}
           />
         </div>
 

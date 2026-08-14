@@ -9,6 +9,10 @@ export const seasonSchema = z.object({
   end_date: z.string().min(1, 'يرجى تحديد تاريخ نهاية الموسم'),
   title_ar: z.string().min(1, 'يرجى إدخال العنوان بالعربية'),
   title_en: z.string().min(1, 'يرجى إدخال العنوان بالإنجليزية'),
+  title_es: z.string().min(1, 'يرجى إدخال العنوان بالإسبانية'),
+  public_name_ar: z.string().min(1, 'يرجى إدخال الاسم المعلن بالعربية'),
+  public_name_en: z.string().min(1, 'يرجى إدخال الاسم المعلن بالإنجليزية'),
+  public_name_es: z.string().min(1, 'يرجى إدخال الاسم المعلن بالإسبانية'),
 });
 
 export type SeasonFormValues = z.infer<typeof seasonSchema>;

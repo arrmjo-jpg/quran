@@ -20,6 +20,10 @@ export interface CreateSeasonPayload {
   end_date:           string;
   title_ar:           string;
   title_en:           string;
+  title_es:           string;
+  public_name_ar:     string;
+  public_name_en:     string;
+  public_name_es:     string;
 }
 
 export interface SeasonFilters {

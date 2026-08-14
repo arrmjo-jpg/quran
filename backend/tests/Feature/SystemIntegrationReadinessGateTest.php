@@ -79,6 +79,10 @@ function irg_create_season(mixed $testCase, UserModel $admin, string $slug): str
         'end_date' => '2026-09-30 23:59:59',
         'title_ar' => 'موسم اختبار',
         'title_en' => 'Test Season',
+        'title_es' => 'Temporada de prueba',
+        'public_name_ar' => 'موسم القرآن',
+        'public_name_en' => 'Quran Season',
+        'public_name_es' => 'Temporada del Corán',
     ]);
     $response->assertStatus(201);
     $seasonId = $response->json('data.id');

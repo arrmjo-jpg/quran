@@ -51,6 +51,10 @@ final class SeasonsTest extends TestCase
             'end_date' => "{$year}-02-28 23:59:59",
             'title_ar' => "موسم {$year}",
             'title_en' => "Season {$year}",
+            'title_es' => "Temporada {$year}",
+            'public_name_ar' => "موسم القرآن {$year}",
+            'public_name_en' => "Quran Season {$year}",
+            'public_name_es' => "Temporada del Corán {$year}",
         ]);
 
         $response->assertStatus(201);
@@ -107,6 +111,26 @@ final class SeasonsTest extends TestCase
         $id = $this->createSeason('uuid-check', 2030);
 
         expect(Uuid::isValid($id))->toBeTrue();
+    }
+
+    public function test_creating_a_season_actually_persists_its_translations(): void
+    {
+        $id = $this->createSeason('translation-check', 2041);
+
+        $repository = app(SeasonRepositoryContract::class);
+        $season = $repository->findOrFail($id);
+
+        $ar = $season->getTranslation('ar');
+        $en = $season->getTranslation('en');
+        $es = $season->getTranslation('es');
+
+        expect($ar)->not->toBeNull();
+        expect($ar->title)->toBe('موسم 2041');
+        expect($ar->publicName)->toBe('موسم القرآن 2041');
+        expect($en?->title)->toBe('Season 2041');
+        expect($en?->publicName)->toBe('Quran Season 2041');
+        expect($es?->title)->toBe('Temporada 2041');
+        expect($es?->publicName)->toBe('Temporada del Corán 2041');
     }
 
     public function test_season_dates_beyond_the_mysql_timestamp_ceiling_are_accepted(): void
@@ -199,6 +223,10 @@ final class SeasonsTest extends TestCase
             'end_date' => '2038-02-28 23:59:59',
             'title_ar' => 'مكرر',
             'title_en' => 'Duplicate',
+            'title_es' => 'Duplicado',
+            'public_name_ar' => 'مكرر',
+            'public_name_en' => 'Duplicate',
+            'public_name_es' => 'Duplicado',
         ])->assertStatus(422);
     }
 
@@ -222,6 +250,10 @@ final class SeasonsTest extends TestCase
             'end_date' => '2039-02-28 23:59:59',
             'title_ar' => 'محظور',
             'title_en' => 'Blocked',
+            'title_es' => 'Bloqueado',
+            'public_name_ar' => 'محظور',
+            'public_name_en' => 'Blocked',
+            'public_name_es' => 'Bloqueado',
         ])->assertStatus(403);
     }
 }
