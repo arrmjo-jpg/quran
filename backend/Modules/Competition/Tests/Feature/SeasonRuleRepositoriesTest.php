@@ -171,7 +171,11 @@ test('SeasonRuleVersionRepository persists an immutable snapshot row', function 
     $row = SeasonRuleVersionModel::query()->where('season_id', $season->id)->where('version', 1)->first();
 
     expect($row)->not->toBeNull();
-    expect($row->snapshot_json)->toBe(['min_age' => 10, 'max_age' => 18]);
+    // toEqualCanonicalizing(), not toBe(): MySQL's native JSON column type
+    // does not guarantee object member order is preserved on round-trip
+    // (SQLite has no native JSON type, so it stores/returns the raw text
+    // verbatim, which masked this) — only the content should be asserted.
+    expect($row->snapshot_json)->toEqualCanonicalizing(['min_age' => 10, 'max_age' => 18]);
     expect($row->created_by_user_id)->toBeNull();
 });
 

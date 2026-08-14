@@ -29,6 +29,7 @@ use Modules\Competition\Infrastructure\Database\Models\StageModel;
 use Modules\Competition\Infrastructure\Database\Models\StageTranslationModel;
 use Modules\Competition\Infrastructure\Database\Models\TajweedLevelModel;
 use Modules\Competition\Infrastructure\Database\Models\TajweedLevelTranslationModel;
+use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Countries\Infrastructure\Database\Models\CountryModel;
 use Modules\Countries\Infrastructure\Database\Models\CountryTranslationModel;
 
@@ -94,11 +95,30 @@ function seedFullyConfiguredSeason(): string
     return $season->id;
 }
 
+/**
+ * archived_by_user_id / created_by_user_id are real FKs to users.id — a
+ * fake string like 'admin-1' only ever "worked" against sqlite, which
+ * doesn't enforce FK constraints in this test config. Seed a real user
+ * so these use cases round-trip correctly on MySQL too.
+ */
+function seedTestUser(): string
+{
+    return UserModel::query()->create([
+        'id' => (string) Str::uuid(),
+        'email' => 'season-test-'.Str::random(8).'@quran.test',
+        'name' => 'Season Test Admin',
+        'type' => 'admin',
+        'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
+        'is_active' => true,
+    ])->id;
+}
+
 test('OpenSeasonRegistrationUseCase freezes a fully configured season, persists version 1, and dispatches events', function (): void {
     Event::fake();
     $seasonId = seedFullyConfiguredSeason();
+    $adminId = seedTestUser();
 
-    $season = app(OpenSeasonRegistrationUseCase::class)->execute($seasonId, 'admin-1');
+    $season = app(OpenSeasonRegistrationUseCase::class)->execute($seasonId, $adminId);
 
     expect($season->getStatus())->toBe('registration_open');
     expect($season->isFrozen())->toBeTrue();
@@ -111,7 +131,7 @@ test('OpenSeasonRegistrationUseCase freezes a fully configured season, persists 
 
     $version = SeasonRuleVersionModel::query()->where('season_id', $seasonId)->where('version', 1)->first();
     expect($version)->not->toBeNull();
-    expect($version->created_by_user_id)->toBe('admin-1');
+    expect($version->created_by_user_id)->toBe($adminId);
     expect($version->snapshot_json['min_age'])->toBe(10);
     expect($version->snapshot_json['max_age'])->toBe(18);
     expect($version->snapshot_json['participation_type']['code'])->toBe('mixed');
@@ -196,15 +216,16 @@ test('ArchiveSeasonUseCase archives a completed season and dispatches SeasonArch
         'start_date' => '2026-01-16 00:00:00', 'end_date' => '2026-03-01 00:00:00',
         'status' => 'completed', 'is_active' => false,
     ]);
+    $adminId = seedTestUser();
 
-    $result = app(ArchiveSeasonUseCase::class)->execute($season->id, 'season concluded', 'admin-1');
+    $result = app(ArchiveSeasonUseCase::class)->execute($season->id, 'season concluded', $adminId);
 
     expect($result->getStatus())->toBe('archived');
 
     $reloaded = SeasonModel::query()->findOrFail($season->id);
     expect($reloaded->status)->toBe('archived');
     expect($reloaded->archive_reason)->toBe('season concluded');
-    expect($reloaded->archived_by_user_id)->toBe('admin-1');
+    expect($reloaded->archived_by_user_id)->toBe($adminId);
 
     Event::assertDispatched(SeasonArchived::class);
 });
@@ -232,8 +253,9 @@ test('CancelSeasonUseCase cancels a draft season and dispatches SeasonCancelled'
         'start_date' => '2026-01-16 00:00:00', 'end_date' => '2026-03-01 00:00:00',
         'status' => 'draft', 'is_active' => false,
     ]);
+    $adminId = seedTestUser();
 
-    $result = app(CancelSeasonUseCase::class)->execute($season->id, 'insufficient interest', 'admin-2');
+    $result = app(CancelSeasonUseCase::class)->execute($season->id, 'insufficient interest', $adminId);
 
     expect($result->getStatus())->toBe('archived');
     expect(SeasonModel::query()->findOrFail($season->id)->archive_reason)->toBe('insufficient interest');
