@@ -26,6 +26,11 @@ interface SeasonRepositoryContract
 
     public function find(string $id): ?Season;
 
+    /**
+     * @return array<int, Season>
+     */
+    public function findAll(): array;
+
     public function findActiveSeason(): ?Season;
 
     public function save(Season $season): void;

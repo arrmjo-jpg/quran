@@ -7,8 +7,12 @@ namespace Modules\Competition\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Modules\Competition\Domain\Entities\Season;
-use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use InvalidArgumentException;
+use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
+use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
+use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
+use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
@@ -17,27 +21,27 @@ use Symfony\Component\Uid\Uuid;
 final class AdminSeasonController extends Controller
 {
     public function __construct(
-        private readonly SeasonRepositoryContract $repository,
+        private readonly CreateSeasonUseCase $createSeason,
+        private readonly OpenSeasonRegistrationUseCase $openSeasonRegistration,
+        private readonly CloseSeasonRegistrationUseCase $closeSeasonRegistration,
         private readonly CompetitionRuleEngine $ruleEngine,
     ) {}
 
     public function store(CreateSeasonRequest $request): JsonResponse
     {
-        $season = Season::create(
+        $season = $this->createSeason->execute(
             id: (string) Uuid::v7(),
             slug: $request->validated('slug'),
             year: (int) $request->validated('year'),
-            regStartIso: $request->validated('registration_start'),
-            regEndIso: $request->validated('registration_end'),
+            registrationStartIso: $request->validated('registration_start'),
+            registrationEndIso: $request->validated('registration_end'),
             startDateIso: $request->validated('start_date'),
             endDateIso: $request->validated('end_date'),
             translations: [
                 'ar' => $request->validated('title_ar'),
                 'en' => $request->validated('title_en'),
-            ]
+            ],
         );
-
-        $this->repository->save($season);
 
         return response()->json([
             'success' => true,
@@ -46,27 +50,21 @@ final class AdminSeasonController extends Controller
         ], 201);
     }
 
-    public function openRegistration(string $id): JsonResponse
+    public function openRegistration(string $id, Request $request): JsonResponse
     {
-        $season = $this->repository->findOrFail($id);
-
         try {
-            $season->openRegistration();
-        } catch (\InvalidArgumentException $e) {
+            $season = $this->openSeasonRegistration->execute($id, $request->user()?->id);
+        } catch (InvalidSeasonTransitionException $e) {
             return response()->json([
                 'success' => false,
                 'error' => ['code' => 'INVALID_STATE_TRANSITION', 'message' => $e->getMessage()],
             ], 409);
+        } catch (IncompleteSeasonRulesException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'INCOMPLETE_SEASON_RULES', 'message' => $e->getMessage(), 'missing' => $e->missing],
+            ], 422);
         }
-
-        // deactivateOthers() MUST run before save(): seasons.active_flag is
-        // a generated column with a unique index (uk_seasons_single_active),
-        // so setting this season's is_active=1 while a previously active
-        // season is still is_active=1 collides on it — even single-threaded.
-        // Only one season may be active at a time — findActiveSeason() and
-        // the public "current season" endpoint both assume exactly one.
-        $this->repository->deactivateOthers($season->id);
-        $this->repository->save($season);
 
         return response()->json([
             'success' => true,
@@ -77,18 +75,14 @@ final class AdminSeasonController extends Controller
 
     public function closeRegistration(string $id): JsonResponse
     {
-        $season = $this->repository->findOrFail($id);
-
         try {
-            $season->closeRegistration();
-        } catch (\InvalidArgumentException $e) {
+            $season = $this->closeSeasonRegistration->execute($id);
+        } catch (InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
                 'error' => ['code' => 'INVALID_STATE_TRANSITION', 'message' => $e->getMessage()],
             ], 409);
         }
-
-        $this->repository->save($season);
 
         return response()->json([
             'success' => true,

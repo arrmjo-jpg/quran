@@ -39,6 +39,16 @@ final class SeasonRepository implements SeasonRepositoryContract
         return $model ? $this->toDomain($model) : null;
     }
 
+    /**
+     * @return array<int, Season>
+     */
+    public function findAll(): array
+    {
+        return SeasonModel::query()->with('translations')->orderBy('year', 'desc')->get()
+            ->map(fn (SeasonModel $model): Season => $this->toDomain($model))
+            ->all();
+    }
+
     public function findActiveSeason(): ?Season
     {
         $model = SeasonModel::query()->with('translations')->where('is_active', true)->first();

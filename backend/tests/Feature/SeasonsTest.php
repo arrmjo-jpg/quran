@@ -5,8 +5,17 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
+use Modules\Competition\Infrastructure\Database\Models\JudgeScoreSystemModel;
+use Modules\Competition\Infrastructure\Database\Models\ParticipationTypeModel;
 use Modules\Competition\Infrastructure\Database\Models\SeasonModel;
+use Modules\Competition\Infrastructure\Database\Models\StageModel;
+use Modules\Competition\Infrastructure\Database\Models\TajweedLevelModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Countries\Infrastructure\Database\Models\CountryModel;
 use Symfony\Component\Uid\Uuid;
 use Tests\TestCase;
 
@@ -49,6 +58,50 @@ final class SeasonsTest extends TestCase
         return $response->json('data.id');
     }
 
+    /**
+     * OpenSeasonRegistrationUseCase (the v2 replacement for the old,
+     * naive openRegistration()) requires a season's rules to be fully
+     * resolved before it may open registration — age range, participation
+     * type, tajweed level, all three translations, at least one eligible
+     * country, and at least one stage rule. There is no admin API yet to
+     * set any of this (a known, separate gap — see Step 9's verification
+     * report), so tests that need an activatable season must configure
+     * it directly through the domain/repository, exactly like the
+     * Competition module's own seedFullyConfiguredSeason() helper does.
+     */
+    private function configureSeasonRules(string $seasonId): void
+    {
+        $repository = app(SeasonRepositoryContract::class);
+        $season = $repository->findOrFail($seasonId);
+
+        $participationType = ParticipationTypeModel::query()->create(['id' => (string) Uuid::v4(), 'code' => 'mixed-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+        $tajweedLevel = TajweedLevelModel::query()->create(['id' => (string) Uuid::v4(), 'code' => 'advanced-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+        $country = CountryModel::query()->create(['id' => (string) Uuid::v4(), 'iso_code' => Str::upper(Str::random(2)), 'iso3_code' => Str::upper(Str::random(3)), 'phone_code' => '+1', 'is_active' => true]);
+
+        $season->setAgeRange(10, 18);
+        $season->setParticipationType($participationType->id);
+        $season->setTajweedLevel($tajweedLevel->id);
+        $season->setTranslation(new SeasonTranslation('ar', 'موسم', 'موسم القرآن'));
+        $season->setTranslation(new SeasonTranslation('en', 'Season', 'Quran Season'));
+        $season->setTranslation(new SeasonTranslation('es', 'Temporada', 'Temporada del Corán'));
+        $repository->save($season);
+
+        DB::table('season_countries')->insert(['season_id' => $seasonId, 'country_id' => $country->id]);
+
+        $stage = StageModel::query()->create([
+            'id' => (string) Uuid::v4(), 'season_id' => $seasonId, 'stage_number' => 1, 'type' => 'final',
+            'start_date' => now(), 'end_date' => now()->addDay(), 'status' => 'pending',
+        ]);
+
+        $scoreSystem = JudgeScoreSystemModel::query()->create(['id' => (string) Uuid::v4(), 'code' => 'out_of_100-'.Str::random(6), 'max_score' => 100, 'display_order' => 1, 'is_active' => true]);
+
+        DB::table('season_stage_rules')->insert([
+            'id' => (string) Uuid::v4(), 'season_id' => $seasonId, 'stage_id' => $stage->id,
+            'judge_score_system_id' => $scoreSystem->id, 'qualification_percentage' => 80,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
+
     public function test_season_id_is_a_real_uuid_not_a_fake_one(): void
     {
         $id = $this->createSeason('uuid-check', 2030);
@@ -76,6 +129,8 @@ final class SeasonsTest extends TestCase
     {
         $seasonA = $this->createSeason('season-a', 2031);
         $seasonB = $this->createSeason('season-b', 2032);
+        $this->configureSeasonRules($seasonA);
+        $this->configureSeasonRules($seasonB);
 
         $this->actingAs($this->admin())->postJson("/api/v1/admin/seasons/{$seasonA}/open-registration")
             ->assertStatus(200)
@@ -114,6 +169,7 @@ final class SeasonsTest extends TestCase
     public function test_public_current_season_returns_the_active_one(): void
     {
         $seasonId = $this->createSeason('current-season', 2035);
+        $this->configureSeasonRules($seasonId);
         $this->actingAs($this->admin())->postJson("/api/v1/admin/seasons/{$seasonId}/open-registration");
 
         $this->getJson('/api/v1/seasons/current')
