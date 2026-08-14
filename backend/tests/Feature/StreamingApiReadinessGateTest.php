@@ -31,7 +31,7 @@ function stream_season(): SeasonModel
         'year' => 2026,
         'registration_start' => now()->subDays(5),
         'registration_end' => now()->addDays(20),
-        'start_date' => now(),
+        'start_date' => now()->addDays(21),
         'end_date' => now()->addMonths(2),
         'status' => 'active',
         'is_active' => true,
