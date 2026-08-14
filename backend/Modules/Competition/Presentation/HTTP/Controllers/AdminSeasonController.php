@@ -59,11 +59,14 @@ final class AdminSeasonController extends Controller
             ], 409);
         }
 
-        $this->repository->save($season);
-
+        // deactivateOthers() MUST run before save(): seasons.active_flag is
+        // a generated column with a unique index (uk_seasons_single_active),
+        // so setting this season's is_active=1 while a previously active
+        // season is still is_active=1 collides on it — even single-threaded.
         // Only one season may be active at a time — findActiveSeason() and
         // the public "current season" endpoint both assume exactly one.
         $this->repository->deactivateOthers($season->id);
+        $this->repository->save($season);
 
         return response()->json([
             'success' => true,
