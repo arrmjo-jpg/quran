@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Infrastructure\Database\Models\SeasonModel;
+
+uses()->group('competition', 'feature', 'season-use-cases', 'concurrency');
+
+/**
+ * Proves ADR-005 Decision 16 ("seasons.is_current: Activating a season —
+ * Pessimistic Locking, lock all candidate rows") is a real row-level DB
+ * lock, not just a method call that happens to compile.
+ *
+ * SQLite has no FOR UPDATE semantics (Laravel's grammar silently drops
+ * the clause), so this can only be proven against a real MySQL
+ * connection. It intentionally does NOT use RefreshDatabase: proving a
+ * lock blocks a *second, independent* connection requires the seeded row
+ * to be actually committed and visible outside the test's own
+ * transaction, which RefreshDatabase's wrapping transaction would
+ * prevent. Cleanup is manual instead (see finally block).
+ *
+ * Technique: open a genuinely separate MySQL session, give it a 1-second
+ * innodb_lock_wait_timeout, and have it attempt the same FOR UPDATE lock
+ * while connection #1's transaction still holds it, uncommitted. If the
+ * lock is real, connection #2 blocks and then fails with "Lock wait
+ * timeout exceeded" — that failure is the proof. If the repository
+ * method were a plain SELECT (no locking), connection #2 would return
+ * immediately instead, and the test would fail.
+ */
+test('findOrFailForActivation takes a real row lock that blocks a concurrent activation attempt on MySQL', function (): void {
+    $seasonId = (string) Str::uuid();
+
+    SeasonModel::query()->create([
+        'id' => $seasonId,
+        'slug' => 'lock-probe-'.Str::random(8),
+        'year' => 2099,
+        'registration_start' => '2099-01-01 00:00:00',
+        'registration_end' => '2099-01-15 00:00:00',
+        'start_date' => '2099-01-16 00:00:00',
+        'end_date' => '2099-03-01 00:00:00',
+        'status' => 'draft',
+        'is_active' => false,
+    ]);
+
+    try {
+        config(['database.connections.season_lock_probe' => config('database.connections.mysql')]);
+        $probe = DB::connection('season_lock_probe');
+        $probe->statement('SET SESSION innodb_lock_wait_timeout = 1');
+
+        DB::beginTransaction();
+        app(SeasonRepositoryContract::class)->findOrFailForActivation($seasonId);
+
+        $blockedByLock = false;
+
+        try {
+            $probe->table('seasons')->lockForUpdate()->get(['id']);
+        } catch (QueryException $exception) {
+            $blockedByLock = str_contains($exception->getMessage(), 'Lock wait timeout exceeded');
+        }
+
+        DB::rollBack();
+
+        expect($blockedByLock)->toBeTrue();
+    } finally {
+        DB::connection()->table('seasons')->where('id', $seasonId)->delete();
+        DB::purge('season_lock_probe');
+    }
+})->skip(
+    fn () => DB::connection()->getDriverName() !== 'mysql',
+    'Pessimistic row locking can only be proven against a real MySQL connection (run inside the Docker stack, not the default sqlite suite).'
+);

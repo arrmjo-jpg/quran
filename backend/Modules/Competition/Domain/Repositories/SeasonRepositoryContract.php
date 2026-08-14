@@ -10,6 +10,20 @@ interface SeasonRepositoryContract
 {
     public function findOrFail(string $id): Season;
 
+    /**
+     * Same as findOrFail(), but first takes a row lock (SELECT ... FOR
+     * UPDATE) across every season row. Per ADR-005 Decision 16
+     * ("seasons.is_current: Activating a season — Pessimistic Locking,
+     * lock all candidate rows"), this is what serializes concurrent
+     * "open registration" attempts against the single-active-season
+     * invariant, so a second caller blocks until the first transaction
+     * commits or rolls back instead of racing it and surfacing a raw
+     * uk_seasons_single_active constraint violation. Callers MUST invoke
+     * this inside an existing DB transaction — the lock is held only for
+     * that transaction's lifetime.
+     */
+    public function findOrFailForActivation(string $id): Season;
+
     public function find(string $id): ?Season;
 
     public function findActiveSeason(): ?Season;

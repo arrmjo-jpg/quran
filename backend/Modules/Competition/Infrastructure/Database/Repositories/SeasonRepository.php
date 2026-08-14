@@ -20,6 +20,18 @@ final class SeasonRepository implements SeasonRepositoryContract
         return $this->toDomain($model);
     }
 
+    public function findOrFailForActivation(string $id): Season
+    {
+        // Lock every season row before reading any of them. "Candidate
+        // rows" (ADR-005 D16) means every season, not just the target: a
+        // concurrent activation of a *different* draft season also
+        // contends for the single-active-season slot, so it must be
+        // serialized against this one too.
+        SeasonModel::query()->lockForUpdate()->get(['id']);
+
+        return $this->findOrFail($id);
+    }
+
     public function find(string $id): ?Season
     {
         $model = SeasonModel::query()->with('translations')->find($id);

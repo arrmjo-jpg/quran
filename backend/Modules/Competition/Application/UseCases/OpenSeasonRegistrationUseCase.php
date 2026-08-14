@@ -33,6 +33,13 @@ use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
  * records — Controllers never touch them, and events are never lost:
  * every released event is dispatched via event(), the seam a future
  * Outbox consumer would hook into without needing this method to change.
+ *
+ * Concurrency (ADR-005 Decision 16): resolving the season via
+ * findOrFailForActivation() takes a pessimistic lock across every season
+ * row before anything is read, so a second, concurrent activation
+ * attempt — of this season or any other draft season — blocks on that
+ * lock instead of racing this transaction to the uk_seasons_single_active
+ * constraint.
  */
 final readonly class OpenSeasonRegistrationUseCase
 {
@@ -50,14 +57,22 @@ final readonly class OpenSeasonRegistrationUseCase
     public function execute(string $seasonId, ?string $performedByUserId = null): Season
     {
         return DB::transaction(function () use ($seasonId, $performedByUserId): Season {
-            $season = $this->seasons->findOrFail($seasonId);
+            $season = $this->seasons->findOrFailForActivation($seasonId);
 
             $rules = $this->resolveRules($season);
 
             $season->freeze($this->stateMachine, $this->snapshotFactory, $rules);
 
-            $this->seasons->save($season);
+            // deactivateOthers() MUST run before save(): seasons.active_flag
+            // is a generated column with a unique index (uk_seasons_single_
+            // active), so if a previously active season is still is_active=1
+            // when this save() sets the new season's is_active=1 too, MySQL
+            // rejects it — two rows briefly claiming the one active slot,
+            // even though only this transaction is touching the table.
+            // Clearing the old holder first means the target row is the
+            // only one ever claiming active_flag=1.
             $this->seasons->deactivateOthers($season->id);
+            $this->seasons->save($season);
 
             foreach ($season->releaseEvents() as $event) {
                 if ($event instanceof SeasonRulesFrozen) {
