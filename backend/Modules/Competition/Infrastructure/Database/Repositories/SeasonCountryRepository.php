@@ -36,4 +36,18 @@ final class SeasonCountryRepository implements SeasonCountryRepositoryContract
             $this->countries->findResolvedByIds($countryIds)
         );
     }
+
+    public function syncEligibleCountries(string $seasonId, array $countryIds): void
+    {
+        DB::table('season_countries')->where('season_id', $seasonId)->delete();
+
+        if ($countryIds === []) {
+            return;
+        }
+
+        DB::table('season_countries')->insert(array_map(
+            static fn (string $countryId): array => ['season_id' => $seasonId, 'country_id' => $countryId],
+            $countryIds
+        ));
+    }
 }

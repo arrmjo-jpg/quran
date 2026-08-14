@@ -17,4 +17,11 @@ interface SeasonCountryRepositoryContract
      * @return array<int, ResolvedLookupOption>
      */
     public function findEligibleCountries(string $seasonId): array;
+
+    /**
+     * Replace a season's entire eligible-country set with the given ids.
+     *
+     * @param  array<int, string>  $countryIds
+     */
+    public function syncEligibleCountries(string $seasonId, array $countryIds): void;
 }

@@ -11,10 +11,13 @@ use InvalidArgumentException;
 use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
+use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
+use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRulesRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
 use Symfony\Component\Uid\Uuid;
 
@@ -24,6 +27,7 @@ final class AdminSeasonController extends Controller
         private readonly CreateSeasonUseCase $createSeason,
         private readonly OpenSeasonRegistrationUseCase $openSeasonRegistration,
         private readonly CloseSeasonRegistrationUseCase $closeSeasonRegistration,
+        private readonly UpdateSeasonRulesUseCase $updateSeasonRules,
         private readonly CompetitionRuleEngine $ruleEngine,
     ) {}
 
@@ -70,6 +74,31 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration opened successfully for season.'),
+            'data' => new SeasonResource($season),
+        ]);
+    }
+
+    public function updateRules(string $id, UpdateSeasonRulesRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->updateSeasonRules->execute(
+                seasonId: $id,
+                minAge: (int) $request->validated('min_age'),
+                maxAge: (int) $request->validated('max_age'),
+                participationTypeId: $request->validated('participation_type_id'),
+                tajweedLevelId: $request->validated('tajweed_level_id'),
+                countryIds: $request->validated('country_ids'),
+            );
+        } catch (SeasonAlreadyFrozenException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'SEASON_ALREADY_FROZEN', 'message' => $e->getMessage()],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season rules updated successfully.'),
             'data' => new SeasonResource($season),
         ]);
     }
