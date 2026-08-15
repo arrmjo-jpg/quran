@@ -10,6 +10,7 @@ use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
 use Modules\Competition\Domain\Repositories\StageRepositoryContract;
+use Modules\Competition\Domain\Services\SeasonEditingPolicy;
 use Modules\Competition\Domain\ValueObjects\ResolvedStageRule;
 use Modules\Competition\Domain\ValueObjects\StageRuleAssignment;
 
@@ -37,6 +38,7 @@ final readonly class UpdateSeasonStageRulesUseCase
         private SeasonRepositoryContract $seasons,
         private StageRepositoryContract $stages,
         private SeasonStageRuleRepositoryContract $stageRules,
+        private SeasonEditingPolicy $editing,
     ) {}
 
     /**
@@ -46,7 +48,7 @@ final readonly class UpdateSeasonStageRulesUseCase
     public function execute(string $seasonId, array $assignments): array
     {
         return DB::transaction(function () use ($seasonId, $assignments): array {
-            $this->seasons->findOrFail($seasonId)->assertMutable('stage_rules');
+            $this->editing->assertEditable($this->seasons->findOrFail($seasonId), 'stage_rules');
 
             $this->assertCoversEveryStage($seasonId, $assignments);
 

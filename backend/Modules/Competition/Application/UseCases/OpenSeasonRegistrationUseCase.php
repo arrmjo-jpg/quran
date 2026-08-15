@@ -6,6 +6,7 @@ namespace Modules\Competition\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Competition\Domain\Entities\Season;
+use Modules\Competition\Domain\Entities\Stage;
 use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Repositories\ParticipationTypeRepositoryContract;
@@ -13,10 +14,12 @@ use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRuleVersionRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
+use Modules\Competition\Domain\Repositories\StageRepositoryContract;
 use Modules\Competition\Domain\Repositories\TajweedLevelRepositoryContract;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\Services\SeasonStateMachine;
 use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
+use Modules\Competition\Domain\ValueObjects\ResolvedStageRule;
 
 /**
  * OpenSeasonRegistrationUseCase
@@ -49,6 +52,7 @@ final readonly class OpenSeasonRegistrationUseCase
         private TajweedLevelRepositoryContract $tajweedLevels,
         private SeasonCountryRepositoryContract $seasonCountries,
         private SeasonStageRuleRepositoryContract $seasonStageRules,
+        private StageRepositoryContract $stages,
         private SeasonRuleVersionRepositoryContract $ruleVersions,
         private SeasonStateMachine $stateMachine,
         private SeasonRuleSnapshotFactory $snapshotFactory,
@@ -99,6 +103,11 @@ final readonly class OpenSeasonRegistrationUseCase
         $participationTypeId = $season->getParticipationTypeId();
         $tajweedLevelId = $season->getTajweedLevelId();
 
+        $stageIds = array_map(
+            static fn (Stage $stage): string => $stage->id,
+            $this->stages->findBySeason($season->id)
+        );
+
         $missing = [];
 
         if ($season->getMinAge() === null || $season->getMaxAge() === null) {
@@ -113,15 +122,54 @@ final readonly class OpenSeasonRegistrationUseCase
             $missing[] = 'tajweed_level_id';
         }
 
+        // A season with no stages has no competition to run. Checked here
+        // rather than left to ResolvedSeasonRules' zero-stage-rules guard,
+        // so "you never created any stages" is reported as such instead of
+        // as a missing rule set.
+        if ($stageIds === []) {
+            $missing[] = 'stages';
+        }
+
         if ($missing !== []) {
             throw new IncompleteSeasonRulesException($missing);
         }
+
+        $stageRules = $this->seasonStageRules->findResolvedRules($season->id);
+
+        $this->assertEveryStageHasARule($stageIds, $stageRules);
 
         return new ResolvedSeasonRules(
             participationType: $this->participationTypes->findOrFail($participationTypeId),
             tajweedLevel: $this->tajweedLevels->findOrFail($tajweedLevelId),
             eligibleCountries: $this->seasonCountries->findEligibleCountries($season->id),
-            stageRules: $this->seasonStageRules->findResolvedRules($season->id),
+            stageRules: $stageRules,
         );
+    }
+
+    /**
+     * The snapshot is what every later judging decision is read back from,
+     * so a stage missing from it is a stage nobody can be scored on. The
+     * bulk stage-rules endpoint already refuses to write a partial set, but
+     * rules can also fall out of step afterwards — a stage added after the
+     * rules were set has no rule of its own — and freezing is the last
+     * point at which that can still be caught.
+     *
+     * @param  array<int, string>  $stageIds
+     * @param  array<int, ResolvedStageRule>  $stageRules
+     */
+    private function assertEveryStageHasARule(array $stageIds, array $stageRules): void
+    {
+        $ruledStageIds = array_map(
+            static fn (ResolvedStageRule $rule): string => $rule->stageId,
+            $stageRules
+        );
+
+        $unruled = array_diff($stageIds, $ruledStageIds);
+
+        if ($unruled !== []) {
+            throw new IncompleteSeasonRulesException(
+                array_map(static fn (string $id): string => "stage_rule.missing.{$id}", array_values($unruled))
+            );
+        }
     }
 }

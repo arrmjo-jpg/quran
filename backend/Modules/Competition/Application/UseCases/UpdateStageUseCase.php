@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Competition\Domain\Entities\Stage;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Repositories\StageRepositoryContract;
+use Modules\Competition\Domain\Services\SeasonEditingPolicy;
 use Modules\Competition\Domain\ValueObjects\StageTranslation;
 
 /**
@@ -26,6 +27,7 @@ final readonly class UpdateStageUseCase
     public function __construct(
         private StageRepositoryContract $stages,
         private SeasonRepositoryContract $seasons,
+        private SeasonEditingPolicy $editing,
     ) {}
 
     /**
@@ -42,7 +44,7 @@ final readonly class UpdateStageUseCase
         return DB::transaction(function () use ($stageId, $type, $startDateIso, $endDateIso, $evaluationTemplateId, $translations): Stage {
             $stage = $this->stages->findOrFail($stageId);
 
-            $this->seasons->findOrFail($stage->seasonId)->assertMutable('stages');
+            $this->editing->assertEditable($this->seasons->findOrFail($stage->seasonId), 'stages');
 
             $stage->setType($type);
             $stage->setSchedule($startDateIso, $endDateIso);

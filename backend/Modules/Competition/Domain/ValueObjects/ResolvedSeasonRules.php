@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Competition\Domain\ValueObjects;
 
-use InvalidArgumentException;
+use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 
 /**
  * ResolvedSeasonRules
@@ -13,6 +13,12 @@ use InvalidArgumentException;
  * already fetched and resolved by the repository/application layer.
  * The pure domain layer never queries the database itself — it only
  * ever receives already-resolved bundles like this one.
+ *
+ * The completeness guards below raise IncompleteSeasonRulesException
+ * rather than a plain InvalidArgumentException: these fire on exactly the
+ * same "this season is not configured yet" condition that
+ * Season::assertRulesSelected() reports, and an admin who has not finished
+ * configuring a season must get a 422 naming what is missing, not a 500.
  */
 final readonly class ResolvedSeasonRules
 {
@@ -26,12 +32,18 @@ final readonly class ResolvedSeasonRules
         public array $eligibleCountries,
         public array $stageRules,
     ) {
+        $missing = [];
+
         if ($this->eligibleCountries === []) {
-            throw new InvalidArgumentException('A season cannot open registration with zero eligible countries.');
+            $missing[] = 'eligible_countries';
         }
 
         if ($this->stageRules === []) {
-            throw new InvalidArgumentException('A season cannot open registration with zero stages configured.');
+            $missing[] = 'stage_rules';
+        }
+
+        if ($missing !== []) {
+            throw new IncompleteSeasonRulesException($missing);
         }
     }
 }

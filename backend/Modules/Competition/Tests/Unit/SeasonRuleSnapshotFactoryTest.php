@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\ValueObjects\ResolvedLookupOption;
 use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
@@ -131,7 +132,7 @@ test('a season cannot open registration with zero eligible countries', function 
             ),
         ],
     );
-})->throws(InvalidArgumentException::class);
+})->throws(IncompleteSeasonRulesException::class);
 
 test('a season cannot open registration with zero stages configured', function (): void {
     new ResolvedSeasonRules(
@@ -142,4 +143,4 @@ test('a season cannot open registration with zero stages configured', function (
         ],
         stageRules: [],
     );
-})->throws(InvalidArgumentException::class);
+})->throws(IncompleteSeasonRulesException::class);

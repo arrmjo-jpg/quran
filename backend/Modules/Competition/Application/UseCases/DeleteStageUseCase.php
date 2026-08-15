@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Competition\Domain\Exceptions\StageInUseException;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Repositories\StageRepositoryContract;
+use Modules\Competition\Domain\Services\SeasonEditingPolicy;
 
 /**
  * DeleteStageUseCase
@@ -35,6 +36,7 @@ final readonly class DeleteStageUseCase
     public function __construct(
         private StageRepositoryContract $stages,
         private SeasonRepositoryContract $seasons,
+        private SeasonEditingPolicy $editing,
     ) {}
 
     public function execute(string $stageId): void
@@ -42,7 +44,7 @@ final readonly class DeleteStageUseCase
         DB::transaction(function () use ($stageId): void {
             $stage = $this->stages->findOrFail($stageId);
 
-            $this->seasons->findOrFail($stage->seasonId)->assertMutable('stages');
+            $this->editing->assertEditable($this->seasons->findOrFail($stage->seasonId), 'stages');
 
             if ($this->stages->isReferenced($stageId)) {
                 throw new StageInUseException($stageId);
