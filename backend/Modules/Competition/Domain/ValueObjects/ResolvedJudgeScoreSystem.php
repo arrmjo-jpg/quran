@@ -22,10 +22,11 @@ final readonly class ResolvedJudgeScoreSystem
         public string $code,
         public array $name,
         public float $maxScore,
+        public ?int $displayOrder = null,
     ) {}
 
     public function toLookupOption(): ResolvedLookupOption
     {
-        return new ResolvedLookupOption($this->id, $this->code, $this->name);
+        return new ResolvedLookupOption($this->id, $this->code, $this->name, $this->displayOrder);
     }
 }

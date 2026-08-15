@@ -20,4 +20,23 @@ final class ParticipationTypeRepository implements ParticipationTypeRepositoryCo
             name: $model->translations->pluck('name', 'locale')->toArray(),
         );
     }
+
+    /**
+     * @return array<int, ResolvedLookupOption>
+     */
+    public function findAllActive(): array
+    {
+        return ParticipationTypeModel::query()
+            ->with('translations')
+            ->where('is_active', true)
+            ->orderBy('display_order')
+            ->get()
+            ->map(fn (ParticipationTypeModel $model): ResolvedLookupOption => new ResolvedLookupOption(
+                id: $model->id,
+                code: $model->code,
+                name: $model->translations->pluck('name', 'locale')->toArray(),
+                displayOrder: $model->display_order,
+            ))
+            ->all();
+    }
 }
