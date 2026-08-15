@@ -16,9 +16,10 @@ import {
 import { SeasonFormDialog } from '../components/SeasonFormDialog';
 import { CancelSeasonDialog } from '../components/CancelSeasonDialog';
 import { SeasonRulesDialog } from '../components/SeasonRulesDialog';
+import { StageManagerDialog } from '@/features/stages/components/StageManagerDialog';
 import type { Season, SeasonStatus } from '../types';
 import { formatDate } from '@/core/utils';
-import { Plus, Pencil, SlidersHorizontal } from 'lucide-react';
+import { Plus, Pencil, SlidersHorizontal, ListOrdered } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -73,6 +74,7 @@ export default function SeasonsPage(): React.JSX.Element {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<Season | null>(null);
   const [rulesTarget, setRulesTarget] = useState<Season | null>(null);
+  const [stagesTarget, setStagesTarget] = useState<Season | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
 
   const { data: seasons, isLoading, isError, refetch } = useSeasons();
@@ -153,6 +155,14 @@ export default function SeasonsPage(): React.JSX.Element {
                   <span>القواعد</span>
                 </Button>
               )}
+
+              {/* Available on frozen seasons too — the dialog is read-only
+                  there, and being unable to look at the stages of a running
+                  season would be worse than showing them. */}
+              <Button size="sm" variant="outline" onClick={() => setStagesTarget(season)}>
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>المراحل</span>
+              </Button>
 
               {canOpenRegistration(season) && (
                 <Button
@@ -256,6 +266,13 @@ export default function SeasonsPage(): React.JSX.Element {
       )}
 
       <SeasonRulesDialog season={rulesTarget} onClose={() => setRulesTarget(null)} />
+
+      <StageManagerDialog
+        seasonId={stagesTarget?.id ?? null}
+        seasonYear={stagesTarget?.year ?? null}
+        isFrozen={stagesTarget?.is_frozen ?? false}
+        onClose={() => setStagesTarget(null)}
+      />
 
       {/* Cancellation has its own dialog because the reason is mandatory
           and ConfirmDialog has nowhere to type it. */}
