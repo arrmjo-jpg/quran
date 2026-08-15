@@ -42,6 +42,13 @@ export interface Season {
   max_age:               number | null;
   participation_type_id: string | null;
   tajweed_level_id:      string | null;
+  /**
+   * Ids only — the names come from the countries catalog. Always present,
+   * so [] genuinely means "no eligible countries" rather than "not loaded".
+   * PATCH .../rules replaces the whole set, so this is what an edit form
+   * must send back for anything it wants kept.
+   */
+  country_ids:           string[];
   registration_start:    string;
   registration_end:      string;
   start_date:            string;
@@ -85,6 +92,43 @@ export interface ArchiveSeasonPayload {
 /** POST /admin/seasons/{id}/cancel — reason is required by the API. */
 export interface CancelSeasonPayload {
   reason: string;
+}
+
+/** PATCH /admin/seasons/{id}/rules — a full replace, every field required. */
+export interface UpdateSeasonRulesPayload {
+  min_age:               number;
+  max_age:               number;
+  participation_type_id: string;
+  tajweed_level_id:      string;
+  country_ids:           string[];
+}
+
+/**
+ * One entry of an admin catalog — participation types, tajweed levels,
+ * judge score systems. Mirrors LookupOptionResource; max_score is only
+ * present on judge score systems.
+ */
+export interface LookupOption {
+  id:            string;
+  code:          string;
+  name:          Partial<Record<Locale, string>>;
+  display_order: number | null;
+  max_score?:    number;
+}
+
+/**
+ * Mirrors CountryResource, which returns a single already-localised `name`
+ * chosen from the Accept-Language header — not a per-locale map, and not
+ * the name_ar/name_en pair the shared countries feature's type claims.
+ * Declared locally so this screen reads the real contract without
+ * refactoring that module.
+ */
+export interface CountryOption {
+  id:        string;
+  iso2:      string;
+  iso3:      string;
+  name:      string;
+  is_active: boolean;
 }
 
 export interface SeasonFilters {

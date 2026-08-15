@@ -4,6 +4,7 @@ import { seasonService } from '../api/season.service';
 import type {
   CreateSeasonPayload,
   UpdateSeasonPayload,
+  UpdateSeasonRulesPayload,
   ArchiveSeasonPayload,
   CancelSeasonPayload,
   SeasonFilters,
@@ -70,6 +71,15 @@ export function useUpdateSeason() {
     ({ id, payload }) => seasonService.updateSeason(id, payload),
     'تم تحديث بيانات الموسم بنجاح',
     'فشل تحديث الموسم. تحقق من البيانات.',
+    ({ id }) => id,
+  );
+}
+
+export function useUpdateSeasonRules() {
+  return useSeasonMutation<{ id: string; payload: UpdateSeasonRulesPayload }>(
+    ({ id, payload }) => seasonService.updateSeasonRules(id, payload),
+    'تم حفظ قواعد الموسم بنجاح',
+    'فشل حفظ قواعد الموسم. تحقق من البيانات.',
     ({ id }) => id,
   );
 }

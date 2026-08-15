@@ -15,9 +15,10 @@ import {
 } from '../hooks/useSeasons';
 import { SeasonFormDialog } from '../components/SeasonFormDialog';
 import { CancelSeasonDialog } from '../components/CancelSeasonDialog';
+import { SeasonRulesDialog } from '../components/SeasonRulesDialog';
 import type { Season, SeasonStatus } from '../types';
 import { formatDate } from '@/core/utils';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -71,6 +72,7 @@ export default function SeasonsPage(): React.JSX.Element {
   const { t } = useTranslation('seasons');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<Season | null>(null);
+  const [rulesTarget, setRulesTarget] = useState<Season | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
 
   const { data: seasons, isLoading, isError, refetch } = useSeasons();
@@ -142,6 +144,13 @@ export default function SeasonsPage(): React.JSX.Element {
                 <Button size="sm" variant="outline" onClick={() => openEdit(season)}>
                   <Pencil className="w-3.5 h-3.5" />
                   <span>تعديل</span>
+                </Button>
+              )}
+
+              {canEdit(season) && (
+                <Button size="sm" variant="outline" onClick={() => setRulesTarget(season)}>
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>القواعد</span>
                 </Button>
               )}
 
@@ -245,6 +254,8 @@ export default function SeasonsPage(): React.JSX.Element {
           }
         />
       )}
+
+      <SeasonRulesDialog season={rulesTarget} onClose={() => setRulesTarget(null)} />
 
       {/* Cancellation has its own dialog because the reason is mandatory
           and ConfirmDialog has nowhere to type it. */}

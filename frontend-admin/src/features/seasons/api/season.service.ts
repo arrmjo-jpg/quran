@@ -4,6 +4,7 @@ import type {
   Season,
   CreateSeasonPayload,
   UpdateSeasonPayload,
+  UpdateSeasonRulesPayload,
   ArchiveSeasonPayload,
   CancelSeasonPayload,
   SeasonFilters,
@@ -35,6 +36,16 @@ export const seasonService = {
 
   async updateSeason(id: string, payload: UpdateSeasonPayload): Promise<Season> {
     const { data } = await http.patch<ApiSuccess<Season>>(`/admin/seasons/${id}`, payload);
+    return data.data;
+  },
+
+  /**
+   * Replaces the season's whole rule set, eligible countries included —
+   * anything omitted from country_ids is removed, so callers must send
+   * back the season's current country_ids for everything they want kept.
+   */
+  async updateSeasonRules(id: string, payload: UpdateSeasonRulesPayload): Promise<Season> {
+    const { data } = await http.patch<ApiSuccess<Season>>(`/admin/seasons/${id}/rules`, payload);
     return data.data;
   },
 
