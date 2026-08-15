@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Modules\Competition\Presentation\HTTP\Controllers\AdminSeasonController;
 use Modules\Competition\Presentation\HTTP\Controllers\AdminStageController;
 
+Route::get('seasons', [AdminSeasonController::class, 'index'])->name('admin.seasons.index');
 Route::post('seasons', [AdminSeasonController::class, 'store'])->name('admin.seasons.store');
+Route::get('seasons/{id}', [AdminSeasonController::class, 'show'])->name('admin.seasons.show');
 Route::patch('seasons/{id}', [AdminSeasonController::class, 'update'])->name('admin.seasons.update');
 Route::patch('seasons/{id}/rules', [AdminSeasonController::class, 'updateRules'])->name('admin.seasons.update_rules');
 Route::post('seasons/{id}/archive', [AdminSeasonController::class, 'archive'])->name('admin.seasons.archive');

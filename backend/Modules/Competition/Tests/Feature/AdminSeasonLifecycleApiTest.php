@@ -67,7 +67,9 @@ test('POST archive archives a completed season', function (): void {
         ->assertJsonPath('data.archive_reason', 'season concluded')
         ->assertJsonPath('data.is_active', false);
 
-    expect($this->actingAs($admin)->getJson("/api/v1/seasons/{$seasonId}")->json('data.archived_by_user_id'))
+    // Read back through the admin endpoint: the public one deliberately
+    // withholds archived_by_user_id (see PublicSeasonExposureTest).
+    expect($this->actingAs($admin)->getJson("/api/v1/admin/seasons/{$seasonId}")->json('data.archived_by_user_id'))
         ->toBe($admin->id);
 });
 

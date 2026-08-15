@@ -18,6 +18,7 @@ use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CancelSeasonRequest;
@@ -38,7 +39,30 @@ final class AdminSeasonController extends Controller
         private readonly ArchiveSeasonUseCase $archiveSeason,
         private readonly CancelSeasonUseCase $cancelSeason,
         private readonly CompetitionRuleEngine $ruleEngine,
+        private readonly SeasonRepositoryContract $seasons,
     ) {}
+
+    /**
+     * The admin projection of a season. Separate from the public routes
+     * because those now return PublicSeasonResource, which deliberately
+     * withholds the judging configuration and the archive metadata an
+     * admin screen needs.
+     */
+    public function index(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => SeasonResource::collection($this->seasons->findAll()),
+        ]);
+    }
+
+    public function show(string $id): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => new SeasonResource($this->seasons->findOrFail($id)),
+        ]);
+    }
 
     public function store(CreateSeasonRequest $request): JsonResponse
     {
