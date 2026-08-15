@@ -1,19 +1,62 @@
-export interface Season {
-  id:                 string;
-  slug:               string;
-  year:               number;
-  registration_start: string;
-  registration_end:   string;
-  start_date?:        string;
-  end_date?:          string;
-  status:             'draft' | 'registration_open' | 'registration_closed' | 'active' | 'completed' | 'archived';
-  is_active:          boolean;
-  created_at?:        string;
+/**
+ * Derived from the API, not guessed: these mirror
+ * Modules/Competition/Presentation/HTTP/Resources/SeasonResource.php
+ * field for field. Competition API v2 is frozen, so it is the contract —
+ * when something here disagrees with it, this file is what changes.
+ *
+ * Note these are the *admin* shapes. The public routes return
+ * PublicSeasonResource, which deliberately withholds the judging
+ * configuration and every archive field, so this type must not be used
+ * for anything read from /seasons.
+ */
+
+export type SeasonStatus =
+  | 'draft'
+  | 'registration_open'
+  | 'registration_closed'
+  | 'competition_running'
+  | 'judging'
+  | 'completed'
+  | 'archived';
+
+export type Locale = 'ar' | 'en' | 'es';
+
+export interface SeasonTranslation {
+  title:             string;
+  public_name:       string | null;
+  public_short_name: string | null;
+  description:       string | null;
 }
 
+export interface Season {
+  id:                    string;
+  slug:                  string;
+  year:                  number;
+  /** Display title for the active locale, falling back to en, then the slug. */
+  title:                 string;
+  status:                SeasonStatus;
+  is_active:             boolean;
+  /** Once frozen, the API rejects edits to rules, translations and stages with a 409. */
+  is_frozen:             boolean;
+  min_age:               number | null;
+  max_age:               number | null;
+  participation_type_id: string | null;
+  tajweed_level_id:      string | null;
+  registration_start:    string;
+  registration_end:      string;
+  start_date:            string;
+  end_date:              string;
+  frozen_at:             string | null;
+  archived_at:           string | null;
+  archived_by_user_id:   string | null;
+  archive_reason:        string | null;
+  translations:          Partial<Record<Locale, SeasonTranslation>>;
+}
+
+/** POST /admin/seasons — every locale's title and public_name are required. */
 export interface CreateSeasonPayload {
-  year:               number;
   slug:               string;
+  year:               number;
   registration_start: string;
   registration_end:   string;
   start_date:         string;
@@ -26,8 +69,26 @@ export interface CreateSeasonPayload {
   public_name_es:     string;
 }
 
+/**
+ * PATCH /admin/seasons/{id} — same field set as create; the endpoint backs
+ * a fully populated edit form rather than a partial patch. The season's
+ * rules (age range, participation type, tajweed level, countries) are a
+ * separate endpoint and deliberately not part of this payload.
+ */
+export type UpdateSeasonPayload = CreateSeasonPayload;
+
+/** POST /admin/seasons/{id}/archive — reason is optional. */
+export interface ArchiveSeasonPayload {
+  reason?: string;
+}
+
+/** POST /admin/seasons/{id}/cancel — reason is required by the API. */
+export interface CancelSeasonPayload {
+  reason: string;
+}
+
 export interface SeasonFilters {
-  status?: string;
+  status?: SeasonStatus;
   year?:   number;
   search?: string;
 }
