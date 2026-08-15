@@ -21,4 +21,24 @@ final class JudgeScoreSystemRepository implements JudgeScoreSystemRepositoryCont
             maxScore: (float) $model->max_score,
         );
     }
+
+    /**
+     * @return array<int, ResolvedJudgeScoreSystem>
+     */
+    public function findAllActive(): array
+    {
+        return JudgeScoreSystemModel::query()
+            ->with('translations')
+            ->where('is_active', true)
+            ->orderBy('display_order')
+            ->get()
+            ->map(fn (JudgeScoreSystemModel $model): ResolvedJudgeScoreSystem => new ResolvedJudgeScoreSystem(
+                id: $model->id,
+                code: $model->code,
+                name: $model->translations->pluck('name', 'locale')->toArray(),
+                maxScore: (float) $model->max_score,
+                displayOrder: $model->display_order,
+            ))
+            ->all();
+    }
 }

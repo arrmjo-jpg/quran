@@ -3,8 +3,14 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Competition\Presentation\HTTP\Controllers\AdminLookupController;
 use Modules\Competition\Presentation\HTTP\Controllers\AdminSeasonController;
 use Modules\Competition\Presentation\HTTP\Controllers\AdminStageController;
+
+// Catalogs behind the season/stage rule pickers.
+Route::get('participation-types', [AdminLookupController::class, 'participationTypes'])->name('admin.lookups.participation_types');
+Route::get('tajweed-levels', [AdminLookupController::class, 'tajweedLevels'])->name('admin.lookups.tajweed_levels');
+Route::get('judge-score-systems', [AdminLookupController::class, 'judgeScoreSystems'])->name('admin.lookups.judge_score_systems');
 
 Route::get('seasons', [AdminSeasonController::class, 'index'])->name('admin.seasons.index');
 Route::post('seasons', [AdminSeasonController::class, 'store'])->name('admin.seasons.store');
