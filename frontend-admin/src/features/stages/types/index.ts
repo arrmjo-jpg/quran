@@ -80,3 +80,46 @@ export interface UpdateStagePayload {
 export interface ReorderStagesPayload {
   stage_ids: string[];
 }
+
+/**
+ * GET /admin/seasons/{seasonId}/stage-rules — mirrors StageRuleResource.
+ *
+ * A rule belongs to a stage by stage_id and nothing else: season_stage_rules
+ * has no ordering column, and the API derives the listing order from the
+ * stage's stage_number at read time. So stage_number here is presentation,
+ * and stage_id is identity. Never pair a rule with a stage by array
+ * position — reordering the stages would silently reassign every rule.
+ */
+export interface StageRule {
+  stage_id:                 string;
+  stage_number:             number;
+  type:                     StageType;
+  name:                     Partial<Record<Locale, string>>;
+  judge_score_system: {
+    id:        string;
+    code:      string;
+    name:      Partial<Record<Locale, string>>;
+    max_score: number;
+  };
+  qualification_percentage: number | null;
+  /** Derived server-side as max_score × percentage, so clients don't recompute it. */
+  required_score:           number | null;
+}
+
+/** One stage's rule as the write endpoint accepts it. */
+export interface StageRuleAssignment {
+  stage_id:                 string;
+  judge_score_system_id:    string;
+  /** null is valid: a final stage may rank without eliminating anyone. */
+  qualification_percentage: number | null;
+}
+
+/**
+ * PATCH /admin/seasons/{seasonId}/stage-rules — a complete replace. The set
+ * must cover every stage of the season exactly once; missing, duplicated or
+ * foreign stages are rejected with 422. There is no per-rule add or delete
+ * endpoint, by design.
+ */
+export interface UpdateStageRulesPayload {
+  rules: StageRuleAssignment[];
+}

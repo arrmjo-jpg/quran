@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { stageService } from '../api/stage.service';
 import { extractStageErrorMessage } from '../api/stageErrors';
-import type { CreateStagePayload, UpdateStagePayload } from '../types';
+import type { CreateStagePayload, UpdateStagePayload, StageRuleAssignment } from '../types';
 
 /** Stage lists are always scoped to a season; there is no global stage list. */
 export const stageKeys = {
   bySeason: (seasonId: string) => ['stages', seasonId] as const,
+  rulesBySeason: (seasonId: string) => ['stage-rules', seasonId] as const,
 };
 
 export function useStages(seasonId: string | null) {
@@ -71,10 +72,42 @@ export function useDeleteStage(seasonId: string) {
 }
 
 export function useReorderStages(seasonId: string) {
-  return useStageMutation<string[]>(
-    seasonId,
-    (stageIds) => stageService.reorderStages(seasonId, { stage_ids: stageIds }),
-    'تم حفظ ترتيب المراحل بنجاح',
-    'فشل حفظ ترتيب المراحل.',
-  );
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (stageIds: string[]) => stageService.reorderStages(seasonId, { stage_ids: stageIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stageKeys.bySeason(seasonId) });
+      // Rules carry each stage's stage_number for display, so a reorder
+      // makes the cached rules stale even though no rule itself changed.
+      queryClient.invalidateQueries({ queryKey: stageKeys.rulesBySeason(seasonId) });
+      toast.success('تم حفظ ترتيب المراحل بنجاح');
+    },
+    onError: (err) => {
+      toast.error(extractStageErrorMessage(err, 'فشل حفظ ترتيب المراحل.'));
+    },
+  });
+}
+
+export function useStageRules(seasonId: string | null) {
+  return useQuery({
+    queryKey: stageKeys.rulesBySeason(seasonId ?? ''),
+    queryFn: () => stageService.getStageRules(seasonId as string),
+    enabled: Boolean(seasonId),
+  });
+}
+
+export function useUpdateStageRules(seasonId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (rules: StageRuleAssignment[]) => stageService.updateStageRules(seasonId, { rules }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stageKeys.rulesBySeason(seasonId) });
+      toast.success('تم حفظ قواعد المراحل بنجاح');
+    },
+    onError: (err) => {
+      toast.error(extractStageErrorMessage(err, 'فشل حفظ قواعد المراحل. تحقق من البيانات.'));
+    },
+  });
 }

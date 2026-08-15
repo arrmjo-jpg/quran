@@ -5,6 +5,8 @@ import type {
   CreateStagePayload,
   UpdateStagePayload,
   ReorderStagesPayload,
+  StageRule,
+  UpdateStageRulesPayload,
 } from '../types';
 
 export const stageService = {
@@ -38,6 +40,25 @@ export const stageService = {
   async reorderStages(seasonId: string, payload: ReorderStagesPayload): Promise<Stage[]> {
     const { data } = await http.put<ApiSuccess<Stage[]>>(
       `/admin/seasons/${seasonId}/stages/order`,
+      payload,
+    );
+    return data.data;
+  },
+
+  /** The rules currently stored, ordered by the stages' stage_number. */
+  async getStageRules(seasonId: string): Promise<StageRule[]> {
+    const { data } = await http.get<ApiSuccess<StageRule[]>>(`/admin/seasons/${seasonId}/stage-rules`);
+    return data.data;
+  },
+
+  /**
+   * Replaces the season's whole rule set. Every stage must appear exactly
+   * once, so callers build the payload from the stage list rather than from
+   * whatever the admin happened to touch.
+   */
+  async updateStageRules(seasonId: string, payload: UpdateStageRulesPayload): Promise<StageRule[]> {
+    const { data } = await http.patch<ApiSuccess<StageRule[]>>(
+      `/admin/seasons/${seasonId}/stage-rules`,
       payload,
     );
     return data.data;
