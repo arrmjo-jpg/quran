@@ -15,9 +15,11 @@ use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
+use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
@@ -40,7 +42,20 @@ final class AdminSeasonController extends Controller
         private readonly CancelSeasonUseCase $cancelSeason,
         private readonly CompetitionRuleEngine $ruleEngine,
         private readonly SeasonRepositoryContract $seasons,
+        private readonly SeasonCountryRepositoryContract $seasonCountries,
     ) {}
+
+    /**
+     * Every admin season response carries country_ids, without exception.
+     * Making it conditional would leave callers unable to tell "this season
+     * has no eligible countries" from "this endpoint didn't load them" —
+     * and a client that guesses wrong there wipes the set on its next
+     * PATCH .../rules, since that endpoint replaces the whole thing.
+     */
+    private function seasonResource(Season $season): SeasonResource
+    {
+        return new SeasonResource($season, $this->seasonCountries->findEligibleCountryIds($season->id));
+    }
 
     /**
      * The admin projection of a season. Separate from the public routes
@@ -50,9 +65,20 @@ final class AdminSeasonController extends Controller
      */
     public function index(): JsonResponse
     {
+        $seasons = $this->seasons->findAll();
+
+        // Batched rather than per-row: seasonResource() would issue one
+        // query per season here.
+        $countryIds = $this->seasonCountries->findEligibleCountryIdsBySeasons(
+            array_map(static fn (Season $season): string => $season->id, $seasons)
+        );
+
         return response()->json([
             'success' => true,
-            'data' => SeasonResource::collection($this->seasons->findAll()),
+            'data' => array_map(
+                fn (Season $season): SeasonResource => new SeasonResource($season, $countryIds[$season->id] ?? []),
+                $seasons
+            ),
         ]);
     }
 
@@ -60,7 +86,7 @@ final class AdminSeasonController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => new SeasonResource($this->seasons->findOrFail($id)),
+            'data' => $this->seasonResource($this->seasons->findOrFail($id)),
         ]);
     }
 
@@ -84,7 +110,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season created successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ], 201);
     }
 
@@ -107,7 +133,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration opened successfully for season.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -138,7 +164,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season updated successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -156,7 +182,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season archived successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -174,7 +200,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season cancelled successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -199,7 +225,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season rules updated successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -217,7 +243,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration closed successfully for season.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
