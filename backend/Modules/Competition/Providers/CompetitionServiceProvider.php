@@ -18,6 +18,7 @@ use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRuleVersionRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
+use Modules\Competition\Domain\Repositories\StageRepositoryContract;
 use Modules\Competition\Domain\Repositories\TajweedLevelRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Infrastructure\Database\Repositories\JudgeScoreSystemRepository;
@@ -26,6 +27,7 @@ use Modules\Competition\Infrastructure\Database\Repositories\SeasonCountryReposi
 use Modules\Competition\Infrastructure\Database\Repositories\SeasonRepository;
 use Modules\Competition\Infrastructure\Database\Repositories\SeasonRuleVersionRepository;
 use Modules\Competition\Infrastructure\Database\Repositories\SeasonStageRuleRepository;
+use Modules\Competition\Infrastructure\Database\Repositories\StageRepository;
 use Modules\Competition\Infrastructure\Database\Repositories\TajweedLevelRepository;
 use Modules\Competition\Infrastructure\Services\CompetitionService;
 
@@ -66,6 +68,11 @@ final class CompetitionServiceProvider extends ServiceProvider
         $this->app->singleton(
             SeasonRuleVersionRepositoryContract::class,
             SeasonRuleVersionRepository::class
+        );
+
+        $this->app->singleton(
+            StageRepositoryContract::class,
+            StageRepository::class
         );
 
         $this->app->singleton(

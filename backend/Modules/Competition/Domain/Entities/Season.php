@@ -364,6 +364,19 @@ final class Season
         $this->recordEvent(new SeasonCancelled($this->id, reason: $reason, byUserId: $byUserId, occurredAt: $this->archivedAtIso));
     }
 
+    /**
+     * The same frozen-season guard the setters above apply, exposed for
+     * the things that belong to a season but are not part of this
+     * aggregate — a Stage cannot see its season's state, so its Use Cases
+     * ask the season directly before editing it. Keeps "what may change
+     * on a frozen season" a single rule living on Season, rather than an
+     * isFrozen() check copy-pasted around the application layer.
+     */
+    public function assertMutable(string $field): void
+    {
+        $this->assertMutableSettings($field);
+    }
+
     private function assertMutableSettings(string $field): void
     {
         if ($this->isFrozen()) {

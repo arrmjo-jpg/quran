@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $stage_id
  * @property string $locale
  * @property string $name
+ * @property string|null $public_name
  * @property string|null $description
  *
  * @mixin \Eloquent
@@ -30,6 +31,7 @@ final class StageTranslationModel extends Model
         'stage_id',
         'locale',
         'name',
+        'public_name',
         'description',
     ];
 }
