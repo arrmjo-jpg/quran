@@ -13,6 +13,17 @@ final class SeasonResource extends JsonResource
 {
     private const SUPPORTED_LOCALES = ['ar', 'en', 'es'];
 
+    /**
+     * @param  Season  $resource
+     * @param  array<int, string>  $countryIds  the season's eligible countries, ids only
+     */
+    public function __construct(
+        $resource,
+        private readonly array $countryIds = [],
+    ) {
+        parent::__construct($resource);
+    }
+
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
@@ -42,6 +53,12 @@ final class SeasonResource extends JsonResource
             'max_age' => $season->getMaxAge(),
             'participation_type_id' => $season->getParticipationTypeId(),
             'tajweed_level_id' => $season->getTajweedLevelId(),
+            // Ids only, by design — the names belong to the countries
+            // catalog, and repeating them here would mean two places to
+            // keep in step. This exists so a client can read the set it is
+            // about to replace via PATCH .../rules, which takes the whole
+            // set every time.
+            'country_ids' => $this->countryIds,
             'registration_start' => $season->getRegistrationStartIso(),
             'registration_end' => $season->getRegistrationEndIso(),
             'start_date' => $season->getStartDateIso(),
