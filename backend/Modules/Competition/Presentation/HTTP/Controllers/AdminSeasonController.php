@@ -8,15 +8,21 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use InvalidArgumentException;
+use Modules\Competition\Application\UseCases\ArchiveSeasonUseCase;
+use Modules\Competition\Application\UseCases\CancelSeasonUseCase;
 use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
+use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
+use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
+use Modules\Competition\Presentation\HTTP\Requests\CancelSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
+use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRulesRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
 use Symfony\Component\Uid\Uuid;
@@ -28,6 +34,9 @@ final class AdminSeasonController extends Controller
         private readonly OpenSeasonRegistrationUseCase $openSeasonRegistration,
         private readonly CloseSeasonRegistrationUseCase $closeSeasonRegistration,
         private readonly UpdateSeasonRulesUseCase $updateSeasonRules,
+        private readonly UpdateSeasonUseCase $updateSeason,
+        private readonly ArchiveSeasonUseCase $archiveSeason,
+        private readonly CancelSeasonUseCase $cancelSeason,
         private readonly CompetitionRuleEngine $ruleEngine,
     ) {}
 
@@ -74,6 +83,73 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration opened successfully for season.'),
+            'data' => new SeasonResource($season),
+        ]);
+    }
+
+    public function update(string $id, UpdateSeasonRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->updateSeason->execute(
+                seasonId: $id,
+                slug: $request->validated('slug'),
+                year: (int) $request->validated('year'),
+                registrationStartIso: $request->validated('registration_start'),
+                registrationEndIso: $request->validated('registration_end'),
+                startDateIso: $request->validated('start_date'),
+                endDateIso: $request->validated('end_date'),
+                translations: [
+                    'ar' => ['title' => $request->validated('title_ar'), 'public_name' => $request->validated('public_name_ar')],
+                    'en' => ['title' => $request->validated('title_en'), 'public_name' => $request->validated('public_name_en')],
+                    'es' => ['title' => $request->validated('title_es'), 'public_name' => $request->validated('public_name_es')],
+                ],
+            );
+        } catch (SeasonAlreadyFrozenException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'SEASON_ALREADY_FROZEN', 'message' => $e->getMessage()],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season updated successfully.'),
+            'data' => new SeasonResource($season),
+        ]);
+    }
+
+    public function archive(string $id, ArchiveSeasonRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->archiveSeason->execute($id, $request->validated('reason'), $request->user()?->id);
+        } catch (InvalidSeasonTransitionException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'INVALID_STATE_TRANSITION', 'message' => $e->getMessage()],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season archived successfully.'),
+            'data' => new SeasonResource($season),
+        ]);
+    }
+
+    public function cancel(string $id, CancelSeasonRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->cancelSeason->execute($id, $request->validated('reason'), $request->user()?->id);
+        } catch (InvalidSeasonTransitionException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'INVALID_STATE_TRANSITION', 'message' => $e->getMessage()],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season cancelled successfully.'),
             'data' => new SeasonResource($season),
         ]);
     }

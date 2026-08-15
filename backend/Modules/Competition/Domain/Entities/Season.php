@@ -245,6 +245,41 @@ final class Season
         $this->translationsByLocale[$translation->locale] = $translation;
     }
 
+    public function setSlug(string $slug): void
+    {
+        $this->assertMutableSettings('slug');
+        $this->slug = $slug;
+    }
+
+    public function setYear(int $year): void
+    {
+        $this->assertMutableSettings('year');
+        $this->year = $year;
+    }
+
+    /**
+     * The four dates move together — a registration window that no longer
+     * lines up with the competition window is not a state worth being able
+     * to pass through, even briefly. Their ordering
+     * (registration_start < registration_end <= start_date < end_date, the
+     * shape chk_seasons_start_after_registration enforces in the database)
+     * is validated by the form request, exactly as it is on create; this
+     * setter's own job is the frozen-season guard.
+     */
+    public function setSchedule(
+        string $registrationStartIso,
+        string $registrationEndIso,
+        string $startDateIso,
+        string $endDateIso,
+    ): void {
+        $this->assertMutableSettings('schedule');
+
+        $this->registrationStartIso = $registrationStartIso;
+        $this->registrationEndIso = $registrationEndIso;
+        $this->startDateIso = $startDateIso;
+        $this->endDateIso = $endDateIso;
+    }
+
     public function setAgeRange(?int $minAge, ?int $maxAge): void
     {
         $this->assertMutableSettings('age_range');

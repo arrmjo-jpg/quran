@@ -15,6 +15,7 @@ use Modules\Competition\Application\UseCases\UpdateStageUseCase;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
 use Modules\Competition\Domain\Exceptions\StageInUseException;
+use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
 use Modules\Competition\Domain\Repositories\StageRepositoryContract;
 use Modules\Competition\Domain\ValueObjects\StageRuleAssignment;
 use Modules\Competition\Presentation\HTTP\Requests\CreateStageRequest;
@@ -34,6 +35,7 @@ final class AdminStageController extends Controller
         private readonly ReorderStagesUseCase $reorderStages,
         private readonly UpdateSeasonStageRulesUseCase $updateStageRules,
         private readonly StageRepositoryContract $stages,
+        private readonly SeasonStageRuleRepositoryContract $stageRules,
     ) {}
 
     public function index(string $seasonId): JsonResponse
@@ -125,6 +127,19 @@ final class AdminStageController extends Controller
             'success' => true,
             'message' => __('Stages reordered successfully.'),
             'data' => StageResource::collection($stages),
+        ]);
+    }
+
+    /**
+     * The read side of the bulk rules endpoint. An edit screen has to load
+     * the set it is about to replace, and GET .../stages alone does not
+     * carry each stage's score system or qualification percentage.
+     */
+    public function stageRules(string $seasonId): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => StageRuleResource::collection($this->stageRules->findResolvedRules($seasonId)),
         ]);
     }
 
