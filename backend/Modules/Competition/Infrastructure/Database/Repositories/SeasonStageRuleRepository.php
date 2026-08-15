@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Competition\Infrastructure\Database\Repositories;
 
+use Illuminate\Support\Str;
 use Modules\Competition\Domain\Repositories\SeasonStageRuleRepositoryContract;
 use Modules\Competition\Domain\ValueObjects\ResolvedLookupOption;
 use Modules\Competition\Domain\ValueObjects\ResolvedStageRule;
+use Modules\Competition\Domain\ValueObjects\StageRuleAssignment;
 use Modules\Competition\Infrastructure\Database\Models\SeasonStageRuleModel;
 
 final class SeasonStageRuleRepository implements SeasonStageRuleRepositoryContract
@@ -42,5 +44,23 @@ final class SeasonStageRuleRepository implements SeasonStageRuleRepositoryContra
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<int, StageRuleAssignment>  $assignments
+     */
+    public function replaceAll(string $seasonId, array $assignments): void
+    {
+        SeasonStageRuleModel::query()->where('season_id', $seasonId)->delete();
+
+        foreach ($assignments as $assignment) {
+            SeasonStageRuleModel::query()->create([
+                'id' => (string) Str::uuid(),
+                'season_id' => $seasonId,
+                'stage_id' => $assignment->stageId,
+                'judge_score_system_id' => $assignment->judgeScoreSystemId,
+                'qualification_percentage' => $assignment->qualificationPercentage,
+            ]);
+        }
     }
 }

@@ -14,6 +14,7 @@ Route::post('seasons/{id}/close-registration', [AdminSeasonController::class, 'c
 Route::get('seasons/{seasonId}/stages', [AdminStageController::class, 'index'])->name('admin.stages.index');
 Route::post('seasons/{seasonId}/stages', [AdminStageController::class, 'store'])->name('admin.stages.store');
 Route::put('seasons/{seasonId}/stages/order', [AdminStageController::class, 'reorder'])->name('admin.stages.reorder');
+Route::patch('seasons/{seasonId}/stage-rules', [AdminStageController::class, 'updateStageRules'])->name('admin.stages.update_rules');
 Route::patch('stages/{id}', [AdminStageController::class, 'update'])->name('admin.stages.update');
 Route::delete('stages/{id}', [AdminStageController::class, 'destroy'])->name('admin.stages.destroy');
 Route::get('stages/{id}/preview-results', [AdminSeasonController::class, 'previewResults'])->name('admin.stages.preview_results');
