@@ -1,0 +1,33 @@
+{
+  "title": "Evaluations and results centre",
+  "subtitle": "Track judge progress, run the ranking algorithms, and publish official stage results",
+  "empty": "No evaluations are assigned to this stage.",
+
+  "stage_id_placeholder": "Stage ID",
+  "action_calculate": "Calculate stage results",
+  "action_publish": "Publish official results",
+  "action_reopen": "Reopen stage results",
+
+  "stat_total": "Total evaluations",
+  "stat_completed": "Completed evaluations",
+  "stat_average": "Average completed score",
+
+  "col_id": "Evaluation ID",
+  "col_application": "Application no.",
+  "col_judge": "Judge ID",
+  "col_score": "Total score (100)",
+  "col_status": "Evaluation status",
+  "score_out_of": "{{score}} / 100",
+  "status_submitted": "Completed and closed",
+
+  "reopen_title": "Confirm reopening the stage results",
+  "reopen_body": "Unpublish this stage's results and make them available for recounting and editing again? The action will be recorded in the audit logs.",
+  "reopen_confirm": "Reopen",
+
+  "calculate_success": "The stage results and ranking were calculated by the RankingService",
+  "calculate_error": "Could not calculate the results. Check the stage ID.",
+  "publish_success": "The stage results were published and the winning contestants qualified",
+  "publish_error": "Could not publish the results. Check the stage ID.",
+  "reopen_success": "The stage results were reopened",
+  "reopen_error": "Could not reopen the results. Check the stage ID."
+}

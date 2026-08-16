@@ -1,0 +1,33 @@
+{
+  "title": "Centro de evaluaciones y resultados",
+  "subtitle": "Siga el progreso de los jueces, aplique los algoritmos de clasificación y publique los resultados oficiales de las etapas",
+  "empty": "No hay evaluaciones asignadas a esta etapa.",
+
+  "stage_id_placeholder": "ID de la etapa",
+  "action_calculate": "Calcular resultados de la etapa",
+  "action_publish": "Publicar resultados oficiales",
+  "action_reopen": "Reabrir resultados de la etapa",
+
+  "stat_total": "Total de evaluaciones",
+  "stat_completed": "Evaluaciones completadas",
+  "stat_average": "Puntuación media completada",
+
+  "col_id": "ID de la evaluación",
+  "col_application": "N.º de solicitud",
+  "col_judge": "ID del juez",
+  "col_score": "Puntuación total (100)",
+  "col_status": "Estado de la evaluación",
+  "score_out_of": "{{score}} / 100",
+  "status_submitted": "Completada y cerrada",
+
+  "reopen_title": "Confirmar la reapertura de los resultados",
+  "reopen_body": "¿Anular la publicación de los resultados de esta etapa y volver a permitir su recuento y edición? La acción quedará registrada en los registros de auditoría.",
+  "reopen_confirm": "Reabrir",
+
+  "calculate_success": "Los resultados y la clasificación de la etapa se calcularon con el RankingService",
+  "calculate_error": "No se pudieron calcular los resultados. Compruebe el ID de la etapa.",
+  "publish_success": "Los resultados de la etapa se publicaron y los concursantes ganadores quedaron clasificados",
+  "publish_error": "No se pudieron publicar los resultados. Compruebe el ID de la etapa.",
+  "reopen_success": "Los resultados de la etapa se reabrieron",
+  "reopen_error": "No se pudieron reabrir los resultados. Compruebe el ID de la etapa."
+}
