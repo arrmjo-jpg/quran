@@ -53,7 +53,10 @@ export const lookupService = {
 
     do {
       const { data } = await http.get<ApiSuccess<CountryOption[]> & PaginationMeta>('/countries', {
-        params: { page, per_page: COUNTRIES_MAX_PER_PAGE, active: true },
+        // active is 1, not true: axios serialises a boolean as the string
+        // "true", and Laravel's `boolean` rule accepts 1/0/"1"/"0"/true/false
+        // but not "true" — sending the boolean makes the whole request a 422.
+        params: { page, per_page: COUNTRIES_MAX_PER_PAGE, active: 1 },
       });
 
       collected.push(...data.data);
