@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { DataTable } from '@/ui/datatable/DataTable';
@@ -9,6 +10,8 @@ import type { ContestantProfile } from '../types';
 import { Eye } from 'lucide-react';
 
 export default function ContestantsPage(): React.JSX.Element {
+  const { t } = useTranslation('contestants');
+  const { t: tc } = useTranslation('common');
   const [query, setQuery] = useState('');
   const [selectedContestant, setSelectedContestant] = useState<ContestantProfile | null>(null);
 
@@ -17,26 +20,26 @@ export default function ContestantsPage(): React.JSX.Element {
   const columns: ColumnDef<ContestantProfile>[] = [
     {
       accessorKey: 'id',
-      header: 'معرف المتسابق',
+      header: t('col_id'),
       cell: ({ row }) => <span className="font-mono text-[10px] text-slate-400">{row.original.id}</span>,
     },
     {
       accessorKey: 'full_name',
-      header: 'الاسم الكامل',
+      header: t('col_full_name'),
       cell: ({ row }) => <span className="font-semibold text-slate-900 dark:text-white">{row.original.full_name}</span>,
     },
     {
       accessorKey: 'phone_number',
-      header: 'رقم الهاتف',
+      header: t('col_phone'),
       cell: ({ row }) => row.original.phone_number ?? '—',
     },
     {
       id: 'actions',
-      header: 'عرض الملف 360°',
+      header: t('col_profile'),
       cell: ({ row }) => (
         <Button size="sm" variant="ghost" onClick={() => setSelectedContestant(row.original)}>
           <Eye className="w-4 h-4 text-brand-600" />
-          <span>الملف الكامل</span>
+          <span>{t('view_full_profile')}</span>
         </Button>
       ),
     },
@@ -44,9 +47,9 @@ export default function ContestantsPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="إدارة وشاشات المتسابقين (360° Profile Hub)"
-      subtitle="البحث المتخصص باسم المتسابق، رقم الطلب، الهاتف، أو الدولة ومعاينة الملف الكامل"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'المتسابقون' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
     >
       <DataTable<ContestantProfile>
         columns={columns}
@@ -55,7 +58,7 @@ export default function ContestantsPage(): React.JSX.Element {
         onSearchChange={(q) => setQuery(q)}
         onRefresh={refetch}
         exportable
-        emptyMessage="لم يتم العثور على أي متسابق مطابق للبحث."
+        emptyMessage={t('empty')}
       />
 
       <Contestant360Drawer
