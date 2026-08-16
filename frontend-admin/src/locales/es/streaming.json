@@ -1,0 +1,32 @@
+{
+  "title": "Centro de control de transmisión en directo",
+  "subtitle": "Genere claves RTMP y controle los espectadores y la señal en directo de las eliminatorias",
+  "empty": "Todavía no se ha creado ninguna sesión de transmisión.",
+
+  "stat_live_sessions": "Sesiones en directo",
+  "stat_viewers": "Espectadores estimados",
+  "stat_viewers_value": "1.420 espectadores",
+  "stat_signal_quality": "Calidad de la señal RTMP",
+  "stat_capacity": "Capacidad del servidor",
+
+  "create_placeholder": "Título de la nueva transmisión (p. ej. Eliminatorias finales – recitación Hafs)...",
+  "create_button": "Crear sala de transmisión",
+
+  "preview_heading": "Vista previa de la transmisión en directo",
+
+  "col_title": "Título de la sesión",
+  "col_stream_key": "Clave RTMP",
+  "col_status": "Estado de la transmisión",
+  "col_preview": "Vista previa en directo",
+  "col_actions": "Sala de control",
+
+  "status_live": "EN DIRECTO",
+  "preview_button": "Ver la transmisión",
+  "start_stream": "Iniciar la transmisión",
+  "stop_stream": "Detener la transmisión",
+
+  "create_success": "La sala de transmisión se creó y sus claves RTMP se generaron",
+  "start_success": "La transmisión ya está en directo",
+  "stop_success": "La transmisión se detuvo",
+  "key_copied": "Clave RTMP copiada"
+}

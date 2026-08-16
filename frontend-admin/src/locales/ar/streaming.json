@@ -1,0 +1,32 @@
+{
+  "title": "غرفة تحكم البث المباشر (Streaming Command Center)",
+  "subtitle": "توليد مفاتيح RTMP ومتابعة المشاهدين وإشارة البث المباشر للتصفيات",
+  "empty": "لا توجد جلسات بث مسجلة حالياً.",
+
+  "stat_live_sessions": "الجلسات المباشرة",
+  "stat_viewers": "المشاهدون الحسابيون",
+  "stat_viewers_value": "1,420 مشاهد",
+  "stat_signal_quality": "جودة الإشارة RTMP",
+  "stat_capacity": "سعة السيرفر",
+
+  "create_placeholder": "عنوان البث المباشر الجديد (مثال: التصفيات النهائية - قراءة حفص)...",
+  "create_button": "إنشاء غرفة بث جديدة",
+
+  "preview_heading": "معاينة البث المباشر الحالي",
+
+  "col_title": "عنوان الجلسة والبث",
+  "col_stream_key": "مفتاح RTMP Stream Key",
+  "col_status": "حالة البث",
+  "col_preview": "المعاينة اللحظية",
+  "col_actions": "غرفة التحكم",
+
+  "status_live": "LIVE مباشر",
+  "preview_button": "معاينة البث",
+  "start_stream": "بدء البث",
+  "stop_stream": "إيقاف البث",
+
+  "create_success": "تمت إضافة غرفة البث وتوليد مفاتيح RTMP التلقائية",
+  "start_success": "البث المباشر يعمل الآن LIVE",
+  "stop_success": "تم إيقاف البث المباشر",
+  "key_copied": "تم نسخ مفتاح RTMP"
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -12,6 +13,8 @@ import { Radio, Users, Activity, Play, Square, RefreshCw, Key, Copy } from 'luci
 import { toast } from 'sonner';
 
 export default function StreamingPage(): React.JSX.Element {
+  const { t } = useTranslation('streaming');
+  const { t: tc } = useTranslation('common');
   const queryClient = useQueryClient();
   const [streamTitle, setStreamTitle] = useState('');
   const [activePreview, setActivePreview] = useState<string | null>(null);
@@ -25,7 +28,7 @@ export default function StreamingPage(): React.JSX.Element {
     mutationFn: () => streamService.createStream('default-season-id', streamTitle),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['streams'] });
-      toast.success('تمت إضافة غرفة البث وتوليد مفاتيح RTMP التلقائية');
+      toast.success(t('create_success'));
       setStreamTitle('');
     },
   });
@@ -34,7 +37,7 @@ export default function StreamingPage(): React.JSX.Element {
     mutationFn: (id: string) => streamService.startStream(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['streams'] });
-      toast.success('البث المباشر يعمل الآن LIVE');
+      toast.success(t('start_success'));
     },
   });
 
@@ -42,19 +45,19 @@ export default function StreamingPage(): React.JSX.Element {
     mutationFn: (id: string) => streamService.stopStream(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['streams'] });
-      toast.success('تم إيقاف البث المباشر');
+      toast.success(t('stop_success'));
     },
   });
 
   const columns: ColumnDef<StreamItem>[] = [
     {
       accessorKey: 'title',
-      header: 'عنوان الجلسة والبث',
+      header: t('col_title'),
       cell: ({ row }) => <span className="font-bold text-slate-900 dark:text-white">{row.original.title}</span>,
     },
     {
       accessorKey: 'stream_key',
-      header: 'مفتاح RTMP Stream Key',
+      header: t('col_stream_key'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
           <Key className="w-3 h-3 text-amber-500" />
@@ -62,7 +65,7 @@ export default function StreamingPage(): React.JSX.Element {
           <button
             onClick={() => {
               navigator.clipboard.writeText(row.original.stream_key ?? 'rtmp_live_key_9921');
-              toast.success('تم نسخ مفتاح RTMP');
+              toast.success(t('key_copied'));
             }}
             className="p-1 hover:text-brand-600"
           >
@@ -73,16 +76,16 @@ export default function StreamingPage(): React.JSX.Element {
     },
     {
       accessorKey: 'status',
-      header: 'حالة البث',
+      header: t('col_status'),
       cell: ({ row }) => (
         <Badge variant={row.original.status === 'live' ? 'danger' : 'neutral'}>
-          {row.original.status === 'live' ? 'LIVE مباشر' : row.original.status}
+          {row.original.status === 'live' ? t('status_live') : row.original.status}
         </Badge>
       ),
     },
     {
       id: 'preview',
-      header: 'المعاينة اللحظية',
+      header: t('col_preview'),
       cell: ({ row }) => (
         <Button
           size="sm"
@@ -90,24 +93,24 @@ export default function StreamingPage(): React.JSX.Element {
           onClick={() => setActivePreview(row.original.playback_url ?? 'https://www.w3schools.com/html/mov_bbb.mp4')}
         >
           <Play className="w-3.5 h-3.5 text-brand-600" />
-          <span>معاينة البث</span>
+          <span>{t('preview_button')}</span>
         </Button>
       ),
     },
     {
       id: 'actions',
-      header: 'غرفة التحكم',
+      header: t('col_actions'),
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5">
           {row.original.status !== 'live' ? (
             <Button size="sm" variant="outline" onClick={() => startMutation.mutate(row.original.id)}>
               <Play className="w-3 h-3" />
-              <span>بدء البث</span>
+              <span>{t('start_stream')}</span>
             </Button>
           ) : (
             <Button size="sm" variant="danger" onClick={() => stopMutation.mutate(row.original.id)}>
               <Square className="w-3 h-3" />
-              <span>إيقاف البث</span>
+              <span>{t('stop_stream')}</span>
             </Button>
           )}
         </div>
@@ -117,15 +120,15 @@ export default function StreamingPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="غرفة تحكم البث المباشر (Streaming Command Center)"
-      subtitle="توليد مفاتيح RTMP ومتابعة المشاهدين وإشارة البث المباشر للتصفيات"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'غرفة البث المباشر' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
     >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard title="الجلسات المباشرة" value="1 LIVE" icon={<Radio className="w-5 h-5" />} color="emerald" />
-        <StatCard title="المشاهدون الحسابيون" value="1,420 مشاهد" icon={<Users className="w-5 h-5" />} color="brand" />
-        <StatCard title="جودة الإشارة RTMP" value="1080p60 Excellent" icon={<Activity className="w-5 h-5" />} color="purple" />
-        <StatCard title="سعة السيرفر" value="2.4 Gbps" icon={<RefreshCw className="w-5 h-5" />} color="amber" />
+        <StatCard title={t('stat_live_sessions')} value="1 LIVE" icon={<Radio className="w-5 h-5" />} color="emerald" />
+        <StatCard title={t('stat_viewers')} value={t('stat_viewers_value')} icon={<Users className="w-5 h-5" />} color="brand" />
+        <StatCard title={t('stat_signal_quality')} value="1080p60 Excellent" icon={<Activity className="w-5 h-5" />} color="purple" />
+        <StatCard title={t('stat_capacity')} value="2.4 Gbps" icon={<RefreshCw className="w-5 h-5" />} color="amber" />
       </div>
 
       {activePreview && (
@@ -133,9 +136,9 @@ export default function StreamingPage(): React.JSX.Element {
           <div className="flex items-center justify-between text-white text-xs">
             <span className="font-bold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-              معاينة البث المباشر الحالي
+              {t('preview_heading')}
             </span>
-            <button onClick={() => setActivePreview(null)} className="text-slate-400 hover:text-white">إغلاق</button>
+            <button onClick={() => setActivePreview(null)} className="text-slate-400 hover:text-white">{tc('close')}</button>
           </div>
           <VideoPlayer url={activePreview} />
         </div>
@@ -146,12 +149,12 @@ export default function StreamingPage(): React.JSX.Element {
           type="text"
           value={streamTitle}
           onChange={(e) => setStreamTitle(e.target.value)}
-          placeholder="عنوان البث المباشر الجديد (مثال: التصفيات النهائية - قراءة حفص)..."
+          placeholder={t('create_placeholder')}
           className="flex-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white"
         />
         <Button isLoading={createMutation.isPending} onClick={() => createMutation.mutate()}>
           <Radio className="w-4 h-4" />
-          <span>إنشاء غرفة بث جديدة</span>
+          <span>{t('create_button')}</span>
         </Button>
       </div>
 
@@ -161,7 +164,7 @@ export default function StreamingPage(): React.JSX.Element {
         loading={isLoading}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد جلسات بث مسجلة حالياً."
+        emptyMessage={t('empty')}
       />
     </PageLayout>
   );

@@ -1,0 +1,32 @@
+{
+  "title": "Live streaming command centre",
+  "subtitle": "Generate RTMP keys and monitor viewers and the live signal for the qualifiers",
+  "empty": "No streaming sessions have been created yet.",
+
+  "stat_live_sessions": "Live sessions",
+  "stat_viewers": "Estimated viewers",
+  "stat_viewers_value": "1,420 viewers",
+  "stat_signal_quality": "RTMP signal quality",
+  "stat_capacity": "Server capacity",
+
+  "create_placeholder": "Title for the new live stream (e.g. Final qualifiers – Hafs recitation)...",
+  "create_button": "Create a streaming room",
+
+  "preview_heading": "Live stream preview",
+
+  "col_title": "Session title",
+  "col_stream_key": "RTMP stream key",
+  "col_status": "Stream status",
+  "col_preview": "Live preview",
+  "col_actions": "Control room",
+
+  "status_live": "LIVE",
+  "preview_button": "Preview the stream",
+  "start_stream": "Start the stream",
+  "stop_stream": "Stop the stream",
+
+  "create_success": "The streaming room was created and its RTMP keys generated",
+  "start_success": "The stream is now live",
+  "stop_success": "The stream was stopped",
+  "key_copied": "RTMP key copied"
+}
