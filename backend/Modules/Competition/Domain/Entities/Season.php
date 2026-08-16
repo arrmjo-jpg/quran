@@ -13,10 +13,12 @@ use Modules\Competition\Domain\Events\SeasonCreated;
 use Modules\Competition\Domain\Events\SeasonJudgingStarted;
 use Modules\Competition\Domain\Events\SeasonRegistrationClosed;
 use Modules\Competition\Domain\Events\SeasonRegistrationOpened;
+use Modules\Competition\Domain\Events\SeasonRegistrationReopened;
 use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Exceptions\SeasonNotReopenableException;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\Services\SeasonStateMachine;
 use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
@@ -335,6 +337,48 @@ final class Season
 
         $this->recordEvent(new SeasonRegistrationOpened($this->id, $this->frozenAtIso));
         $this->recordEvent(new SeasonRulesFrozen($this->id, 1, $snapshot, $this->frozenAtIso));
+    }
+
+    /**
+     * Reopen a closed registration window: registration_closed ->
+     * registration_open, with a mandatory reason.
+     *
+     * Like restore(), this deliberately does NOT consult
+     * SeasonStateMachine. That table is documented as strictly linear with
+     * no backward transitions, and this is a backward move — an
+     * administrative correction rather than a step the competition takes on
+     * its own. Adding the edge would tell the machine that going back is
+     * ordinary, which is exactly what it is meant to deny.
+     *
+     * Nothing is unfrozen. The rules entrants signed up under stay locked
+     * and frozen_at is untouched, so no new rule snapshot is produced and
+     * the existing version 1 remains the record — which is what makes this
+     * far safer than restoring: the configuration never moves, only the
+     * window does.
+     *
+     * The season reclaims the single active slot. Whether another season is
+     * already holding it is not something this aggregate can see, so the
+     * Use Case checks that first.
+     */
+    public function reopenRegistration(string $reason, ?string $byUserId = null): void
+    {
+        if (trim($reason) === '') {
+            throw new InvalidArgumentException('A reason is required to reopen a season\'s registration.');
+        }
+
+        if ($this->status !== 'registration_closed') {
+            throw new SeasonNotReopenableException($this->id, SeasonNotReopenableException::NOT_CLOSED);
+        }
+
+        $this->status = 'registration_open';
+        $this->isActive = true;
+
+        $this->recordEvent(new SeasonRegistrationReopened(
+            seasonId: $this->id,
+            reason: trim($reason),
+            occurredAt: now()->toIso8601String(),
+            byUserId: $byUserId,
+        ));
     }
 
     public function startCompetition(SeasonStateMachine $machine): void
