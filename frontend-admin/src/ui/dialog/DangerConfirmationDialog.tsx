@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog } from './Dialog';
 import { Input } from '@/ui/input/Input';
 import Button from '@/ui/Button';
@@ -52,6 +53,7 @@ export function DangerConfirmationDialog({
   extraBlocked = false,
   children,
 }: DangerConfirmationDialogProps): React.JSX.Element | null {
+  const { t } = useTranslation('common');
   const [typed, setTyped] = useState('');
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export function DangerConfirmationDialog({
 
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
           <Button variant="secondary" size="sm" onClick={onClose} disabled={isLoading}>
-            تراجع
+            {t('back')}
           </Button>
           <Button variant="danger" size="sm" isLoading={isLoading} disabled={blocked} onClick={onConfirm}>
             {confirmLabel}

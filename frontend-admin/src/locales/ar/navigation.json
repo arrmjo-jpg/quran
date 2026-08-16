@@ -1,0 +1,40 @@
+{
+  "brand_name": "مسابقات القرآن",
+  "brand_subtitle": "لوحة الإدارة المركزية",
+
+  "dashboard": "لوحة التحكم",
+  "seasons": "المواسم",
+  "contestants": "المتسابقون",
+  "judges": "الحكام",
+  "applications": "طلبات الاشتراك",
+  "evaluations": "التقييمات",
+  "media": "مكتبة الوسائط",
+  "videos": "الفيديوهات",
+  "streaming": "البث المباشر",
+  "sponsors": "الرعاة",
+  "content": "الإعلانات والصفحات",
+  "reports": "التقارير والتصدير",
+  "notifications": "الإشعارات",
+  "countries": "الدول المعتمدة",
+  "search": "البحث والفهرسة",
+
+  "quick_search": "البحث السريع",
+  "toggle_theme": "تغيير المظهر",
+  "logout": "خروج",
+
+  "command_placeholder": "اكتب اسم الصفحة أو الموديول للانتقال السريع (Ctrl + K)...",
+  "command_no_results": "لم يتم العثور على أي خيار مطابق.",
+
+  "command_dashboard": "لوحة التحكم الرئيسية",
+  "command_seasons": "إدارة المواسم وفترات التسجيل",
+  "command_contestants": "المتسابقون وملفات 360°",
+  "command_judges": "لجنة التحكيم والقراءات",
+  "command_applications": "طابور مراجعة الطلبات",
+  "command_evaluations": "مركز التقييمات والنتائج",
+  "command_media": "مكتبة الوسائط Cloudflare R2",
+  "command_videos": "معالجة الفيديوهات HLS",
+  "command_streaming": "غرفة البث المباشر RTMP",
+  "command_reports": "مركز التقارير والتصدير",
+  "command_audit_logs": "مستكشف سجلات التدقيق Audit",
+  "command_about": "تشخيصات ومعلومات النظام"
+}

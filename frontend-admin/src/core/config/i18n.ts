@@ -77,6 +77,16 @@ export function applyDirection(code: string): void {
   document.documentElement.lang = code;
 }
 
+/**
+ * The tab title is user-visible text like any other, but it lives in
+ * index.html where t() cannot reach it, so it stayed Arabic in every
+ * language. Syncing it here rather than at the call site means the switcher
+ * cannot forget it — the same reason the resource map is derived, not listed.
+ */
+function applyDocumentTitle(): void {
+  document.title = `${i18n.t('common:app_title')} — ${i18n.t('common:app_subtitle')}`;
+}
+
 const lng = initialLanguage();
 
 i18n.use(initReactI18next).init({
@@ -91,5 +101,8 @@ i18n.use(initReactI18next).init({
 });
 
 applyDirection(lng);
+applyDocumentTitle();
+
+i18n.on('languageChanged', applyDocumentTitle);
 
 export default i18n;

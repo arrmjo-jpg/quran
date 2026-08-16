@@ -20,12 +20,23 @@
   "no_data": "No data available",
   "no_results": "No results match your search.",
 
-  "confirm_delete": "Are you sure? This action will be logged in system audit logs.",
+  "confirm_action": "Confirm action",
+  "confirm_deletion": "Confirm deletion",
+  "audit_log_notice": "Are you sure? This action will be logged in system audit logs.",
+
+  "export_csv": "Export CSV",
+  "previous": "Previous",
+  "next": "Next",
+  "pagination_summary": "Page {{page}} of {{pages}} ({{total}} total)",
 
   "home": "Home",
   "optional": "optional",
   "required": "required",
 
   "load_failed_title": "Failed to load data",
-  "load_failed_message": "Could not reach the server. Check your connection and try again."
+  "load_failed_message": "Could not reach the server. Check your connection and try again.",
+
+  "crash_title": "An unexpected interface error occurred",
+  "crash_message": "The Crash Boundary contained this error to keep the rest of the platform stable.",
+  "reload_page": "Reload the page"
 }

@@ -18,27 +18,31 @@ import {
   Search,
   BookOpen,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils';
 
+/** Labels are translation keys, resolved at render so they follow the language. */
 const navItems = [
-  { path: '/',             label: 'لوحة التحكم',   icon: LayoutDashboard },
-  { path: '/seasons',      label: 'المواسم',       icon: Calendar },
-  { path: '/contestants',  label: 'المتسابقون',    icon: Users },
-  { path: '/judges',       label: 'الحكام',         icon: Award },
-  { path: '/applications', label: 'طلبات الاشتراك', icon: FileCheck },
-  { path: '/evaluations',  label: 'التقييمات',     icon: ClipboardList },
-  { path: '/media',        label: 'مكتبة الوسائط',  icon: FolderKanban },
-  { path: '/videos',       label: 'الفيديوهات',    icon: Video },
-  { path: '/streaming',    label: 'البث المباشر',   icon: Radio },
-  { path: '/sponsors',     label: 'الرعاة',         icon: Sparkles },
-  { path: '/content',      label: 'الإعلانات والصفحات', icon: Megaphone },
-  { path: '/reports',      label: 'التقارير والتصدير', icon: FileText },
-  { path: '/notifications',label: 'الإشعارات',      icon: Bell },
-  { path: '/countries',    label: 'الدول المعتمدة', icon: Globe },
-  { path: '/search',       label: 'البحث والفهرسة', icon: Search },
+  { path: '/',              labelKey: 'dashboard',     icon: LayoutDashboard },
+  { path: '/seasons',       labelKey: 'seasons',       icon: Calendar },
+  { path: '/contestants',   labelKey: 'contestants',   icon: Users },
+  { path: '/judges',        labelKey: 'judges',        icon: Award },
+  { path: '/applications',  labelKey: 'applications',  icon: FileCheck },
+  { path: '/evaluations',   labelKey: 'evaluations',   icon: ClipboardList },
+  { path: '/media',         labelKey: 'media',         icon: FolderKanban },
+  { path: '/videos',        labelKey: 'videos',        icon: Video },
+  { path: '/streaming',     labelKey: 'streaming',     icon: Radio },
+  { path: '/sponsors',      labelKey: 'sponsors',      icon: Sparkles },
+  { path: '/content',       labelKey: 'content',       icon: Megaphone },
+  { path: '/reports',       labelKey: 'reports',       icon: FileText },
+  { path: '/notifications', labelKey: 'notifications', icon: Bell },
+  { path: '/countries',     labelKey: 'countries',     icon: Globe },
+  { path: '/search',        labelKey: 'search',        icon: Search },
 ];
 
 export default function Sidebar(): React.JSX.Element {
+  const { t } = useTranslation('navigation');
+
   return (
     <aside className="w-64 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-screen sticky top-0 shrink-0">
       {/* Brand Header */}
@@ -47,8 +51,8 @@ export default function Sidebar(): React.JSX.Element {
           <BookOpen className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">مسابقات القرآن</h1>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">لوحة الإدارة المركزية</p>
+          <h1 className="text-sm font-bold leading-tight text-slate-900 dark:text-white">{t('brand_name')}</h1>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{t('brand_subtitle')}</p>
         </div>
       </div>
 
@@ -69,7 +73,7 @@ export default function Sidebar(): React.JSX.Element {
             }
           >
             <item.icon className="w-5 h-5 shrink-0 text-brand-600 dark:text-brand-400" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>

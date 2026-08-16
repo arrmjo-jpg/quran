@@ -1,0 +1,40 @@
+{
+  "brand_name": "Quran Competitions",
+  "brand_subtitle": "Central Administration Console",
+
+  "dashboard": "Dashboard",
+  "seasons": "Seasons",
+  "contestants": "Contestants",
+  "judges": "Judges",
+  "applications": "Applications",
+  "evaluations": "Evaluations",
+  "media": "Media Library",
+  "videos": "Videos",
+  "streaming": "Live Streaming",
+  "sponsors": "Sponsors",
+  "content": "Announcements & Pages",
+  "reports": "Reports & Exports",
+  "notifications": "Notifications",
+  "countries": "Approved Countries",
+  "search": "Search & Indexing",
+
+  "quick_search": "Quick search",
+  "toggle_theme": "Toggle theme",
+  "logout": "Log out",
+
+  "command_placeholder": "Type a page or module name to jump to it (Ctrl + K)...",
+  "command_no_results": "No matching option found.",
+
+  "command_dashboard": "Main dashboard",
+  "command_seasons": "Seasons and registration windows",
+  "command_contestants": "Contestants and 360° profiles",
+  "command_judges": "Judging panel and recitations",
+  "command_applications": "Application review queue",
+  "command_evaluations": "Evaluations and results centre",
+  "command_media": "Cloudflare R2 media library",
+  "command_videos": "HLS video processing",
+  "command_streaming": "RTMP live streaming room",
+  "command_reports": "Reports and exports centre",
+  "command_audit_logs": "Audit log explorer",
+  "command_about": "System diagnostics and info"
+}

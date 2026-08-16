@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Button from '@/ui/Button';
 import { cn } from '@/core/utils';
 
@@ -51,25 +52,27 @@ export function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
-  title = 'تأكيد الإجراء',
-  description = 'هل أنت متأكد؟ سيتم تسجيل وتتبع هذه العملية في سجلات الأمان والحوكمة (Audit Logs).',
-  confirmLabel = 'تأكيد الحذف',
+  title,
+  description,
+  confirmLabel,
   isLoading = false,
 }: ConfirmDialogProps): React.JSX.Element | null {
+  const { t } = useTranslation('common');
+
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title={title}>
+    <Dialog isOpen={isOpen} onClose={onClose} title={title ?? t('confirm_action')}>
       <div className="space-y-4">
         <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-amber-800 dark:text-amber-300">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p className="text-xs leading-relaxed">{description}</p>
+          <p className="text-xs leading-relaxed">{description ?? t('audit_log_notice')}</p>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-2">
           <Button variant="secondary" size="sm" onClick={onClose} disabled={isLoading}>
-            إلغاء
+            {t('cancel')}
           </Button>
           <Button variant="danger" size="sm" isLoading={isLoading} onClick={onConfirm}>
-            {confirmLabel}
+            {confirmLabel ?? t('confirm_deletion')}
           </Button>
         </div>
       </div>

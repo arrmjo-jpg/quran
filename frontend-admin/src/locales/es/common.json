@@ -20,12 +20,23 @@
   "no_data": "No hay datos disponibles",
   "no_results": "No hay resultados que coincidan con la búsqueda.",
 
-  "confirm_delete": "¿Está seguro? Esta acción se registrará en los registros de auditoría.",
+  "confirm_action": "Confirmar acción",
+  "confirm_deletion": "Confirmar eliminación",
+  "audit_log_notice": "¿Está seguro? Esta acción se registrará en los registros de auditoría.",
+
+  "export_csv": "Exportar CSV",
+  "previous": "Anterior",
+  "next": "Siguiente",
+  "pagination_summary": "Página {{page}} de {{pages}} ({{total}} en total)",
 
   "home": "Inicio",
   "optional": "opcional",
   "required": "obligatorio",
 
   "load_failed_title": "Error al cargar los datos",
-  "load_failed_message": "No se pudo conectar con el servidor. Compruebe su conexión e inténtelo de nuevo."
+  "load_failed_message": "No se pudo conectar con el servidor. Compruebe su conexión e inténtelo de nuevo.",
+
+  "crash_title": "Se produjo un error inesperado en la interfaz",
+  "crash_message": "El Crash Boundary contuvo este error para mantener estable el resto de la plataforma.",
+  "reload_page": "Recargar la página"
 }

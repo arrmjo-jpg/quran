@@ -1,26 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Calendar, Users, Award, FileCheck, FolderKanban, Video, Radio, FileText, Settings, Shield } from 'lucide-react';
 
+/**
+ * Longer, searchable descriptions of the same routes the sidebar lists tersely.
+ * Kept separate from the sidebar labels on purpose: one is a nav label, the
+ * other is what an operator would type to find the page.
+ */
+const commands = [
+  { labelKey: 'command_dashboard',    path: '/',            icon: Search },
+  { labelKey: 'command_seasons',      path: '/seasons',     icon: Calendar },
+  { labelKey: 'command_contestants',  path: '/contestants', icon: Users },
+  { labelKey: 'command_judges',       path: '/judges',      icon: Award },
+  { labelKey: 'command_applications', path: '/applications',icon: FileCheck },
+  { labelKey: 'command_evaluations',  path: '/evaluations', icon: Award },
+  { labelKey: 'command_media',        path: '/media',       icon: FolderKanban },
+  { labelKey: 'command_videos',       path: '/videos',      icon: Video },
+  { labelKey: 'command_streaming',    path: '/streaming',   icon: Radio },
+  { labelKey: 'command_reports',      path: '/reports',     icon: FileText },
+  { labelKey: 'command_audit_logs',   path: '/audit-logs',  icon: Shield },
+  { labelKey: 'command_about',        path: '/about',       icon: Settings },
+];
+
 export function CommandPalette(): React.JSX.Element | null {
+  const { t } = useTranslation('navigation');
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-
-  const commands = [
-    { label: 'لوحة التحكم الرئيسية', path: '/', icon: Search },
-    { label: 'إدارة المواسم وفترات التسجيل', path: '/seasons', icon: Calendar },
-    { label: 'المتسابقون وملفات 360°', path: '/contestants', icon: Users },
-    { label: 'لجنة التحكيم والقراءات', path: '/judges', icon: Award },
-    { label: 'طابور مراجعة الطلبات', path: '/applications', icon: FileCheck },
-    { label: 'مركز التقييمات والنتائج', path: '/evaluations', icon: Award },
-    { label: 'مكتبة الوسائط Cloudflare R2', path: '/media', icon: FolderKanban },
-    { label: 'معالجة الفيديوهات HLS', path: '/videos', icon: Video },
-    { label: 'غرفة البث المباشر RTMP', path: '/streaming', icon: Radio },
-    { label: 'مركز التقارير والتصدير', path: '/reports', icon: FileText },
-    { label: 'مستكشف سجلات التدقيق Audit', path: '/audit-logs', icon: Shield },
-    { label: 'تشخيصات ومعلومات النظام', path: '/about', icon: Settings },
-  ];
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,7 +43,10 @@ export function CommandPalette(): React.JSX.Element | null {
 
   if (!isOpen) return null;
 
-  const filteredCommands = commands.filter((cmd) => cmd.label.toLowerCase().includes(query.toLowerCase()));
+  // Resolve first, then filter: the operator searches what they can see.
+  const filteredCommands = commands
+    .map((cmd) => ({ ...cmd, label: t(cmd.labelKey) }))
+    .filter((cmd) => cmd.label.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
@@ -47,7 +57,7 @@ export function CommandPalette(): React.JSX.Element | null {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="اكتب اسم الصفحة أو الموديول للانتقال السريع (Ctrl + K)..."
+            placeholder={t('command_placeholder')}
             className="w-full bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
             autoFocus
           />
@@ -55,7 +65,7 @@ export function CommandPalette(): React.JSX.Element | null {
 
         <div className="max-h-80 overflow-y-auto p-2 space-y-1">
           {filteredCommands.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">لم يتم العثور على أي خيار مطابقة.</p>
+            <p className="py-6 text-xs text-center text-slate-400">{t('command_no_results')}</p>
           ) : (
             filteredCommands.map((cmd, idx) => {
               const Icon = cmd.icon;

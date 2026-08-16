@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/core/auth/AuthContext';
 import { authService, isMfaChallenge } from '../api/auth.service';
@@ -9,6 +10,8 @@ import { extractErrorMessage } from '@/core/api/errors';
 import { toast } from 'sonner';
 
 export default function LoginPage(): React.JSX.Element {
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -33,10 +36,10 @@ export default function LoginPage(): React.JSX.Element {
       }
 
       login(result.token, result.user);
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t('login_success'));
       navigate('/');
     } catch (err) {
-      toast.error(extractErrorMessage(err, 'فشل تسجيل الدخول. تحقق من البيانات.'));
+      toast.error(extractErrorMessage(err, t('login_failed')));
     } finally {
       setLoading(false);
     }
@@ -50,10 +53,10 @@ export default function LoginPage(): React.JSX.Element {
     try {
       const data = await authService.completeMfaChallenge(challengeToken, mfaCode);
       login(data.token, data.user);
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success(t('login_success'));
       navigate('/');
     } catch (err) {
-      toast.error(extractErrorMessage(err, 'رمز التحقق غير صحيح.'));
+      toast.error(extractErrorMessage(err, t('mfa_code_invalid')));
     } finally {
       setLoading(false);
     }
@@ -67,13 +70,13 @@ export default function LoginPage(): React.JSX.Element {
             <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-brand-600/30">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold text-white">التحقق بخطوتين</h1>
-            <p className="text-xs text-slate-400 mt-1">أدخل رمز التطبيق المصادق أو أحد رموز الاسترجاع الثمانية</p>
+            <h1 className="text-xl font-bold text-white">{t('mfa_title')}</h1>
+            <p className="mt-1 text-xs text-slate-400">{t('mfa_subtitle')}</p>
           </div>
 
           <form onSubmit={handleMfaSubmit} className="space-y-4">
             <Input
-              label="رمز التحقق"
+              label={t('mfa_code_label')}
               placeholder="123456"
               maxLength={8}
               value={mfaCode}
@@ -81,7 +84,7 @@ export default function LoginPage(): React.JSX.Element {
             />
 
             <Button type="submit" isLoading={loading} className="w-full py-3 mt-2 text-sm font-semibold">
-              تأكيد
+              {tc('confirm')}
             </Button>
 
             <button
@@ -89,7 +92,7 @@ export default function LoginPage(): React.JSX.Element {
               onClick={() => { setChallengeToken(null); setMfaCode(''); }}
               className="w-full text-center text-xs text-slate-400 hover:text-slate-200 mt-2"
             >
-              العودة لتسجيل الدخول
+              {t('back_to_login')}
             </button>
           </form>
         </div>
@@ -104,13 +107,13 @@ export default function LoginPage(): React.JSX.Element {
           <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-brand-600/30">
             <BookOpen className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-bold text-white">منصة مسابقات القرآن الكريم</h1>
-          <p className="text-xs text-slate-400 mt-1">لوحة الإدارة المركزية</p>
+          <h1 className="text-xl font-bold text-white">{tc('app_title')}</h1>
+          <p className="mt-1 text-xs text-slate-400">{tc('app_subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">البريد الإلكتروني</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">{t('email_label')}</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute right-3 top-3" />
               <input
@@ -125,7 +128,7 @@ export default function LoginPage(): React.JSX.Element {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">كلمة المرور</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">{t('password_label')}</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute right-3 top-3" />
               <input
@@ -140,7 +143,7 @@ export default function LoginPage(): React.JSX.Element {
           </div>
 
           <Button type="submit" isLoading={loading} className="w-full py-3 mt-2 text-sm font-semibold">
-            تسجيل الدخول
+            {t('sign_in')}
           </Button>
         </form>
       </div>

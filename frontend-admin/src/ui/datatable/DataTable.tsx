@@ -92,7 +92,7 @@ export function DataTable<TData>({
           {exportable && onExport && (
             <Button variant="outline" size="sm" onClick={onExport}>
               <Download className="w-3.5 h-3.5" />
-              <span>تصدير CSV</span>
+              <span>{t('export_csv')}</span>
             </Button>
           )}
         </div>
@@ -158,7 +158,11 @@ export function DataTable<TData>({
         {pagination && (
           <div className="flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 text-xs">
             <span className="text-slate-500 dark:text-slate-400">
-              عرضالصفحة {pagination.pageIndex + 1} من {Math.ceil(pagination.total / pagination.pageSize) || 1} (إجمالي {pagination.total})
+              {t('pagination_summary', {
+                page:  pagination.pageIndex + 1,
+                pages: Math.ceil(pagination.total / pagination.pageSize) || 1,
+                total: pagination.total,
+              })}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -167,7 +171,7 @@ export function DataTable<TData>({
                 disabled={pagination.pageIndex <= 0 || loading}
                 onClick={() => onPageChange?.(pagination.pageIndex - 1)}
               >
-                السابق
+                {t('previous')}
               </Button>
               <Button
                 variant="outline"
@@ -175,7 +179,7 @@ export function DataTable<TData>({
                 disabled={(pagination.pageIndex + 1) * pagination.pageSize >= pagination.total || loading}
                 onClick={() => onPageChange?.(pagination.pageIndex + 1)}
               >
-                التالي
+                {t('next')}
               </Button>
             </div>
           </div>
