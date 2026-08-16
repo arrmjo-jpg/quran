@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { STORAGE_KEYS } from '@/core/constants';
+import { applyDateLocale } from '@/core/utils';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'ar', label: 'العربية', dir: 'rtl' },
@@ -102,7 +103,11 @@ i18n.use(initReactI18next).init({
 
 applyDirection(lng);
 applyDocumentTitle();
+applyDateLocale(lng);
 
-i18n.on('languageChanged', applyDocumentTitle);
+i18n.on('languageChanged', (language: string) => {
+  applyDocumentTitle();
+  applyDateLocale(language);
+});
 
 export default i18n;
