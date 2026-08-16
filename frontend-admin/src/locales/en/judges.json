@@ -1,0 +1,14 @@
+{
+  "title": "Judging panel and judge workload",
+  "subtitle": "Distribute the judging queue and track how quickly recitation evaluations are completed",
+  "empty": "No judges have been registered on the platform yet.",
+
+  "stat_total": "Total judges",
+  "stat_active": "Active judges",
+
+  "col_name": "Full name and title",
+  "col_specialization": "Specialisation and recitations",
+  "default_title": "Certified judge",
+  "status_active": "Active",
+  "status_inactive": "Inactive"
+}

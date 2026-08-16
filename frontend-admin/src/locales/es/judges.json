@@ -1,0 +1,14 @@
+{
+  "title": "Comité de jueces y carga de trabajo",
+  "subtitle": "Distribuya la cola de evaluación y siga la rapidez con que se completan las evaluaciones de recitación",
+  "empty": "Todavía no hay jueces registrados en la plataforma.",
+
+  "stat_total": "Total de jueces",
+  "stat_active": "Jueces activos",
+
+  "col_name": "Nombre completo y título",
+  "col_specialization": "Especialización y recitaciones",
+  "default_title": "Juez certificado",
+  "status_active": "Activo",
+  "status_inactive": "Inactivo"
+}
