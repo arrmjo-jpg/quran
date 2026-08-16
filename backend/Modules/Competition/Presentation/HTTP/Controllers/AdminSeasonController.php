@@ -13,6 +13,7 @@ use Modules\Competition\Application\UseCases\CancelSeasonUseCase;
 use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\ReopenSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\RestoreSeasonUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
@@ -20,6 +21,7 @@ use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Exceptions\SeasonNotReopenableException;
 use Modules\Competition\Domain\Exceptions\SeasonNotRestorableException;
 use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
@@ -27,6 +29,7 @@ use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CancelSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
+use Modules\Competition\Presentation\HTTP\Requests\ReopenRegistrationRequest;
 use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRulesRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
@@ -43,6 +46,7 @@ final class AdminSeasonController extends Controller
         private readonly ArchiveSeasonUseCase $archiveSeason,
         private readonly CancelSeasonUseCase $cancelSeason,
         private readonly RestoreSeasonUseCase $restoreSeason,
+        private readonly ReopenSeasonRegistrationUseCase $reopenSeasonRegistration,
         private readonly CompetitionRuleEngine $ruleEngine,
         private readonly SeasonRepositoryContract $seasons,
         private readonly SeasonCountryRepositoryContract $seasonCountries,
@@ -136,6 +140,41 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration opened successfully for season.'),
+            'data' => $this->seasonResource($season),
+        ]);
+    }
+
+    /**
+     * Reopen a closed registration window. Refusals are 409s carrying the
+     * specific code — the season is not in registration_closed, or another
+     * season already holds the single active slot, in which case the
+     * response names it so the admin knows what to close first.
+     */
+    public function reopenRegistration(string $id, ReopenRegistrationRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->reopenSeasonRegistration->execute(
+                $id,
+                $request->validated('reason'),
+                $request->user()?->id,
+            );
+        } catch (SeasonNotReopenableException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => $e->reason,
+                    'message' => $e->getMessage(),
+                    // Identified well enough to act on without a lookup.
+                    'active_season_id' => $e->activeSeasonId,
+                    'active_season_slug' => $e->activeSeasonSlug,
+                    'active_season_year' => $e->activeSeasonYear,
+                ],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season registration reopened successfully.'),
             'data' => $this->seasonResource($season),
         ]);
     }
