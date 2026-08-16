@@ -41,6 +41,20 @@ const canCancel = (s: Season): boolean => s.status === 'draft';
 /** Editing is refused by the aggregate once the season is frozen. */
 const canEdit = (s: Season): boolean => !s.is_frozen;
 
+/**
+ * One mutation hook serves every row, so `isPending` alone is true for the
+ * whole table the moment any row is acted on — every season's button then
+ * shows a spinner at once and it reads as though they were all triggered
+ * together, even though exactly one request was sent.
+ *
+ * react-query keeps the in-flight variables, which for these mutations is
+ * the season id, so comparing against it narrows the loading state back to
+ * the row that is actually busy.
+ */
+function isBusy(mutation: { isPending: boolean; variables?: string }, seasonId: string): boolean {
+  return mutation.isPending && mutation.variables === seasonId;
+}
+
 const STATUS_VARIANT: Record<SeasonStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   draft: 'neutral',
   registration_open: 'success',
@@ -170,7 +184,7 @@ export default function SeasonsPage(): React.JSX.Element {
                 <Button
                   size="sm"
                   variant="outline"
-                  isLoading={openRegistration.isPending}
+                  isLoading={isBusy(openRegistration, season.id)}
                   onClick={() => openRegistration.mutate(season.id)}
                 >
                   {t('open_reg')}
