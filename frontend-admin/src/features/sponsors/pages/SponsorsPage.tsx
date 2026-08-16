@@ -25,11 +25,11 @@ export default function SponsorsPage(): React.JSX.Element {
       <Card>
         <CardHeader title="قائمة الرعاة" subtitle={`إجمالي الرعاة: ${sponsors?.length ?? 0}`} />
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-right text-slate-600 dark:text-slate-300">
+          <table className="w-full text-xs text-start text-slate-600 dark:text-slate-300">
             <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase font-medium">
               <tr>
-                <th className="px-4 py-3">اسم الراعـي</th>
-                <th className="px-4 py-3">مستوى الرعاية (Tier)</th>
+                <th className="px-4 py-3 text-start">اسم الراعـي</th>
+                <th className="px-4 py-3 text-start">مستوى الرعاية (Tier)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

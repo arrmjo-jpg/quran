@@ -57,7 +57,7 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="إعداد التوثيق الثنائي (TOTP MFA)">
-      <div className="space-y-4 text-xs text-right">
+      <div className="space-y-4 text-xs text-start">
         {step === 'setup' && (
           <>
             {!secret ? (

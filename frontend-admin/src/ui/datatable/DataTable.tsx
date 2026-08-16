@@ -101,12 +101,12 @@ export function DataTable<TData>({
       {/* Main Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-right text-slate-600 dark:text-slate-300">
+          <table className="w-full text-xs text-start text-slate-600 dark:text-slate-300">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-slate-800">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 select-none">
+                    <th key={header.id} className="px-4 py-3 text-start select-none">
                       {header.isPlaceholder ? null : (
                         <div
                           className={`flex items-center gap-1.5 ${header.column.getCanSort() ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''}`}

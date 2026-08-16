@@ -149,7 +149,7 @@ export default function ApplicationsPage(): React.JSX.Element {
               سيتم إشعار المتسابق بضرورة إعادة رفع فيديو التلاوة مع توضيح السبب أدناه، وتسجيل القرار في Audit Trail.
             </p>
             <textarea
-              className="w-full min-h-[90px] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full min-h-[90px] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-start focus:outline-none focus:ring-2 focus:ring-brand-500"
               placeholder="سبب طلب إعادة الرفع (إلزامي)..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}

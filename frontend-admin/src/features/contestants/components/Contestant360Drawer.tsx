@@ -30,7 +30,7 @@ export function Contestant360Drawer({ contestant, isOpen, onClose }: Contestant3
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title={`الملف الشخصي 360° — ${contestant.full_name}`}>
-      <div className="space-y-4 text-xs text-right">
+      <div className="space-y-4 text-xs text-start">
         {/* Tabs Bar */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1 gap-1">
           {tabs.map((t) => {

@@ -50,7 +50,7 @@ export function CommandPalette(): React.JSX.Element | null {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-right">
+      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-start">
         <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
           <Search className="w-4 h-4 text-slate-400" />
           <input

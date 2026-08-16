@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-xs leading-relaxed text-slate-400">
               {t('crash_message')}
             </p>
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-[11px] font-mono text-rose-400 text-right overflow-x-auto max-h-32">
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-[11px] font-mono text-rose-400 text-start overflow-x-auto max-h-32">
               {this.state.error?.message ?? 'Unknown Error'}
             </div>
             <Button variant="primary" onClick={this.handleReload} className="w-full justify-center">
