@@ -7,14 +7,10 @@ import Button from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/dialog/Dialog';
 import { ErrorState } from '@/ui/error-state/ErrorState';
 import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
-import {
-  useSeasons,
-  useOpenRegistration,
-  useCloseRegistration,
-  useArchiveSeason,
-} from '../hooks/useSeasons';
+import { useSeasons, useOpenRegistration, useCloseRegistration } from '../hooks/useSeasons';
 import { SeasonFormDialog } from '../components/SeasonFormDialog';
 import { CancelSeasonDialog } from '../components/CancelSeasonDialog';
+import { ArchiveSeasonDialog } from '../components/ArchiveSeasonDialog';
 import { SeasonRulesDialog } from '../components/SeasonRulesDialog';
 import { StageManagerDialog } from '@/features/stages/components/StageManagerDialog';
 import { StageRulesDialog } from '@/features/stages/components/StageRulesDialog';
@@ -82,7 +78,6 @@ export default function SeasonsPage(): React.JSX.Element {
   const { data: seasons, isLoading, isError, refetch } = useSeasons();
   const openRegistration = useOpenRegistration();
   const closeRegistration = useCloseRegistration();
-  const archiveSeason = useArchiveSeason();
 
   const closePending = () => setPending(null);
 
@@ -258,19 +253,13 @@ export default function SeasonsPage(): React.JSX.Element {
         />
       )}
 
-      {pending?.kind === 'archive' && (
-        <ConfirmDialog
-          isOpen
-          onClose={closePending}
-          title="تأكيد أرشفة الموسم"
-          description={`سيتم أرشفة موسم ${pending.season.year} نهائياً. الأرشفة هي الحالة الأخيرة في دورة حياة الموسم ولا يمكن التراجع عنها.`}
-          confirmLabel="أرشفة الموسم"
-          isLoading={archiveSeason.isPending}
-          onConfirm={() =>
-            archiveSeason.mutate({ id: pending.season.id, payload: {} }, { onSuccess: closePending })
-          }
-        />
-      )}
+      {/* Archive and cancel both end a season permanently, so both ask for
+          the season's slug rather than a plain confirmation — see
+          DangerConfirmationDialog for why identity beats intent here. */}
+      <ArchiveSeasonDialog
+        season={pending?.kind === 'archive' ? pending.season : null}
+        onClose={closePending}
+      />
 
       <SeasonRulesDialog season={rulesTarget} onClose={() => setRulesTarget(null)} />
 
@@ -288,8 +277,8 @@ export default function SeasonsPage(): React.JSX.Element {
         onClose={() => setStageRulesTarget(null)}
       />
 
-      {/* Cancellation has its own dialog because the reason is mandatory
-          and ConfirmDialog has nowhere to type it. */}
+      {/* Cancellation needs both the slug confirmation and a mandatory
+          reason, so it owns its own dialog too. */}
       <CancelSeasonDialog
         season={pending?.kind === 'cancel' ? pending.season : null}
         onClose={closePending}

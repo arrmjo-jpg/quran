@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Dialog } from '@/ui/dialog/Dialog';
+import { DangerConfirmationDialog } from '@/ui/dialog/DangerConfirmationDialog';
 import { Textarea } from '@/ui/input/Input';
-import Button from '@/ui/Button';
 import { useCancelSeason } from '../hooks/useSeasons';
 import type { Season } from '../types';
-import { AlertCircle } from 'lucide-react';
 
 export interface CancelSeasonDialogProps {
   season:  Season | null;
@@ -12,10 +10,15 @@ export interface CancelSeasonDialogProps {
 }
 
 /**
- * Cancelling needs a mandatory reason — Season::cancel() rejects a blank
- * one, and CancelSeasonRequest requires the field — so this cannot reuse
- * ConfirmDialog, which has nowhere to type it. Requiring it here means the
- * admin is stopped before the request rather than by a 422 afterwards.
+ * Cancelling ends a season permanently — it moves to `archived`, the state
+ * machine's terminal state, with no way back. It is also the only route to
+ * that state reachable through the API today, since `completed` (and so
+ * archiving proper) needs lifecycle steps that have no endpoints yet.
+ *
+ * That makes this the most dangerous button on the seasons table, sitting
+ * in a row where every season looks alike, so it asks for the season's slug
+ * rather than a plain confirmation. The reason is mandatory because
+ * Season::cancel() rejects a blank one.
  */
 export function CancelSeasonDialog({ season, onClose }: CancelSeasonDialogProps): React.JSX.Element | null {
   const [reason, setReason] = useState('');
@@ -42,34 +45,26 @@ export function CancelSeasonDialog({ season, onClose }: CancelSeasonDialogProps)
   };
 
   return (
-    <Dialog isOpen onClose={onClose} title={`إلغاء موسم ${season.year}`}>
-      <div className="space-y-4">
-        <div className="flex items-start gap-3 p-3 text-xs leading-relaxed border rounded-xl bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>
-            الإلغاء متاح فقط قبل فتح التسجيل، ولا يمكن التراجع عنه. سيُحفظ السبب في سجل الموسم مع
-            هوية من نفّذ العملية.
-          </p>
-        </div>
-
-        <Textarea
-          label="سبب الإلغاء"
-          placeholder="مثال: عدم اكتمال النصاب المطلوب من المشاركين"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          onBlur={() => setTouched(true)}
-          error={error}
-        />
-
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button variant="secondary" size="sm" onClick={onClose} disabled={cancelSeason.isPending}>
-            تراجع
-          </Button>
-          <Button variant="danger" size="sm" isLoading={cancelSeason.isPending} onClick={submit}>
-            تأكيد الإلغاء
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+    <DangerConfirmationDialog
+      isOpen
+      onClose={onClose}
+      onConfirm={submit}
+      title={`إلغاء موسم ${season.year}`}
+      description="الإلغاء نهائي ولا يمكن التراجع عنه. سينتقل الموسم إلى حالة الأرشفة، ولا توجد طريقة لإعادته إلى المسودة. سيُحفظ السبب في سجل الموسم مع هوية من نفّذ العملية."
+      confirmationText={season.slug}
+      confirmationLabel="للتأكيد، اكتب معرّف الموسم (Slug) كما هو ظاهر أدناه:"
+      confirmLabel="تأكيد الإلغاء"
+      isLoading={cancelSeason.isPending}
+      extraBlocked={trimmed === ''}
+    >
+      <Textarea
+        label="سبب الإلغاء (إلزامي)"
+        placeholder="مثال: عدم اكتمال النصاب المطلوب من المشاركين"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        onBlur={() => setTouched(true)}
+        error={error}
+      />
+    </DangerConfirmationDialog>
   );
 }
