@@ -13,11 +13,13 @@ use Modules\Competition\Application\UseCases\CancelSeasonUseCase;
 use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\RestoreSeasonUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Exceptions\SeasonNotRestorableException;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
@@ -38,6 +40,7 @@ final class AdminSeasonController extends Controller
         private readonly UpdateSeasonUseCase $updateSeason,
         private readonly ArchiveSeasonUseCase $archiveSeason,
         private readonly CancelSeasonUseCase $cancelSeason,
+        private readonly RestoreSeasonUseCase $restoreSeason,
         private readonly CompetitionRuleEngine $ruleEngine,
         private readonly SeasonRepositoryContract $seasons,
     ) {}
@@ -174,6 +177,30 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season cancelled successfully.'),
+            'data' => new SeasonResource($season),
+        ]);
+    }
+
+    /**
+     * Undo an accidental archival. Every refusal is a 409 carrying the
+     * specific reason code, so the operator learns which condition blocked
+     * the restore rather than being told "no" — the details list names the
+     * tables and row counts holding the season.
+     */
+    public function restore(string $id, Request $request): JsonResponse
+    {
+        try {
+            $season = $this->restoreSeason->execute($id, $request->user()?->id);
+        } catch (SeasonNotRestorableException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => $e->reason, 'message' => $e->getMessage(), 'details' => $e->details],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season restored to draft successfully.'),
             'data' => new SeasonResource($season),
         ]);
     }

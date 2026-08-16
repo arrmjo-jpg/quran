@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Competition\Infrastructure\Database\Repositories;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
@@ -54,6 +55,48 @@ final class SeasonRepository implements SeasonRepositoryContract
         $model = SeasonModel::query()->with('translations')->where('is_active', true)->first();
 
         return $model ? $this->toDomain($model) : null;
+    }
+
+    /**
+     * Deliberately excludes stages, season_stage_rules and season_countries:
+     * those are the season's own configuration, they belong to it, and a
+     * restored draft is expected to still have them. What blocks a restore
+     * is evidence the season was *used* — a frozen rule snapshot, or rows
+     * in other modules that were created on the assumption it was running.
+     *
+     * Queried by table name rather than through each owning module's
+     * models, per ADR-002.
+     *
+     * @return array<string, int>
+     */
+    public function findRestoreBlockers(string $seasonId): array
+    {
+        $blockers = [];
+
+        // Directly keyed on the season.
+        foreach (['season_rule_versions', 'applications', 'streams'] as $table) {
+            $count = DB::table($table)->where('season_id', $seasonId)->count();
+
+            if ($count > 0) {
+                $blockers[$table] = $count;
+            }
+        }
+
+        // Reached through the season's stages: these tables know a stage,
+        // not a season, so a season with no stages can never have them.
+        $stageIds = DB::table('stages')->where('season_id', $seasonId)->pluck('id')->all();
+
+        if ($stageIds !== []) {
+            foreach (['stage_results', 'judge_assignments'] as $table) {
+                $count = DB::table($table)->whereIn('stage_id', $stageIds)->count();
+
+                if ($count > 0) {
+                    $blockers[$table] = $count;
+                }
+            }
+        }
+
+        return $blockers;
     }
 
     public function save(Season $season): void
