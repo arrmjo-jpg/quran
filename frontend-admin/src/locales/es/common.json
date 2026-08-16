@@ -1,20 +1,31 @@
 {
-  "app": {
-    "title": "Plataforma de Competiciones del Corán",
-    "subtitle": "Consola Central de Administración"
-  },
-  "common": {
-    "save": "Guardar",
-    "cancel": "Cancelar",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "create": "Crear Nuevo",
-    "search": "Buscar...",
-    "filter": "Filtrar",
-    "actions": "Acciones",
-    "status": "Estado",
-    "loading": "Cargando...",
-    "no_data": "No hay datos disponibles",
-    "confirm_delete": "¿Está seguro? Esta acción se registrará en los registros de auditoría."
-  }
+  "app_title": "Plataforma de Competiciones del Corán",
+  "app_subtitle": "Consola Central de Administración",
+
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "back": "Volver",
+  "close": "Cerrar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "create": "Crear Nuevo",
+  "confirm": "Confirmar",
+  "retry": "Reintentar",
+
+  "search": "Buscar...",
+  "filter": "Filtrar",
+  "actions": "Acciones",
+  "status": "Estado",
+  "loading": "Cargando...",
+  "no_data": "No hay datos disponibles",
+  "no_results": "No hay resultados que coincidan con la búsqueda.",
+
+  "confirm_delete": "¿Está seguro? Esta acción se registrará en los registros de auditoría.",
+
+  "home": "Inicio",
+  "optional": "opcional",
+  "required": "obligatorio",
+
+  "load_failed_title": "Error al cargar los datos",
+  "load_failed_message": "No se pudo conectar con el servidor. Compruebe su conexión e inténtelo de nuevo."
 }

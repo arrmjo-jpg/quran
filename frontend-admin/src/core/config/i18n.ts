@@ -2,14 +2,6 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { STORAGE_KEYS } from '@/core/constants';
 
-import arCommon from '@/locales/ar/common.json';
-import enCommon from '@/locales/en/common.json';
-import esCommon from '@/locales/es/common.json';
-
-import arSeasons from '@/locales/ar/seasons.json';
-import enSeasons from '@/locales/en/seasons.json';
-import esSeasons from '@/locales/es/seasons.json';
-
 export const SUPPORTED_LANGUAGES = [
   { code: 'ar', label: 'العربية', dir: 'rtl' },
   { code: 'en', label: 'English', dir: 'ltr' },
@@ -24,6 +16,43 @@ const DEFAULT_LANGUAGE: LanguageCode = 'ar';
 export function directionOf(code: string): Direction {
   return SUPPORTED_LANGUAGES.find((l) => l.code === code)?.dir ?? 'rtl';
 }
+
+/**
+ * Translation files register themselves.
+ *
+ * Every locales/<lang>/<namespace>.json is picked up by its path, so adding
+ * a screen's translations means dropping the file in and nothing else, and
+ * adding a fourth language means creating locales/<lang>/ and nothing else.
+ *
+ * The previous arrangement needed the same file named in two places — an
+ * import plus an entry in `ns` — and missing either one left t() silently
+ * returning the raw key. That is not a hypothetical: the seasons namespace
+ * shipped unregistered and the screen rendered "title", "YEAR" and "SLUG"
+ * to the admin until it was noticed.
+ */
+const modules = import.meta.glob<{ default: Record<string, string> }>(
+  '../../locales/*/*.json',
+  { eager: true },
+);
+
+const resources: Record<string, Record<string, Record<string, string>>> = {};
+
+for (const [path, module] of Object.entries(modules)) {
+  // ../../locales/ar/seasons.json -> ['ar', 'seasons']
+  const match = path.match(/\/locales\/([^/]+)\/([^/]+)\.json$/);
+
+  if (!match) continue;
+
+  const [, language, namespace] = match;
+
+  resources[language] ??= {};
+  resources[language][namespace] = module.default;
+}
+
+/** Derived from the files themselves, so it can never fall out of step. */
+const namespaces = [
+  ...new Set(Object.values(resources).flatMap((byNamespace) => Object.keys(byNamespace))),
+];
 
 /**
  * The language the admin last chose. LanguageSwitcher writes it to
@@ -48,26 +77,13 @@ export function applyDirection(code: string): void {
   document.documentElement.lang = code;
 }
 
-/**
- * Every namespace a screen calls useTranslation() with has to be registered
- * here and listed in `ns` — i18next has no filesystem access, so a
- * translation file that is not imported simply does not exist as far as it
- * is concerned, and t() silently returns the key instead. Adding a new
- * locales/<lang>/<file>.json means adding it in both places below.
- */
-const resources = {
-  ar: { common: arCommon, seasons: arSeasons },
-  en: { common: enCommon, seasons: enSeasons },
-  es: { common: esCommon, seasons: esSeasons },
-};
-
 const lng = initialLanguage();
 
 i18n.use(initReactI18next).init({
   resources,
   lng,
   fallbackLng: DEFAULT_LANGUAGE,
-  ns: ['common', 'seasons'],
+  ns: namespaces,
   defaultNS: 'common',
   interpolation: {
     escapeValue: false,

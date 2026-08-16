@@ -1,20 +1,31 @@
 {
-  "app": {
-    "title": "Quran Competition Platform",
-    "subtitle": "Central Administration Console"
-  },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "create": "Create New",
-    "search": "Search...",
-    "filter": "Filter",
-    "actions": "Actions",
-    "status": "Status",
-    "loading": "Loading...",
-    "no_data": "No data available",
-    "confirm_delete": "Are you sure? This action will be logged in system audit logs."
-  }
+  "app_title": "Quran Competition Platform",
+  "app_subtitle": "Central Administration Console",
+
+  "save": "Save",
+  "cancel": "Cancel",
+  "back": "Back",
+  "close": "Close",
+  "delete": "Delete",
+  "edit": "Edit",
+  "create": "Create New",
+  "confirm": "Confirm",
+  "retry": "Retry",
+
+  "search": "Search...",
+  "filter": "Filter",
+  "actions": "Actions",
+  "status": "Status",
+  "loading": "Loading...",
+  "no_data": "No data available",
+  "no_results": "No results match your search.",
+
+  "confirm_delete": "Are you sure? This action will be logged in system audit logs.",
+
+  "home": "Home",
+  "optional": "optional",
+  "required": "required",
+
+  "load_failed_title": "Failed to load data",
+  "load_failed_message": "Could not reach the server. Check your connection and try again."
 }
