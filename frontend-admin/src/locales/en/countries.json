@@ -1,0 +1,31 @@
+{
+  "title": "Approved countries",
+  "subtitle": "Manage ISO country codes and dialling codes for participants",
+  "create_button": "Add a country",
+  "empty": "No countries have been added yet.",
+
+  "col_phone_code": "Dialling code",
+  "col_name_ar": "Name (Arabic)",
+  "col_name_en": "Name (English)",
+  "status_active": "Active",
+  "status_inactive": "Disabled",
+
+  "form_title": "Add a new country to the platform",
+  "field_iso2": "ISO 2 (two letters)",
+  "field_iso3": "ISO 3 (three letters)",
+  "field_phone_code": "Dialling code",
+  "field_name_ar": "Name in Arabic",
+  "field_name_en": "Name in English",
+  "field_flag_url": "Flag or logo URL (optional)",
+  "form_save": "Save the country",
+
+  "create_success": "The country was added",
+  "create_error": "Could not add the country. Check that the codes are not already in use.",
+
+  "v_iso2_length": "The ISO2 code must be exactly two letters",
+  "v_iso3_length": "The ISO3 code must be exactly three letters",
+  "v_phone_code_prefix": "The dialling code must start with +",
+  "v_name_ar_required": "The Arabic name is required",
+  "v_name_en_required": "The English name is required",
+  "v_flag_url_invalid": "That is not a valid flag URL"
+}
