@@ -33,6 +33,7 @@
   "optional": "optional",
   "required": "required",
 
+  "unexpected_error": "Something went wrong",
   "load_failed_title": "Failed to load data",
   "load_failed_message": "Could not reach the server. Check your connection and try again.",
 

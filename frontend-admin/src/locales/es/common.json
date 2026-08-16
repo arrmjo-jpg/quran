@@ -33,6 +33,7 @@
   "optional": "opcional",
   "required": "obligatorio",
 
+  "unexpected_error": "Se produjo un error inesperado",
   "load_failed_title": "Error al cargar los datos",
   "load_failed_message": "No se pudo conectar con el servidor. Compruebe su conexión e inténtelo de nuevo.",
 
