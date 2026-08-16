@@ -11,6 +11,7 @@ import type {
   SeasonFilters,
 } from '../types';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { extractErrorMessage } from '@/core/api/errors';
 import { extractRestoreErrorMessage } from '../api/restoreErrors';
 import { extractReopenErrorMessage } from '../api/reopenErrors';
@@ -20,14 +21,19 @@ import { extractReopenErrorMessage } from '../api/reopenErrors';
  * mutation invalidates the list; the ones that take an id invalidate that
  * season's detail key too, so a detail view opened behind a dialog does
  * not keep showing the pre-action state.
+ *
+ * Takes translation keys, not finished strings: the toast fires long after
+ * the hook was called, and resolving through `t` here means the message
+ * follows whatever language is active at that moment.
  */
 function useSeasonMutation<TVariables>(
   mutationFn: (variables: TVariables) => Promise<unknown>,
-  successMessage: string,
-  errorMessage: string,
+  successKey: string,
+  errorKey: string,
   detailIdOf?: (variables: TVariables) => string,
 ) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('seasons');
 
   return useMutation({
     mutationFn,
@@ -38,10 +44,10 @@ function useSeasonMutation<TVariables>(
         queryClient.invalidateQueries({ queryKey: queryKeys.seasons.detail(detailIdOf(variables)) });
       }
 
-      toast.success(successMessage);
+      toast.success(t(successKey));
     },
     onError: (err) => {
-      toast.error(extractErrorMessage(err, errorMessage));
+      toast.error(extractErrorMessage(err, t(errorKey)));
     },
   });
 }
@@ -64,16 +70,16 @@ export function useSeason(id: string) {
 export function useCreateSeason() {
   return useSeasonMutation<CreateSeasonPayload>(
     (payload) => seasonService.createSeason(payload),
-    'تم إنشاء الموسم الجديد بنجاح',
-    'فشل إنشاء الموسم. تحقق من البيانات.',
+    'create_success',
+    'create_error',
   );
 }
 
 export function useUpdateSeason() {
   return useSeasonMutation<{ id: string; payload: UpdateSeasonPayload }>(
     ({ id, payload }) => seasonService.updateSeason(id, payload),
-    'تم تحديث بيانات الموسم بنجاح',
-    'فشل تحديث الموسم. تحقق من البيانات.',
+    'update_success',
+    'update_error',
     ({ id }) => id,
   );
 }
@@ -81,8 +87,8 @@ export function useUpdateSeason() {
 export function useUpdateSeasonRules() {
   return useSeasonMutation<{ id: string; payload: UpdateSeasonRulesPayload }>(
     ({ id, payload }) => seasonService.updateSeasonRules(id, payload),
-    'تم حفظ قواعد الموسم بنجاح',
-    'فشل حفظ قواعد الموسم. تحقق من البيانات.',
+    'rules_success',
+    'rules_error',
     ({ id }) => id,
   );
 }
@@ -90,8 +96,8 @@ export function useUpdateSeasonRules() {
 export function useOpenRegistration() {
   return useSeasonMutation<string>(
     (id) => seasonService.openRegistration(id),
-    'تم فتح فترة التسجيل للموسم بنجاح',
-    'فشل فتح فترة التسجيل.',
+    'open_success',
+    'open_error',
     (id) => id,
   );
 }
@@ -99,8 +105,8 @@ export function useOpenRegistration() {
 export function useCloseRegistration() {
   return useSeasonMutation<string>(
     (id) => seasonService.closeRegistration(id),
-    'تم إغلاق التسجيل للموسم بنجاح',
-    'فشل إغلاق فترة التسجيل.',
+    'close_success',
+    'close_error',
     (id) => id,
   );
 }
@@ -108,8 +114,8 @@ export function useCloseRegistration() {
 export function useArchiveSeason() {
   return useSeasonMutation<{ id: string; payload?: ArchiveSeasonPayload }>(
     ({ id, payload }) => seasonService.archiveSeason(id, payload ?? {}),
-    'تمت أرشفة الموسم بنجاح',
-    'فشلت أرشفة الموسم.',
+    'archive_success',
+    'archive_error',
     ({ id }) => id,
   );
 }
@@ -121,16 +127,17 @@ export function useArchiveSeason() {
  */
 export function useRestoreSeason() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('seasons');
 
   return useMutation({
     mutationFn: (id: string) => seasonService.restoreSeason(id),
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.detail(id) });
-      toast.success('تمت استعادة الموسم إلى مسودة');
+      toast.success(t('restore_success'));
     },
     onError: (err) => {
-      toast.error(extractRestoreErrorMessage(err, 'فشلت استعادة الموسم.'));
+      toast.error(extractRestoreErrorMessage(err, t('restore_error')));
     },
   });
 }
@@ -142,6 +149,7 @@ export function useRestoreSeason() {
  */
 export function useReopenRegistration() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('seasons');
 
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: ReopenRegistrationPayload }) =>
@@ -149,10 +157,10 @@ export function useReopenRegistration() {
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.seasons.detail(id) });
-      toast.success('تم إعادة فتح التسجيل للموسم');
+      toast.success(t('reopen_success'));
     },
     onError: (err) => {
-      toast.error(extractReopenErrorMessage(err, 'فشلت إعادة فتح التسجيل.'));
+      toast.error(extractReopenErrorMessage(err, t('reopen_error')));
     },
   });
 }
@@ -160,8 +168,8 @@ export function useReopenRegistration() {
 export function useCancelSeason() {
   return useSeasonMutation<{ id: string; payload: CancelSeasonPayload }>(
     ({ id, payload }) => seasonService.cancelSeason(id, payload),
-    'تم إلغاء الموسم بنجاح',
-    'فشل إلغاء الموسم.',
+    'cancel_success',
+    'cancel_error',
     ({ id }) => id,
   );
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TFunction } from 'i18next';
 
 /**
  * Mirrors CreateSeasonRequest/UpdateSeasonRequest on the backend, including
@@ -7,40 +8,48 @@ import { z } from 'zod';
  * the shape the chk_seasons_start_after_registration constraint requires.
  * Checking it here too means the admin sees a field-level message instead
  * of a 422 after a round trip.
+ *
+ * A factory rather than a module-level constant: zod resolves its messages
+ * when the schema is built, so a constant would freeze them at whatever
+ * language was active on import and keep showing it after a switch. Taking
+ * `t` and rebuilding under useMemo keeps validation in step with the rest
+ * of the interface. This is the pattern for every schema in the project.
  */
-export const seasonSchema = z
-  .object({
-    year: z.coerce
-      .number()
-      .min(2020, 'سنة الموسم يجب أن تكون 2020 أو أحدث')
-      .max(2100, 'سنة غير صالحة'),
-    slug: z
-      .string()
-      .min(3, 'المعرف يجب أن يكون 3 أحرف على الأقل')
-      .max(100, 'المعرف طويل جداً')
-      .regex(/^[a-z0-9-]+$/, 'المعرف يجب أن يحوي أحرفاً صغيرة وأرقام وخطوط فقط'),
-    registration_start: z.string().min(1, 'يرجى تحديد تاريخ بداية التسجيل'),
-    registration_end: z.string().min(1, 'يرجى تحديد تاريخ نهاية التسجيل'),
-    start_date: z.string().min(1, 'يرجى تحديد تاريخ بداية الموسم'),
-    end_date: z.string().min(1, 'يرجى تحديد تاريخ نهاية الموسم'),
-    title_ar: z.string().min(1, 'يرجى إدخال العنوان بالعربية').max(255, 'العنوان طويل جداً'),
-    title_en: z.string().min(1, 'يرجى إدخال العنوان بالإنجليزية').max(255, 'العنوان طويل جداً'),
-    title_es: z.string().min(1, 'يرجى إدخال العنوان بالإسبانية').max(255, 'العنوان طويل جداً'),
-    public_name_ar: z.string().min(1, 'يرجى إدخال الاسم المعلن بالعربية').max(255, 'الاسم طويل جداً'),
-    public_name_en: z.string().min(1, 'يرجى إدخال الاسم المعلن بالإنجليزية').max(255, 'الاسم طويل جداً'),
-    public_name_es: z.string().min(1, 'يرجى إدخال الاسم المعلن بالإسبانية').max(255, 'الاسم طويل جداً'),
-  })
-  .refine((v) => new Date(v.registration_end) > new Date(v.registration_start), {
-    message: 'نهاية التسجيل يجب أن تكون بعد بدايته',
-    path: ['registration_end'],
-  })
-  .refine((v) => new Date(v.start_date) >= new Date(v.registration_end), {
-    message: 'بداية الموسم يجب أن تكون بعد نهاية التسجيل أو مساوية لها',
-    path: ['start_date'],
-  })
-  .refine((v) => new Date(v.end_date) > new Date(v.start_date), {
-    message: 'نهاية الموسم يجب أن تكون بعد بدايتها',
-    path: ['end_date'],
-  });
+export function makeSeasonSchema(t: TFunction<'seasons'>) {
+  return z
+    .object({
+      year: z.coerce
+        .number()
+        .min(2020, t('v_year_min'))
+        .max(2100, t('v_year_max')),
+      slug: z
+        .string()
+        .min(3, t('v_slug_min'))
+        .max(100, t('v_slug_max'))
+        .regex(/^[a-z0-9-]+$/, t('v_slug_pattern')),
+      registration_start: z.string().min(1, t('v_reg_start_required')),
+      registration_end: z.string().min(1, t('v_reg_end_required')),
+      start_date: z.string().min(1, t('v_start_date_required')),
+      end_date: z.string().min(1, t('v_end_date_required')),
+      title_ar: z.string().min(1, t('v_title_ar_required')).max(255, t('v_title_max')),
+      title_en: z.string().min(1, t('v_title_en_required')).max(255, t('v_title_max')),
+      title_es: z.string().min(1, t('v_title_es_required')).max(255, t('v_title_max')),
+      public_name_ar: z.string().min(1, t('v_public_name_ar_required')).max(255, t('v_public_name_max')),
+      public_name_en: z.string().min(1, t('v_public_name_en_required')).max(255, t('v_public_name_max')),
+      public_name_es: z.string().min(1, t('v_public_name_es_required')).max(255, t('v_public_name_max')),
+    })
+    .refine((v) => new Date(v.registration_end) > new Date(v.registration_start), {
+      message: t('v_reg_end_after_start'),
+      path: ['registration_end'],
+    })
+    .refine((v) => new Date(v.start_date) >= new Date(v.registration_end), {
+      message: t('v_start_after_reg_end'),
+      path: ['start_date'],
+    })
+    .refine((v) => new Date(v.end_date) > new Date(v.start_date), {
+      message: t('v_end_after_start'),
+      path: ['end_date'],
+    });
+}
 
-export type SeasonFormValues = z.infer<typeof seasonSchema>;
+export type SeasonFormValues = z.infer<ReturnType<typeof makeSeasonSchema>>;

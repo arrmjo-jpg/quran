@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { seasonRulesSchema, type SeasonRulesFormValues } from '../schemas/seasonRules.schema';
+import { makeSeasonRulesSchema, type SeasonRulesFormValues } from '../schemas/seasonRules.schema';
 import { useUpdateSeasonRules } from '../hooks/useSeasons';
 import { useParticipationTypes, useTajweedLevels, useAllCountries } from '../hooks/useLookups';
 import type { Season, LookupOption } from '../types';
@@ -16,18 +17,30 @@ export interface SeasonRulesDialogProps {
   onClose: () => void;
 }
 
-/** Catalog names arrive per locale; prefer Arabic, fall back to English, then the code. */
-function labelOf(option: LookupOption): string {
-  return option.name.ar ?? option.name.en ?? option.code;
+/**
+ * Catalog names arrive as a per-locale map. This used to prefer Arabic
+ * unconditionally, so the participation type and tajweed level dropdowns
+ * stayed Arabic in an English or Spanish interface; it now follows the
+ * selected language and falls back to English, then the raw code.
+ */
+function labelOf(option: LookupOption, language: string): string {
+  const names = option.name as Record<string, string | undefined>;
+
+  return names[language] ?? names.en ?? option.code;
 }
 
 export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): React.JSX.Element | null {
+  const { t, i18n } = useTranslation('seasons');
+  const { t: tc } = useTranslation('common');
   const [countrySearch, setCountrySearch] = useState('');
 
   const participationTypes = useParticipationTypes();
   const tajweedLevels = useTajweedLevels();
   const countries = useAllCountries();
   const updateRules = useUpdateSeasonRules();
+
+  // See makeSeasonSchema: zod bakes messages in when the schema is built.
+  const schema = useMemo(() => makeSeasonRulesSchema(t), [t]);
 
   const {
     register,
@@ -36,7 +49,7 @@ export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): 
     reset,
     formState: { errors },
   } = useForm<SeasonRulesFormValues>({
-    resolver: zodResolver(seasonRulesSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       min_age: 10,
       max_age: 18,
@@ -86,48 +99,44 @@ export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): 
   };
 
   return (
-    <Dialog isOpen onClose={onClose} title={`قواعد موسم ${season.year}`} className="max-w-3xl">
+    <Dialog isOpen onClose={onClose} title={t('rules_title', { year: season.year })} className="max-w-3xl">
       {catalogsLoading ? (
         <div className="flex items-center justify-center py-10">
           <Spinner />
         </div>
       ) : catalogsFailed ? (
         <p className="p-3 text-xs border rounded-xl bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300">
-          تعذر تحميل قوائم الخيارات (أنواع المشاركة، مستويات التجويد، الدول). لا يمكن ضبط القواعد قبل
-          تحميلها — أعد فتح النافذة للمحاولة مرة أخرى.
+          {t('rules_catalogs_failed')}
         </p>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {season.is_frozen && (
             <div className="flex items-start gap-3 p-3 text-xs leading-relaxed border rounded-xl bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <p>
-                هذا الموسم مجمّد لأن التسجيل فُتح فيه. القواعد التي سجّل المتسابقون تحتها لا يمكن
-                تغييرها، وسيرفض الخادم أي حفظ.
-              </p>
+              <p>{t('rules_frozen_notice')}</p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <Input label="الحد الأدنى للعمر" type="number" {...register('min_age')} error={errors.min_age?.message} />
-            <Input label="الحد الأعلى للعمر" type="number" {...register('max_age')} error={errors.max_age?.message} />
+            <Input label={t('field_min_age')} type="number" {...register('min_age')} error={errors.min_age?.message} />
+            <Input label={t('field_max_age')} type="number" {...register('max_age')} error={errors.max_age?.message} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Select
-              label="نوع المشاركة"
+              label={t('field_participation_type')}
               options={[
-                { value: '', label: '— اختر —' },
-                ...(participationTypes.data ?? []).map((o) => ({ value: o.id, label: labelOf(o) })),
+                { value: '', label: t('select_placeholder') },
+                ...(participationTypes.data ?? []).map((o) => ({ value: o.id, label: labelOf(o, i18n.language) })),
               ]}
               {...register('participation_type_id')}
               error={errors.participation_type_id?.message}
             />
             <Select
-              label="مستوى التجويد"
+              label={t('field_tajweed_level')}
               options={[
-                { value: '', label: '— اختر —' },
-                ...(tajweedLevels.data ?? []).map((o) => ({ value: o.id, label: labelOf(o) })),
+                { value: '', label: t('select_placeholder') },
+                ...(tajweedLevels.data ?? []).map((o) => ({ value: o.id, label: labelOf(o, i18n.language) })),
               ]}
               {...register('tajweed_level_id')}
               error={errors.tajweed_level_id?.message}
@@ -154,17 +163,20 @@ export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                      الدول المؤهلة
+                      {t('field_countries')}
                     </label>
                     <span className="text-[11px] text-slate-500">
-                      {selected.size} من {countries.data?.length ?? 0}
+                      {t('countries_selected', {
+                        selected: selected.size,
+                        total: countries.data?.length ?? 0,
+                      })}
                     </span>
                   </div>
 
                   <div className="relative">
                     <Search className="absolute w-3.5 h-3.5 -translate-y-1/2 right-3 top-1/2 text-slate-400" />
                     <Input
-                      placeholder="ابحث باسم الدولة أو رمزها"
+                      placeholder={t('country_search_placeholder')}
                       value={countrySearch}
                       onChange={(e) => setCountrySearch(e.target.value)}
                       className="pr-9"
@@ -174,9 +186,7 @@ export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): 
                   <div className="p-2 space-y-1 overflow-y-auto border max-h-56 rounded-xl border-slate-200 dark:border-slate-800">
                     {filteredCountries.length === 0 ? (
                       <p className="p-3 text-xs text-center text-slate-500">
-                        {(countries.data?.length ?? 0) === 0
-                          ? 'لا توجد دول مسجلة في النظام بعد.'
-                          : 'لا توجد نتائج مطابقة للبحث.'}
+                        {(countries.data?.length ?? 0) === 0 ? t('no_countries') : tc('no_results')}
                       </p>
                     ) : (
                       filteredCountries.map((country) => (
@@ -207,10 +217,10 @@ export function SeasonRulesDialog({ season, onClose }: SeasonRulesDialogProps): 
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={updateRules.isPending}>
-              إلغاء
+              {tc('cancel')}
             </Button>
             <Button variant="primary" size="sm" type="submit" isLoading={updateRules.isPending}>
-              حفظ القواعد
+              {t('rules_save')}
             </Button>
           </div>
         </form>

@@ -85,14 +85,19 @@ const STATUS_VARIANT: Record<SeasonStatus, 'success' | 'warning' | 'danger' | 'i
   archived: 'danger',
 };
 
-const STATUS_LABEL: Record<SeasonStatus, string> = {
-  draft: 'مسودة',
-  registration_open: 'التسجيل مفتوح',
-  registration_closed: 'التسجيل مغلق',
-  competition_running: 'المسابقة جارية',
-  judging: 'قيد التحكيم',
-  completed: 'مكتمل',
-  archived: 'مؤرشف',
+/**
+ * Keys, not labels. Keeping the map keyed on SeasonStatus means adding a
+ * state to the backend still fails the build here until it is given a
+ * translation, which a lookup built from string concatenation would not.
+ */
+const STATUS_LABEL_KEY: Record<SeasonStatus, string> = {
+  draft: 'status_draft',
+  registration_open: 'status_registration_open',
+  registration_closed: 'status_registration_closed',
+  competition_running: 'status_competition_running',
+  judging: 'status_judging',
+  completed: 'status_completed',
+  archived: 'status_archived',
 };
 
 type PendingAction =
@@ -102,6 +107,7 @@ type PendingAction =
 
 export default function SeasonsPage(): React.JSX.Element {
   const { t } = useTranslation('seasons');
+  const { t: tc } = useTranslation('common');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<Season | null>(null);
   const [rulesTarget, setRulesTarget] = useState<Season | null>(null);
@@ -138,7 +144,7 @@ export default function SeasonsPage(): React.JSX.Element {
     },
     {
       accessorKey: 'title',
-      header: 'العنوان',
+      header: t('column_title'),
       cell: ({ row }) => (
         <span className="text-slate-700 dark:text-slate-200">{row.original.title}</span>
       ),
@@ -163,7 +169,7 @@ export default function SeasonsPage(): React.JSX.Element {
       header: t('status'),
       cell: ({ row }) => (
         <Badge variant={STATUS_VARIANT[row.original.status]}>
-          {STATUS_LABEL[row.original.status]}
+          {t(STATUS_LABEL_KEY[row.original.status])}
         </Badge>
       ),
     },
@@ -179,14 +185,14 @@ export default function SeasonsPage(): React.JSX.Element {
               {canEdit(season) && (
                 <Button size="sm" variant="outline" onClick={() => openEdit(season)}>
                   <Pencil className="w-3.5 h-3.5" />
-                  <span>تعديل</span>
+                  <span>{tc('edit')}</span>
                 </Button>
               )}
 
               {canEdit(season) && (
                 <Button size="sm" variant="outline" onClick={() => setRulesTarget(season)}>
                   <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>القواعد</span>
+                  <span>{t('action_rules')}</span>
                 </Button>
               )}
 
@@ -195,12 +201,12 @@ export default function SeasonsPage(): React.JSX.Element {
                   season would be worse than showing them. */}
               <Button size="sm" variant="outline" onClick={() => setStagesTarget(season)}>
                 <ListOrdered className="w-3.5 h-3.5" />
-                <span>المراحل</span>
+                <span>{t('action_stages')}</span>
               </Button>
 
               <Button size="sm" variant="outline" onClick={() => setStageRulesTarget(season)}>
                 <Scale className="w-3.5 h-3.5" />
-                <span>قواعد التحكيم</span>
+                <span>{t('action_stage_rules')}</span>
               </Button>
 
               {canOpenRegistration(season) && (
@@ -223,13 +229,13 @@ export default function SeasonsPage(): React.JSX.Element {
               {canReopenRegistration(season) && (
                 <Button size="sm" variant="outline" onClick={() => setReopenTarget(season)}>
                   <CalendarPlus className="w-3.5 h-3.5" />
-                  <span>إعادة فتح التسجيل</span>
+                  <span>{t('action_reopen')}</span>
                 </Button>
               )}
 
               {canArchive(season) && (
                 <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'archive', season })}>
-                  أرشفة
+                  {t('action_archive')}
                 </Button>
               )}
 
@@ -241,13 +247,13 @@ export default function SeasonsPage(): React.JSX.Element {
                   onClick={() => setRestoreTarget(season)}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>استعادة</span>
+                  <span>{t('action_restore')}</span>
                 </Button>
               )}
 
               {canCancel(season) && (
                 <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'cancel', season })}>
-                  إلغاء الموسم
+                  {t('action_cancel')}
                 </Button>
               )}
             </div>
@@ -261,20 +267,20 @@ export default function SeasonsPage(): React.JSX.Element {
     <PageLayout
       title={t('title')}
       subtitle={t('subtitle')}
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: t('title') }]}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
         <PermissionWrapper role="admin">
           <Button onClick={openCreate}>
             <Plus className="w-4 h-4" />
-            <span>إضافة موسم جديد</span>
+            <span>{t('create_button')}</span>
           </Button>
         </PermissionWrapper>
       }
     >
       {isError ? (
         <ErrorState
-          title="تعذر تحميل المواسم"
-          message="لم نتمكن من جلب قائمة المواسم من الخادم. تحقق من الاتصال وأعد المحاولة."
+          title={t('load_error_title')}
+          message={t('load_error_message')}
           onRetry={() => void refetch()}
         />
       ) : (
@@ -284,7 +290,7 @@ export default function SeasonsPage(): React.JSX.Element {
           loading={isLoading}
           onRefresh={refetch}
           exportable
-          emptyMessage="لا توجد مواسم مسجلة حتى الآن."
+          emptyMessage={t('empty')}
         />
       )}
 
@@ -301,9 +307,9 @@ export default function SeasonsPage(): React.JSX.Element {
         <ConfirmDialog
           isOpen
           onClose={closePending}
-          title="تأكيد إغلاق فترة التسجيل"
-          description={`هل أنت متأكد من إغلاق فترة التسجيل لموسم ${pending.season.year}؟ سيتم منع تسجيل متسابقين جدد وتسجيل العملية في Audit Logs.`}
-          confirmLabel="إغلاق التسجيل"
+          title={t('close_confirm_title')}
+          description={t('close_confirm_body', { year: pending.season.year })}
+          confirmLabel={t('close_reg')}
           isLoading={closeRegistration.isPending}
           onConfirm={() => closeRegistration.mutate(pending.season.id, { onSuccess: closePending })}
         />
@@ -326,9 +332,9 @@ export default function SeasonsPage(): React.JSX.Element {
         <ConfirmDialog
           isOpen
           onClose={() => setRestoreTarget(null)}
-          title={`استعادة موسم ${restoreTarget.year}`}
-          description={`سيعود الموسم "${restoreTarget.slug}" إلى حالة مسودة، وتُمسح بيانات الأرشفة (التاريخ والسبب ومن نفّذها). المراحل والقواعد والدول المضبوطة تبقى كما هي. الاستعادة متاحة فقط للمواسم التي لم تبدأ فعلياً — وسيرفض الخادم غير ذلك موضحاً السبب.`}
-          confirmLabel="استعادة الموسم"
+          title={t('restore_title', { year: restoreTarget.year })}
+          description={t('restore_body', { slug: restoreTarget.slug })}
+          confirmLabel={t('restore_confirm')}
           isLoading={restoreSeason.isPending}
           onConfirm={() =>
             restoreSeason.mutate(restoreTarget.id, { onSuccess: () => setRestoreTarget(null) })

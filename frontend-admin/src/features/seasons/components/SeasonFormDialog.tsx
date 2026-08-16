@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { seasonSchema, type SeasonFormValues } from '../schemas/season.schema';
+import { makeSeasonSchema, type SeasonFormValues } from '../schemas/season.schema';
 import { useCreateSeason, useUpdateSeason } from '../hooks/useSeasons';
 import type { Season } from '../types';
 import { Dialog } from '@/ui/dialog/Dialog';
@@ -57,10 +58,16 @@ function defaultsFor(season?: Season | null): SeasonFormValues {
 }
 
 export function SeasonFormDialog({ isOpen, onClose, season }: SeasonFormDialogProps): React.JSX.Element {
+  const { t } = useTranslation('seasons');
+  const { t: tc } = useTranslation('common');
   const isEditing = Boolean(season);
   const createMutation = useCreateSeason();
   const updateMutation = useUpdateSeason();
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  // Rebuilt when the language changes so validation messages switch with
+  // the rest of the interface — zod resolves its messages at build time.
+  const schema = useMemo(() => makeSeasonSchema(t), [t]);
 
   const {
     register,
@@ -68,7 +75,7 @@ export function SeasonFormDialog({ isOpen, onClose, season }: SeasonFormDialogPr
     reset,
     formState: { errors },
   } = useForm<SeasonFormValues>({
-    resolver: zodResolver(seasonSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultsFor(season),
   });
 
@@ -99,49 +106,49 @@ export function SeasonFormDialog({ isOpen, onClose, season }: SeasonFormDialogPr
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? `تعديل موسم ${season?.year}` : 'إضافة موسم مسابقة جديد'}
+      title={isEditing ? t('form_edit_title', { year: season?.year }) : t('form_create_title')}
       className="max-w-2xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {season?.is_frozen && (
           <p className="p-3 text-xs leading-relaxed border rounded-xl bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300">
-            هذا الموسم مجمّد لأن التسجيل فُتح فيه. لن يقبل الخادم أي تعديل على بياناته.
+            {t('form_frozen_notice')}
           </p>
         )}
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="سنة الموسم" type="number" {...register('year')} error={errors.year?.message} />
-          <Input label="المعرف (Slug)" placeholder="season-2026" {...register('slug')} error={errors.slug?.message} />
+          <Input label={t('field_year')} type="number" {...register('year')} error={errors.year?.message} />
+          <Input label={t('field_slug')} placeholder="season-2026" {...register('slug')} error={errors.slug?.message} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="بداية فترة التسجيل" type="date" {...register('registration_start')} error={errors.registration_start?.message} />
-          <Input label="نهاية فترة التسجيل" type="date" {...register('registration_end')} error={errors.registration_end?.message} />
+          <Input label={t('field_reg_start')} type="date" {...register('registration_start')} error={errors.registration_start?.message} />
+          <Input label={t('field_reg_end')} type="date" {...register('registration_end')} error={errors.registration_end?.message} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="بداية الموسم" type="date" {...register('start_date')} error={errors.start_date?.message} />
-          <Input label="نهاية الموسم" type="date" {...register('end_date')} error={errors.end_date?.message} />
+          <Input label={t('field_start_date')} type="date" {...register('start_date')} error={errors.start_date?.message} />
+          <Input label={t('field_end_date')} type="date" {...register('end_date')} error={errors.end_date?.message} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Input label="عنوان الموسم (عربي)" {...register('title_ar')} error={errors.title_ar?.message} />
-          <Input label="عنوان الموسم (إنجليزي)" {...register('title_en')} error={errors.title_en?.message} />
-          <Input label="عنوان الموسم (إسباني)" {...register('title_es')} error={errors.title_es?.message} />
+          <Input label={t('field_title_ar')} {...register('title_ar')} error={errors.title_ar?.message} />
+          <Input label={t('field_title_en')} {...register('title_en')} error={errors.title_en?.message} />
+          <Input label={t('field_title_es')} {...register('title_es')} error={errors.title_es?.message} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Input label="الاسم المعلن (عربي)" {...register('public_name_ar')} error={errors.public_name_ar?.message} />
-          <Input label="الاسم المعلن (إنجليزي)" {...register('public_name_en')} error={errors.public_name_en?.message} />
-          <Input label="الاسم المعلن (إسباني)" {...register('public_name_es')} error={errors.public_name_es?.message} />
+          <Input label={t('field_public_name_ar')} {...register('public_name_ar')} error={errors.public_name_ar?.message} />
+          <Input label={t('field_public_name_en')} {...register('public_name_en')} error={errors.public_name_en?.message} />
+          <Input label={t('field_public_name_es')} {...register('public_name_es')} error={errors.public_name_es?.message} />
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={isPending}>
-            إلغاء
+            {tc('cancel')}
           </Button>
           <Button variant="primary" size="sm" type="submit" isLoading={isPending}>
-            {isEditing ? 'حفظ التعديلات' : 'حفظ الموسم'}
+            {isEditing ? t('form_save_edit') : t('form_save_create')}
           </Button>
         </div>
       </form>

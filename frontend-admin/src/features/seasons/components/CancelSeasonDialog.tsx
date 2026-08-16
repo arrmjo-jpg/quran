@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DangerConfirmationDialog } from '@/ui/dialog/DangerConfirmationDialog';
 import { Textarea } from '@/ui/input/Input';
 import { useCancelSeason } from '../hooks/useSeasons';
@@ -21,6 +22,7 @@ export interface CancelSeasonDialogProps {
  * Season::cancel() rejects a blank one.
  */
 export function CancelSeasonDialog({ season, onClose }: CancelSeasonDialogProps): React.JSX.Element | null {
+  const { t } = useTranslation('seasons');
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const cancelSeason = useCancelSeason();
@@ -35,7 +37,7 @@ export function CancelSeasonDialog({ season, onClose }: CancelSeasonDialogProps)
   if (!season) return null;
 
   const trimmed = reason.trim();
-  const error = touched && trimmed === '' ? 'سبب الإلغاء إلزامي' : undefined;
+  const error = touched && trimmed === '' ? t('cancel_reason_required') : undefined;
 
   const submit = () => {
     setTouched(true);
@@ -49,17 +51,17 @@ export function CancelSeasonDialog({ season, onClose }: CancelSeasonDialogProps)
       isOpen
       onClose={onClose}
       onConfirm={submit}
-      title={`إلغاء موسم ${season.year}`}
-      description="الإلغاء نهائي ولا يمكن التراجع عنه. سينتقل الموسم إلى حالة الأرشفة، ولا توجد طريقة لإعادته إلى المسودة. سيُحفظ السبب في سجل الموسم مع هوية من نفّذ العملية."
+      title={t('cancel_title', { year: season.year })}
+      description={t('cancel_body')}
       confirmationText={season.slug}
-      confirmationLabel="للتأكيد، اكتب معرّف الموسم (Slug) كما هو ظاهر أدناه:"
-      confirmLabel="تأكيد الإلغاء"
+      confirmationLabel={t('slug_confirmation_label')}
+      confirmLabel={t('cancel_confirm')}
       isLoading={cancelSeason.isPending}
       extraBlocked={trimmed === ''}
     >
       <Textarea
-        label="سبب الإلغاء (إلزامي)"
-        placeholder="مثال: عدم اكتمال النصاب المطلوب من المشاركين"
+        label={t('cancel_reason_label')}
+        placeholder={t('cancel_reason_placeholder')}
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         onBlur={() => setTouched(true)}

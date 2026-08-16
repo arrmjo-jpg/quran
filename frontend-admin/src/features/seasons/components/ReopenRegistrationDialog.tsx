@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/dialog/Dialog';
 import { Textarea } from '@/ui/input/Input';
 import Button from '@/ui/Button';
@@ -22,6 +23,8 @@ export interface ReopenRegistrationDialogProps {
  * was extended.
  */
 export function ReopenRegistrationDialog({ season, onClose }: ReopenRegistrationDialogProps): React.JSX.Element | null {
+  const { t } = useTranslation('seasons');
+  const { t: tc } = useTranslation('common');
   const [reason, setReason] = useState('');
   const [touched, setTouched] = useState(false);
   const reopen = useReopenRegistration();
@@ -36,7 +39,7 @@ export function ReopenRegistrationDialog({ season, onClose }: ReopenRegistration
   if (!season) return null;
 
   const trimmed = reason.trim();
-  const error = touched && trimmed === '' ? 'سبب إعادة الفتح إلزامي' : undefined;
+  const error = touched && trimmed === '' ? t('reopen_reason_required') : undefined;
 
   const submit = () => {
     setTouched(true);
@@ -46,19 +49,16 @@ export function ReopenRegistrationDialog({ season, onClose }: ReopenRegistration
   };
 
   return (
-    <Dialog isOpen onClose={onClose} title={`إعادة فتح التسجيل لموسم ${season.year}`}>
+    <Dialog isOpen onClose={onClose} title={t('reopen_title', { year: season.year })}>
       <div className="space-y-4">
         <div className="flex items-start gap-3 p-3 text-xs leading-relaxed border rounded-xl bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50 text-sky-800 dark:text-sky-300">
           <Info className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>
-            سيعود الموسم إلى حالة "التسجيل مفتوح" ويصبح الموسم الفعّال. قواعد الموسم ومراحله تبقى
-            مجمّدة كما هي — لا يتغير سوى نافذة التسجيل. يمكن إغلاق التسجيل مرة أخرى في أي وقت.
-          </p>
+          <p>{t('reopen_info')}</p>
         </div>
 
         <Textarea
-          label="سبب إعادة الفتح (إلزامي)"
-          placeholder="مثال: تمديد فترة التسجيل أسبوعاً إضافياً بناءً على طلب اللجنة"
+          label={t('reopen_reason_label')}
+          placeholder={t('reopen_reason_placeholder')}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           onBlur={() => setTouched(true)}
@@ -66,16 +66,15 @@ export function ReopenRegistrationDialog({ season, onClose }: ReopenRegistration
         />
 
         <p className="text-[11px] leading-relaxed text-slate-500">
-          لا يسمح النظام بأكثر من موسم فعّال واحد. إذا كان هناك موسم آخر فعّال حالياً، سيرفض الخادم
-          العملية ويوضّح أي موسم يجب إغلاق تسجيله أولاً.
+          {t('reopen_single_active_note')}
         </p>
 
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
           <Button variant="secondary" size="sm" onClick={onClose} disabled={reopen.isPending}>
-            تراجع
+            {tc('back')}
           </Button>
           <Button variant="primary" size="sm" isLoading={reopen.isPending} onClick={submit}>
-            إعادة فتح التسجيل
+            {t('action_reopen')}
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DangerConfirmationDialog } from '@/ui/dialog/DangerConfirmationDialog';
 import { Textarea } from '@/ui/input/Input';
 import { useArchiveSeason } from '../hooks/useSeasons';
@@ -25,6 +26,7 @@ export interface ArchiveSeasonDialogProps {
  * ArchiveSeasonRequest accepts one and nothing has ever sent it.
  */
 export function ArchiveSeasonDialog({ season, onClose }: ArchiveSeasonDialogProps): React.JSX.Element | null {
+  const { t } = useTranslation('seasons');
   const [reason, setReason] = useState('');
   const archiveSeason = useArchiveSeason();
 
@@ -48,16 +50,16 @@ export function ArchiveSeasonDialog({ season, onClose }: ArchiveSeasonDialogProp
       isOpen
       onClose={onClose}
       onConfirm={submit}
-      title={`أرشفة موسم ${season.year}`}
-      description="الأرشفة هي الحالة الأخيرة في دورة حياة الموسم ولا يمكن التراجع عنها. لن يعود الموسم قابلاً للتعديل أو التفعيل بعدها."
+      title={t('archive_title', { year: season.year })}
+      description={t('archive_body')}
       confirmationText={season.slug}
-      confirmationLabel="للتأكيد، اكتب معرّف الموسم (Slug) كما هو ظاهر أدناه:"
-      confirmLabel="تأكيد الأرشفة"
+      confirmationLabel={t('slug_confirmation_label')}
+      confirmLabel={t('archive_confirm')}
       isLoading={archiveSeason.isPending}
     >
       <Textarea
-        label="سبب الأرشفة (اختياري)"
-        placeholder="مثال: انتهت المسابقة واعتُمدت النتائج النهائية"
+        label={t('archive_reason_label')}
+        placeholder={t('archive_reason_placeholder')}
         value={reason}
         onChange={(e) => setReason(e.target.value)}
       />

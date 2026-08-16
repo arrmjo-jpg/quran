@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '@/core/config/i18n';
 import { extractErrorMessage } from '@/core/api/errors';
 
 interface ReopenErrorBody {
@@ -25,15 +26,25 @@ export function extractReopenErrorMessage(error: unknown, fallback: string): str
     const code = body?.error?.code;
 
     if (code === 'SEASON_NOT_REGISTRATION_CLOSED') {
-      return 'لا يمكن إعادة فتح التسجيل إلا لموسم حالته "التسجيل مغلق".';
+      return i18n.t('seasons:err_reopen_not_closed');
     }
 
     if (code === 'ANOTHER_SEASON_IS_ACTIVE') {
       const slug = body?.error?.active_season_slug;
       const year = body?.error?.active_season_year;
-      const named = slug ? ` الموسم الفعّال حالياً هو "${slug}"${year ? ` (${year})` : ''}.` : '';
 
-      return `لا يمكن إعادة فتح التسجيل لأن موسماً آخر هو الموسم الفعّال، ولا يسمح النظام بأكثر من موسم فعّال واحد.${named} أغلق تسجيله أولاً ثم أعد المحاولة.`;
+      // Three separate sentences rather than one with optional fragments:
+      // where the year sits relative to the name is a language's business,
+      // not something to assemble from pieces here.
+      let named = '';
+
+      if (slug && year) {
+        named = i18n.t('seasons:err_reopen_active_named_with_year', { slug, year });
+      } else if (slug) {
+        named = i18n.t('seasons:err_reopen_active_named', { slug });
+      }
+
+      return i18n.t('seasons:err_reopen_another_active', { named });
     }
   }
 
