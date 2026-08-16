@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/dialog/Dialog';
 import { Select, Input } from '@/ui/input/Input';
 import Button from '@/ui/Button';
@@ -7,6 +8,7 @@ import Spinner from '@/ui/Spinner';
 import { useStages, useStageRules, useUpdateStageRules } from '../hooks/useStages';
 import { useJudgeScoreSystems } from '@/features/seasons/hooks/useLookups';
 import type { Stage, StageRule, StageRuleAssignment, StageType } from '../types';
+import { stageNameIn } from '../utils/stageName';
 import type { LookupOption } from '@/features/seasons/types';
 import { AlertCircle } from 'lucide-react';
 
@@ -17,10 +19,10 @@ export interface StageRulesDialogProps {
   onClose:    () => void;
 }
 
-const TYPE_LABEL: Record<StageType, string> = {
-  preliminary: 'تمهيدية',
-  semi_final: 'نصف نهائية',
-  final: 'نهائية',
+const TYPE_LABEL_KEY: Record<StageType, string> = {
+  preliminary: 'type_preliminary',
+  semi_final: 'type_semi_final',
+  final: 'type_final',
 };
 
 /** What the admin is editing for one stage, before it becomes a payload. */
@@ -30,12 +32,16 @@ interface RuleDraft {
   qualification_percentage: string;
 }
 
-function labelOf(option: LookupOption): string {
-  return option.name.ar ?? option.name.en ?? option.code;
-}
+/**
+ * Used to prefer Arabic unconditionally. Ends at `code` rather than walking
+ * the other locales the way stageNameIn does: a lookup always has a code,
+ * and showing it is more useful than a name in a language the admin did not
+ * ask for.
+ */
+function labelOf(option: LookupOption, language: string): string {
+  const names = option.name as Record<string, string | undefined>;
 
-function stageName(stage: Stage): string {
-  return stage.translations.ar?.name ?? stage.name ?? '—';
+  return names[language] ?? names.en ?? option.code;
 }
 
 /**
@@ -74,6 +80,8 @@ export function StageRulesDialog({
   isFrozen,
   onClose,
 }: StageRulesDialogProps): React.JSX.Element | null {
+  const { t, i18n } = useTranslation('stages');
+  const { t: tc } = useTranslation('common');
   const [drafts, setDrafts] = useState<Record<string, RuleDraft>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -114,7 +122,7 @@ export function StageRulesDialog({
       const draft = drafts[stage.id] ?? { judge_score_system_id: '', qualification_percentage: '' };
 
       if (draft.judge_score_system_id === '') {
-        nextErrors[stage.id] = 'يرجى اختيار نظام الدرجات لهذه المرحلة';
+        nextErrors[stage.id] = t('v_score_system_required');
       }
 
       let percentage: number | null = null;
@@ -123,7 +131,7 @@ export function StageRulesDialog({
         const parsed = Number(draft.qualification_percentage);
 
         if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
-          nextErrors[stage.id] = 'نسبة التأهل يجب أن تكون رقماً بين 0 و 100';
+          nextErrors[stage.id] = t('v_percentage_range');
         } else {
           percentage = parsed;
         }
@@ -149,34 +157,30 @@ export function StageRulesDialog({
   };
 
   return (
-    <Dialog isOpen onClose={onClose} title={`قواعد تحكيم مراحل موسم ${seasonYear ?? ''}`} className="max-w-3xl">
+    <Dialog isOpen onClose={onClose} title={t('rules_title', { year: seasonYear ?? '' })} className="max-w-3xl">
       {loading ? (
         <div className="flex items-center justify-center py-10">
           <Spinner />
         </div>
       ) : failed ? (
         <p className="p-3 text-xs border rounded-xl bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300">
-          تعذر تحميل المراحل أو قواعدها أو أنظمة الدرجات. لا يمكن ضبط القواعد قبل تحميلها — أغلق
-          النافذة وأعد فتحها للمحاولة.
+          {t('rules_load_error')}
         </p>
       ) : orderedStages.length === 0 ? (
         <p className="p-6 text-xs text-center border border-dashed rounded-xl border-slate-200 dark:border-slate-800 text-slate-500">
-          لا توجد مراحل لهذا الموسم بعد. أضف المراحل أولاً من شاشة المراحل، ثم عُد لضبط قواعد تحكيمها.
+          {t('rules_no_stages')}
         </p>
       ) : (
         <div className="space-y-4">
           {isFrozen && (
             <div className="flex items-start gap-3 p-3 text-xs leading-relaxed border rounded-xl bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <p>
-                هذا الموسم مجمّد. القواعد معروضة للاطلاع فقط، وسيرفض الخادم أي حفظ.
-              </p>
+              <p>{t('rules_frozen_notice')}</p>
             </div>
           )}
 
           <p className="p-3 text-[11px] leading-relaxed border rounded-xl bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50 text-sky-800 dark:text-sky-300">
-            لكل مرحلة قاعدة واحدة إلزامية. اترك نسبة التأهل فارغة إذا كانت المرحلة ترتّب المتسابقين
-            دون إقصاء أحد — وهو الحال المعتاد للمرحلة النهائية.
+            {t('rules_intro')}
           </p>
 
           {/* Rendered in stage_number order, but each row is bound by
@@ -201,32 +205,35 @@ export function StageRulesDialog({
                       {stage.stage_number}
                     </span>
                     <span className="text-xs font-semibold text-slate-900 dark:text-white">
-                      {stageName(stage)}
+                      {stageNameIn(stage, i18n.language)}
                     </span>
-                    <Badge variant="neutral">{TYPE_LABEL[stage.type]}</Badge>
+                    <Badge variant="neutral">{t(TYPE_LABEL_KEY[stage.type])}</Badge>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
                     <Select
-                      label="نظام الدرجات"
+                      label={t('field_score_system')}
                       value={draft.judge_score_system_id}
                       disabled={isFrozen}
                       onChange={(e) => setDraft(stage.id, { judge_score_system_id: e.target.value })}
                       options={[
-                        { value: '', label: '— اختر —' },
+                        { value: '', label: t('select_placeholder') },
                         ...(scoreSystems.data ?? []).map((s) => ({
                           value: s.id,
-                          label: `${labelOf(s)} (${s.max_score ?? '؟'})`,
+                          label: t('score_system_option', {
+                            name: labelOf(s, i18n.language),
+                            max: s.max_score ?? t('unknown_value'),
+                          }),
                         })),
                       ]}
                     />
 
                     <Input
-                      label="نسبة التأهل %"
+                      label={t('field_qualification')}
                       type="number"
                       min={0}
                       max={100}
-                      placeholder="بدون إقصاء"
+                      placeholder={t('qualification_placeholder')}
                       disabled={isFrozen}
                       value={draft.qualification_percentage}
                       onChange={(e) => setDraft(stage.id, { qualification_percentage: e.target.value })}
@@ -234,10 +241,10 @@ export function StageRulesDialog({
 
                     <div className="w-full space-y-1">
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                        الدرجة المطلوبة
+                        {t('field_required_score')}
                       </label>
                       <p className="px-3 py-2 text-xs border rounded-xl bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                        {requiredScore === null ? 'لا يوجد حد للإقصاء' : requiredScore}
+                        {requiredScore === null ? t('no_elimination') : requiredScore}
                       </p>
                     </div>
                   </div>
@@ -250,11 +257,11 @@ export function StageRulesDialog({
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button variant="secondary" size="sm" onClick={onClose} disabled={updateRules.isPending}>
-              إغلاق
+              {tc('close')}
             </Button>
             {!isFrozen && (
               <Button variant="primary" size="sm" isLoading={updateRules.isPending} onClick={save}>
-                حفظ قواعد المراحل
+                {t('rules_save')}
               </Button>
             )}
           </div>

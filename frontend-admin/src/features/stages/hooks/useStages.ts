@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { stageService } from '../api/stage.service';
 import { extractStageErrorMessage } from '../api/stageErrors';
 import type { CreateStagePayload, UpdateStagePayload, StageRuleAssignment } from '../types';
@@ -23,23 +24,28 @@ export function useStages(seasonId: string | null) {
  * invalidate the same key. Reorder also renumbers rows that were not
  * touched directly, which is exactly why refetching the list beats
  * patching entries in the cache by hand.
+ *
+ * Takes translation keys rather than finished strings: the toast fires
+ * long after the hook was called, so the message is resolved through `t`
+ * at that moment instead of being captured here.
  */
 function useStageMutation<TVariables>(
   seasonId: string,
   mutationFn: (variables: TVariables) => Promise<unknown>,
-  successMessage: string,
-  errorMessage: string,
+  successKey: string,
+  errorKey: string,
 ) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('stages');
 
   return useMutation({
     mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stageKeys.bySeason(seasonId) });
-      toast.success(successMessage);
+      toast.success(t(successKey));
     },
     onError: (err) => {
-      toast.error(extractStageErrorMessage(err, errorMessage));
+      toast.error(extractStageErrorMessage(err, t(errorKey)));
     },
   });
 }
@@ -48,8 +54,8 @@ export function useCreateStage(seasonId: string) {
   return useStageMutation<CreateStagePayload>(
     seasonId,
     (payload) => stageService.createStage(seasonId, payload),
-    'تمت إضافة المرحلة بنجاح',
-    'فشل إضافة المرحلة. تحقق من البيانات.',
+    'create_success',
+    'create_error',
   );
 }
 
@@ -57,8 +63,8 @@ export function useUpdateStage(seasonId: string) {
   return useStageMutation<{ id: string; payload: UpdateStagePayload }>(
     seasonId,
     ({ id, payload }) => stageService.updateStage(id, payload),
-    'تم تحديث المرحلة بنجاح',
-    'فشل تحديث المرحلة. تحقق من البيانات.',
+    'update_success',
+    'update_error',
   );
 }
 
@@ -66,13 +72,14 @@ export function useDeleteStage(seasonId: string) {
   return useStageMutation<string>(
     seasonId,
     (id) => stageService.deleteStage(id),
-    'تم حذف المرحلة بنجاح',
-    'فشل حذف المرحلة.',
+    'delete_success',
+    'delete_error',
   );
 }
 
 export function useReorderStages(seasonId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('stages');
 
   return useMutation({
     mutationFn: (stageIds: string[]) => stageService.reorderStages(seasonId, { stage_ids: stageIds }),
@@ -81,10 +88,10 @@ export function useReorderStages(seasonId: string) {
       // Rules carry each stage's stage_number for display, so a reorder
       // makes the cached rules stale even though no rule itself changed.
       queryClient.invalidateQueries({ queryKey: stageKeys.rulesBySeason(seasonId) });
-      toast.success('تم حفظ ترتيب المراحل بنجاح');
+      toast.success(t('reorder_success'));
     },
     onError: (err) => {
-      toast.error(extractStageErrorMessage(err, 'فشل حفظ ترتيب المراحل.'));
+      toast.error(extractStageErrorMessage(err, t('reorder_error')));
     },
   });
 }
@@ -99,15 +106,16 @@ export function useStageRules(seasonId: string | null) {
 
 export function useUpdateStageRules(seasonId: string) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation('stages');
 
   return useMutation({
     mutationFn: (rules: StageRuleAssignment[]) => stageService.updateStageRules(seasonId, { rules }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stageKeys.rulesBySeason(seasonId) });
-      toast.success('تم حفظ قواعد المراحل بنجاح');
+      toast.success(t('rules_success'));
     },
     onError: (err) => {
-      toast.error(extractStageErrorMessage(err, 'فشل حفظ قواعد المراحل. تحقق من البيانات.'));
+      toast.error(extractStageErrorMessage(err, t('rules_error')));
     },
   });
 }

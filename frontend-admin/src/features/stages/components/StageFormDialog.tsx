@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { stageSchema, type StageFormValues } from '../schemas/stage.schema';
+import { makeStageSchema, type StageFormValues } from '../schemas/stage.schema';
 import { useCreateStage, useUpdateStage } from '../hooks/useStages';
 import type { Stage, StageTranslationPayload, Locale } from '../types';
 import { Dialog } from '@/ui/dialog/Dialog';
@@ -16,11 +17,8 @@ export interface StageFormDialogProps {
   onClose:  () => void;
 }
 
-const TYPE_OPTIONS = [
-  { value: 'preliminary', label: 'تمهيدية' },
-  { value: 'semi_final', label: 'نصف نهائية' },
-  { value: 'final', label: 'نهائية' },
-];
+/** Values are the API's enum; the labels are resolved at render. */
+const TYPE_VALUES = ['preliminary', 'semi_final', 'final'] as const;
 
 function toDateInput(iso: string | null | undefined): string {
   return iso ? iso.slice(0, 10) : '';
@@ -82,10 +80,20 @@ function buildTranslations(values: StageFormValues): Partial<Record<Locale, Stag
 }
 
 export function StageFormDialog({ isOpen, seasonId, stage, onClose }: StageFormDialogProps): React.JSX.Element {
+  const { t } = useTranslation('stages');
+  const { t: tc } = useTranslation('common');
   const isEditing = Boolean(stage);
   const createStage = useCreateStage(seasonId);
   const updateStage = useUpdateStage(seasonId);
   const isPending = createStage.isPending || updateStage.isPending;
+
+  // See makeSeasonSchema: zod bakes messages in when the schema is built.
+  const schema = useMemo(() => makeStageSchema(t), [t]);
+
+  const typeOptions = useMemo(
+    () => TYPE_VALUES.map((value) => ({ value, label: t(`type_${value}`) })),
+    [t],
+  );
 
   const {
     register,
@@ -93,7 +101,7 @@ export function StageFormDialog({ isOpen, seasonId, stage, onClose }: StageFormD
     reset,
     formState: { errors },
   } = useForm<StageFormValues>({
-    resolver: zodResolver(stageSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultsFor(stage),
   });
 
@@ -123,45 +131,44 @@ export function StageFormDialog({ isOpen, seasonId, stage, onClose }: StageFormD
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? `تعديل المرحلة ${stage?.stage_number}` : 'إضافة مرحلة جديدة'}
+      title={isEditing ? t('form_edit_title', { number: stage?.stage_number }) : t('form_create_title')}
       className="max-w-2xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {!isEditing && (
           <p className="p-3 text-xs leading-relaxed border rounded-xl bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50 text-sky-800 dark:text-sky-300">
-            ستُضاف المرحلة في نهاية الترتيب. لتغيير موضعها استخدم أسهم الترتيب في قائمة المراحل.
+            {t('form_append_notice')}
           </p>
         )}
 
         <div className="grid grid-cols-3 gap-3">
-          <Select label="نوع المرحلة" options={TYPE_OPTIONS} {...register('type')} error={errors.type?.message} />
-          <Input label="بداية المرحلة" type="date" {...register('start_date')} error={errors.start_date?.message} />
-          <Input label="نهاية المرحلة" type="date" {...register('end_date')} error={errors.end_date?.message} />
+          <Select label={t('field_type')} options={typeOptions} {...register('type')} error={errors.type?.message} />
+          <Input label={t('field_start_date')} type="date" {...register('start_date')} error={errors.start_date?.message} />
+          <Input label={t('field_end_date')} type="date" {...register('end_date')} error={errors.end_date?.message} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Input label="الاسم (عربي) *" {...register('name_ar')} error={errors.name_ar?.message} />
-          <Input label="الاسم (إنجليزي)" {...register('name_en')} error={errors.name_en?.message} />
-          <Input label="الاسم (إسباني)" {...register('name_es')} error={errors.name_es?.message} />
+          <Input label={t('field_name_ar')} {...register('name_ar')} error={errors.name_ar?.message} />
+          <Input label={t('field_name_en')} {...register('name_en')} error={errors.name_en?.message} />
+          <Input label={t('field_name_es')} {...register('name_es')} error={errors.name_es?.message} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          <Input label="الاسم المعلن (عربي)" {...register('public_name_ar')} error={errors.public_name_ar?.message} />
-          <Input label="الاسم المعلن (إنجليزي)" {...register('public_name_en')} error={errors.public_name_en?.message} />
-          <Input label="الاسم المعلن (إسباني)" {...register('public_name_es')} error={errors.public_name_es?.message} />
+          <Input label={t('field_public_name_ar')} {...register('public_name_ar')} error={errors.public_name_ar?.message} />
+          <Input label={t('field_public_name_en')} {...register('public_name_en')} error={errors.public_name_en?.message} />
+          <Input label={t('field_public_name_es')} {...register('public_name_es')} error={errors.public_name_es?.message} />
         </div>
 
         <p className="text-[11px] leading-relaxed text-slate-500">
-          الاسم بالعربية مطلوب الآن. أما اكتمال اللغات الثلاث والأسماء المعلنة فيتحقق منه الخادم عند فتح
-          التسجيل، فيمكن استكمالها لاحقاً.
+          {t('form_translations_note')}
         </p>
 
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={isPending}>
-            إلغاء
+            {tc('cancel')}
           </Button>
           <Button variant="primary" size="sm" type="submit" isLoading={isPending}>
-            {isEditing ? 'حفظ التعديلات' : 'إضافة المرحلة'}
+            {isEditing ? t('form_save_edit') : t('form_save_create')}
           </Button>
         </div>
       </form>
