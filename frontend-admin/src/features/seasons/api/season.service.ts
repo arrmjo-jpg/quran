@@ -70,4 +70,15 @@ export const seasonService = {
     const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/cancel`, payload);
     return data.data;
   },
+
+  /**
+   * Undo an accidental archival: archived → draft, and only for a season
+   * that never froze and that nothing references. Any other archived
+   * season is refused with a 409 naming what blocks it — see
+   * restoreErrors for the codes.
+   */
+  async restoreSeason(id: string): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/restore`);
+    return data.data;
+  },
 };

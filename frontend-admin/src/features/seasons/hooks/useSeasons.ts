@@ -11,6 +11,7 @@ import type {
 } from '../types';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/core/api/errors';
+import { extractRestoreErrorMessage } from '../api/restoreErrors';
 
 /**
  * Every lifecycle action changes the season row the list renders, so each
@@ -109,6 +110,27 @@ export function useArchiveSeason() {
     'فشلت أرشفة الموسم.',
     ({ id }) => id,
   );
+}
+
+/**
+ * Not built on useSeasonMutation: the restore endpoint's refusals carry a
+ * specific reason code and a list of what is blocking it, and collapsing
+ * those into the generic message would throw away the only useful part.
+ */
+export function useRestoreSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => seasonService.restoreSeason(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.detail(id) });
+      toast.success('تمت استعادة الموسم إلى مسودة');
+    },
+    onError: (err) => {
+      toast.error(extractRestoreErrorMessage(err, 'فشلت استعادة الموسم.'));
+    },
+  });
 }
 
 export function useCancelSeason() {

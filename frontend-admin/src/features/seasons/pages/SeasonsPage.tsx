@@ -7,7 +7,12 @@ import Button from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/dialog/Dialog';
 import { ErrorState } from '@/ui/error-state/ErrorState';
 import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
-import { useSeasons, useOpenRegistration, useCloseRegistration } from '../hooks/useSeasons';
+import {
+  useSeasons,
+  useOpenRegistration,
+  useCloseRegistration,
+  useRestoreSeason,
+} from '../hooks/useSeasons';
 import { SeasonFormDialog } from '../components/SeasonFormDialog';
 import { CancelSeasonDialog } from '../components/CancelSeasonDialog';
 import { ArchiveSeasonDialog } from '../components/ArchiveSeasonDialog';
@@ -16,7 +21,7 @@ import { StageManagerDialog } from '@/features/stages/components/StageManagerDia
 import { StageRulesDialog } from '@/features/stages/components/StageRulesDialog';
 import type { Season, SeasonStatus } from '../types';
 import { formatDate } from '@/core/utils';
-import { Plus, Pencil, SlidersHorizontal, ListOrdered, Scale } from 'lucide-react';
+import { Plus, Pencil, SlidersHorizontal, ListOrdered, Scale, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -40,6 +45,14 @@ const canArchive = (s: Season): boolean => s.status === 'completed';
 const canCancel = (s: Season): boolean => s.status === 'draft';
 /** Editing is refused by the aggregate once the season is frozen. */
 const canEdit = (s: Season): boolean => !s.is_frozen;
+/**
+ * Restoring undoes an accidental archival, and only for a season that never
+ * actually started. The API applies the full rule — it also refuses when
+ * rule snapshots, applications, results, judge assignments or streams exist,
+ * none of which this row knows about — so the button is offered on the two
+ * conditions visible here and the 409 explains the rest.
+ */
+const canRestore = (s: Season): boolean => s.status === 'archived' && !s.is_frozen;
 
 /**
  * One mutation hook serves every row, so `isPending` alone is true for the
@@ -88,10 +101,12 @@ export default function SeasonsPage(): React.JSX.Element {
   const [stagesTarget, setStagesTarget] = useState<Season | null>(null);
   const [stageRulesTarget, setStageRulesTarget] = useState<Season | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<Season | null>(null);
 
   const { data: seasons, isLoading, isError, refetch } = useSeasons();
   const openRegistration = useOpenRegistration();
   const closeRegistration = useCloseRegistration();
+  const restoreSeason = useRestoreSeason();
 
   const closePending = () => setPending(null);
 
@@ -203,6 +218,18 @@ export default function SeasonsPage(): React.JSX.Element {
                 </Button>
               )}
 
+              {canRestore(season) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isLoading={isBusy(restoreSeason, season.id)}
+                  onClick={() => setRestoreTarget(season)}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>استعادة</span>
+                </Button>
+              )}
+
               {canCancel(season) && (
                 <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'cancel', season })}>
                   إلغاء الموسم
@@ -274,6 +301,23 @@ export default function SeasonsPage(): React.JSX.Element {
         season={pending?.kind === 'archive' ? pending.season : null}
         onClose={closePending}
       />
+
+      {/* Restoring is recoverable in a way archiving and cancelling are
+          not — it only ever produces a draft — so a plain confirmation is
+          enough here, without the slug gate those two require. */}
+      {restoreTarget && (
+        <ConfirmDialog
+          isOpen
+          onClose={() => setRestoreTarget(null)}
+          title={`استعادة موسم ${restoreTarget.year}`}
+          description={`سيعود الموسم "${restoreTarget.slug}" إلى حالة مسودة، وتُمسح بيانات الأرشفة (التاريخ والسبب ومن نفّذها). المراحل والقواعد والدول المضبوطة تبقى كما هي. الاستعادة متاحة فقط للمواسم التي لم تبدأ فعلياً — وسيرفض الخادم غير ذلك موضحاً السبب.`}
+          confirmLabel="استعادة الموسم"
+          isLoading={restoreSeason.isPending}
+          onConfirm={() =>
+            restoreSeason.mutate(restoreTarget.id, { onSuccess: () => setRestoreTarget(null) })
+          }
+        />
+      )}
 
       <SeasonRulesDialog season={rulesTarget} onClose={() => setRulesTarget(null)} />
 
