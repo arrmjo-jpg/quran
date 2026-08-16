@@ -33,6 +33,21 @@ interface SeasonRepositoryContract
 
     public function findActiveSeason(): ?Season;
 
+    /**
+     * Anything outside the season row that would be contradicted by
+     * returning it to draft — rule snapshots, applications, stage results,
+     * judge assignments, streams.
+     *
+     * Returned as table => count rather than a bare boolean so the operator
+     * is told what is actually holding the season, not merely that
+     * something is. Implementations query by table name: ADR-002 forbids
+     * Competition importing concrete classes from Applications,
+     * Evaluations, Judges or Streaming.
+     *
+     * @return array<string, int> only tables with at least one row
+     */
+    public function findRestoreBlockers(string $seasonId): array;
+
     public function save(Season $season): void;
 
     /**

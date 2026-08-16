@@ -13,10 +13,12 @@ use Modules\Competition\Domain\Events\SeasonCreated;
 use Modules\Competition\Domain\Events\SeasonJudgingStarted;
 use Modules\Competition\Domain\Events\SeasonRegistrationClosed;
 use Modules\Competition\Domain\Events\SeasonRegistrationOpened;
+use Modules\Competition\Domain\Events\SeasonRestored;
 use Modules\Competition\Domain\Events\SeasonRulesFrozen;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Exceptions\SeasonNotRestorableException;
 use Modules\Competition\Domain\Services\SeasonRuleSnapshotFactory;
 use Modules\Competition\Domain\Services\SeasonStateMachine;
 use Modules\Competition\Domain\ValueObjects\ResolvedSeasonRules;
@@ -353,6 +355,66 @@ final class Season
     {
         $this->status = $machine->transition($this->status, 'completed');
         $this->recordEvent(new SeasonCompleted($this->id, now()->toIso8601String()));
+    }
+
+    /**
+     * Undo an archival that should never have happened: a draft season
+     * cancelled by mistake, back to 'draft'.
+     *
+     * Deliberately does NOT consult SeasonStateMachine. That table is
+     * documented as strictly linear with no backward transitions, and
+     * adding an 'archived' -> 'draft' edge to it would make the machine
+     * permit something that is only safe under conditions the machine
+     * cannot see — it knows the current status and the target, nothing
+     * about frozen_at, rule snapshots or dependent records. Keeping the
+     * table linear and guarding here follows the same reasoning archive()
+     * already uses for its 'completed'-only rule.
+     *
+     * This method enforces only what the aggregate itself can see: that
+     * the season is archived, that it never froze, and that it is not
+     * holding the single active slot. Everything outside the aggregate —
+     * rule versions, applications, results, judge assignments, streams —
+     * is the Use Case's job to check before calling this, because the
+     * aggregate has no business querying other tables.
+     *
+     * Restoring is not the inverse of archiving. A season that genuinely
+     * ran keeps 'archived' permanently; frozen_at being null is what
+     * distinguishes "this never started" from "this is over".
+     */
+    public function restore(?string $byUserId = null): void
+    {
+        if ($this->status !== 'archived') {
+            throw new SeasonNotRestorableException($this->id, SeasonNotRestorableException::NOT_ARCHIVED);
+        }
+
+        if ($this->isFrozen()) {
+            throw new SeasonNotRestorableException($this->id, SeasonNotRestorableException::FROZEN);
+        }
+
+        if ($this->isActive) {
+            throw new SeasonNotRestorableException($this->id, SeasonNotRestorableException::STILL_ACTIVE);
+        }
+
+        // Captured before they are cleared: once this method returns, the
+        // event is the only record left that this season was ever archived.
+        $previousArchivedAt = $this->archivedAtIso;
+        $previousArchivedByUserId = $this->archivedByUserId;
+        $previousArchiveReason = $this->archiveReason;
+
+        $this->status = 'draft';
+        $this->isActive = false;
+        $this->archivedAtIso = null;
+        $this->archivedByUserId = null;
+        $this->archiveReason = null;
+
+        $this->recordEvent(new SeasonRestored(
+            seasonId: $this->id,
+            occurredAt: now()->toIso8601String(),
+            byUserId: $byUserId,
+            previousArchivedAt: $previousArchivedAt,
+            previousArchivedByUserId: $previousArchivedByUserId,
+            previousArchiveReason: $previousArchiveReason,
+        ));
     }
 
     /**
