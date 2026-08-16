@@ -7,11 +7,13 @@ import type {
   UpdateSeasonRulesPayload,
   ArchiveSeasonPayload,
   CancelSeasonPayload,
+  ReopenRegistrationPayload,
   SeasonFilters,
 } from '../types';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/core/api/errors';
 import { extractRestoreErrorMessage } from '../api/restoreErrors';
+import { extractReopenErrorMessage } from '../api/reopenErrors';
 
 /**
  * Every lifecycle action changes the season row the list renders, so each
@@ -129,6 +131,28 @@ export function useRestoreSeason() {
     },
     onError: (err) => {
       toast.error(extractRestoreErrorMessage(err, 'فشلت استعادة الموسم.'));
+    },
+  });
+}
+
+/**
+ * Like restore, this keeps its own error handling: the "another season is
+ * active" refusal names the blocking season, and the generic message would
+ * drop exactly the part the admin needs to act on.
+ */
+export function useReopenRegistration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: ReopenRegistrationPayload }) =>
+      seasonService.reopenRegistration(id, payload),
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.seasons.detail(id) });
+      toast.success('تم إعادة فتح التسجيل للموسم');
+    },
+    onError: (err) => {
+      toast.error(extractReopenErrorMessage(err, 'فشلت إعادة فتح التسجيل.'));
     },
   });
 }

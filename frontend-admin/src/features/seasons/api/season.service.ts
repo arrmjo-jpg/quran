@@ -7,6 +7,7 @@ import type {
   UpdateSeasonRulesPayload,
   ArchiveSeasonPayload,
   CancelSeasonPayload,
+  ReopenRegistrationPayload,
   SeasonFilters,
 } from '../types';
 
@@ -68,6 +69,20 @@ export const seasonService = {
   /** Only legal from `draft`, and the reason is mandatory. */
   async cancelSeason(id: string, payload: CancelSeasonPayload): Promise<Season> {
     const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/cancel`, payload);
+    return data.data;
+  },
+
+  /**
+   * Puts a closed registration window back open. Legal only from
+   * `registration_closed`, needs a reason, and is refused with a 409 if
+   * another season holds the single active slot — the API names that
+   * season so the admin knows what to close first.
+   */
+  async reopenRegistration(id: string, payload: ReopenRegistrationPayload): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(
+      `/admin/seasons/${id}/reopen-registration`,
+      payload,
+    );
     return data.data;
   },
 

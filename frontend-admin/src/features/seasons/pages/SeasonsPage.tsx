@@ -16,12 +16,13 @@ import {
 import { SeasonFormDialog } from '../components/SeasonFormDialog';
 import { CancelSeasonDialog } from '../components/CancelSeasonDialog';
 import { ArchiveSeasonDialog } from '../components/ArchiveSeasonDialog';
+import { ReopenRegistrationDialog } from '../components/ReopenRegistrationDialog';
 import { SeasonRulesDialog } from '../components/SeasonRulesDialog';
 import { StageManagerDialog } from '@/features/stages/components/StageManagerDialog';
 import { StageRulesDialog } from '@/features/stages/components/StageRulesDialog';
 import type { Season, SeasonStatus } from '../types';
 import { formatDate } from '@/core/utils';
-import { Plus, Pencil, SlidersHorizontal, ListOrdered, Scale, RotateCcw } from 'lucide-react';
+import { Plus, Pencil, SlidersHorizontal, ListOrdered, Scale, RotateCcw, CalendarPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -53,6 +54,12 @@ const canEdit = (s: Season): boolean => !s.is_frozen;
  * conditions visible here and the 409 explains the rest.
  */
 const canRestore = (s: Season): boolean => s.status === 'archived' && !s.is_frozen;
+/**
+ * Reopening is legal only from registration_closed. The API additionally
+ * refuses when another season holds the single active slot, which this row
+ * cannot know, so the 409 names that season rather than the UI guessing.
+ */
+const canReopenRegistration = (s: Season): boolean => s.status === 'registration_closed';
 
 /**
  * One mutation hook serves every row, so `isPending` alone is true for the
@@ -102,6 +109,7 @@ export default function SeasonsPage(): React.JSX.Element {
   const [stageRulesTarget, setStageRulesTarget] = useState<Season | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<Season | null>(null);
+  const [reopenTarget, setReopenTarget] = useState<Season | null>(null);
 
   const { data: seasons, isLoading, isError, refetch } = useSeasons();
   const openRegistration = useOpenRegistration();
@@ -212,6 +220,13 @@ export default function SeasonsPage(): React.JSX.Element {
                 </Button>
               )}
 
+              {canReopenRegistration(season) && (
+                <Button size="sm" variant="outline" onClick={() => setReopenTarget(season)}>
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  <span>إعادة فتح التسجيل</span>
+                </Button>
+              )}
+
               {canArchive(season) && (
                 <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'archive', season })}>
                   أرشفة
@@ -301,6 +316,8 @@ export default function SeasonsPage(): React.JSX.Element {
         season={pending?.kind === 'archive' ? pending.season : null}
         onClose={closePending}
       />
+
+      <ReopenRegistrationDialog season={reopenTarget} onClose={() => setReopenTarget(null)} />
 
       {/* Restoring is recoverable in a way archiving and cancelling are
           not — it only ever produces a draft — so a plain confirmation is

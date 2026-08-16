@@ -94,6 +94,15 @@ export interface CancelSeasonPayload {
   reason: string;
 }
 
+/**
+ * POST /admin/seasons/{id}/reopen-registration — reason is required. The
+ * season row keeps no trace of a reopen, so the domain event is the only
+ * record of why the window was extended.
+ */
+export interface ReopenRegistrationPayload {
+  reason: string;
+}
+
 /** PATCH /admin/seasons/{id}/rules — a full replace, every field required. */
 export interface UpdateSeasonRulesPayload {
   min_age:               number;
