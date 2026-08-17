@@ -12,7 +12,7 @@
 | Document | Purpose | File |
 |---|---|---|
 | API Domain Inventory | Complete endpoint matrix — prerequisite for ADR-004 | [API-DOMAIN-INVENTORY.md](./API-DOMAIN-INVENTORY.md) |
-| RBAC Implementation Comparison | Spatie vs. custom — decides open question 1 of ADR-015; must be settled before any Identity & Access code | [RBAC-IMPLEMENTATION-COMPARISON.md](./RBAC-IMPLEMENTATION-COMPARISON.md) |
+| RBAC Implementation Comparison | Spatie vs. custom — **decided 2026-08-17 in favour of custom**; retained as the evidence trail behind ADR-015 §4 | [RBAC-IMPLEMENTATION-COMPARISON.md](./RBAC-IMPLEMENTATION-COMPARISON.md) |
 
 ---
 
@@ -33,7 +33,7 @@
 | ADR-012 | Application Layer & Orchestration | ✅ Accepted | [ADR-012](./adr/ADR-012-application-layer-usecase-orchestration.md) |
 | ADR-013 | Workflow & Process Orchestration | ✅ Accepted | [ADR-013](./adr/ADR-013-workflow-and-process-orchestration.md) |
 | ADR-014 | Presentation Layer Architecture | ✅ Accepted | [ADR-014](./adr/ADR-014-presentation-layer-architecture.md) |
-| ADR-015 | Identity & Access Architecture (RBAC) | ⏳ Proposed — 4 open questions for the board | [ADR-015](./adr/ADR-015-identity-and-access-architecture.md) |
+| ADR-015 | Identity & Access Architecture (RBAC) | ⏳ Proposed — mechanism decided (custom RBAC); awaiting final sign-off | [ADR-015](./adr/ADR-015-identity-and-access-architecture.md) |
 
 ---
 

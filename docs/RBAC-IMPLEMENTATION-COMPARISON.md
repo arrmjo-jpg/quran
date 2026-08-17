@@ -4,8 +4,12 @@
 |---|---|
 | **Date** | 2026-08-17 |
 | **Purpose** | Decide question 1 of [ADR-015](./adr/ADR-015-identity-and-access-architecture.md) before any Identity & Access code is written |
-| **Status** | Decision brief — awaiting the board |
-| **Binding** | Once decided, the answer is recorded in ADR-015 and does not change during implementation |
+| **Status** | **DECIDED 2026-08-17 — Option B, custom RBAC.** Retained as the record of why. |
+| **Binding** | Recorded in [ADR-015 §4](./adr/ADR-015-identity-and-access-architecture.md). Not reopened during implementation. |
+
+> **Outcome.** The board chose **Option B — custom RBAC**, and `spatie/laravel-permission` is removed from `composer.json`.
+>
+> The board's stated reasoning added two grounds beyond this brief's: that `User → Role → Permission` with **no** `User → Permission` path is a hard requirement rather than a preference — and Spatie treats direct grants as first-class; and that Judge-as-an-extension-of-User composes more naturally with an RBAC we own. The board also attached a condition: **this must not become "RBAC written quickly."** ADR-015 §4 answers that by fixing the aggregate, catalogue, link entities, events, audit, caching and escalation guards before implementation begins.
 
 ---
 
@@ -182,8 +186,10 @@ Against that, the cache-invalidation risk is real and should be met deliberately
 
 ---
 
-## 8. The question for the board
+## 8. The question for the board — ANSWERED
 
-> **Option A (Spatie) or Option B (custom)?**
+> **Option A (Spatie) or Option B (custom)?** → **B, custom.** Decided 2026-08-17.
 
-This brief recommends **B**. Either answer is defensible; what matters is that it is recorded in ADR-015 before implementation starts, and not revisited during it.
+Recorded in [ADR-015 §4](./adr/ADR-015-identity-and-access-architecture.md), which now also fixes the shape the board required as a condition of choosing B: `Role` as an explicit aggregate, a static `Permission` catalogue, `role_has_permissions` and `role_user` as link entities, a domain-event catalogue, the audit path, the cache key scheme and its exhaustive invalidation set, the seven escalation guards, and `is_system` as a column.
+
+This document is retained as the evidence trail. It is not re-opened.
