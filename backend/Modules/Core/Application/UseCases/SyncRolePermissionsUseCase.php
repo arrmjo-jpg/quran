@@ -6,8 +6,10 @@ namespace Modules\Core\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Core\Domain\Entities\Role;
+use Modules\Core\Domain\Exceptions\PrivilegeEscalationException;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\ValueObjects\RoleId;
+use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver;
 
 /**
@@ -22,17 +24,10 @@ use Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver;
  * defined in RolesSeeder and change only when that code changes — there
  * is no path from an API or a UI to super_admin's grants.
  *
- * PE-2 IS NOT ENFORCED HERE YET. "You cannot edit a role into something
- * you could not grant" requires the acting user's effective permissions,
- * which requires user↔role resolution — the next epic. Until then this
- * use case is reachable only by an admin, because the whole admin API
- * still sits behind EnsureUserIsAdmin. The PE-2 check belongs here and
- * lands with the epic that can answer the question it asks.
- *
- * CACHE INVALIDATION likewise: changing a role's permissions changes the
- * effective set of every user holding it, and those users' cached
- * permissions must be dropped. There is no cache yet; the invalidation
- * call belongs in this method when there is (ADR-015 §4.6).
+ * PE-2 IS ENFORCED HERE: an actor may only put into a role permissions
+ * they hold themselves. Without it PE-1 is trivially bypassed — grant
+ * yourself a role you are allowed to grant, then edit that role into
+ * anything.
  */
 final readonly class SyncRolePermissionsUseCase
 {
@@ -52,7 +47,18 @@ final readonly class SyncRolePermissionsUseCase
             // Unknown names are rejected before the aggregate sees them:
             // the catalogue is the single source of truth, and a grant
             // nothing defines would be a capability nothing ever checks.
-            $permissions = CreateRoleUseCase::assertKnown(array_values(array_unique($permissionNames)));
+            $names = array_values(array_unique($permissionNames));
+            $permissions = CreateRoleUseCase::assertKnown($names);
+
+            // PE-2 — only permissions the actor holds. Checked against
+            // what is being ADDED: removing a permission the actor does
+            // not hold is not an escalation, and refusing it would stop
+            // an administrator from trimming a role they inherited.
+            $this->assertActorHolds(
+                $byUserId,
+                $role->getName(),
+                array_values(array_diff($names, $role->getPermissionNames()))
+            );
 
             $role->syncPermissions($permissions, $byUserId);
 
@@ -70,5 +76,28 @@ final readonly class SyncRolePermissionsUseCase
 
             return $role;
         });
+    }
+
+    /**
+     * PE-2 — you cannot put into a role a permission you do not hold.
+     *
+     * A null actor is a system action (seeder, console command) and is
+     * exempt, for the same reason as PE-1: that code is already trusted,
+     * and the alternative would be making the seeder impersonate someone.
+     *
+     * @param  array<int, string>  $beingAdded
+     */
+    private function assertActorHolds(?string $byUserId, string $roleName, array $beingAdded): void
+    {
+        if ($byUserId === null || $beingAdded === []) {
+            return;
+        }
+
+        $actorHolds = $this->permissions->forUser(new UserId($byUserId));
+        $exceeds = array_values(array_diff($beingAdded, $actorHolds));
+
+        if ($exceeds !== []) {
+            throw new PrivilegeEscalationException($roleName, $exceeds);
+        }
     }
 }

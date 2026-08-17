@@ -40,6 +40,15 @@ function authzRoleId(string $name): string
     return app(RoleRepositoryContract::class)->findByName($name)->id->value;
 }
 
+/** An admin who holds real authority — see grantSuperAdmin() in Pest.php. */
+function authzActor(string $email): UserModel
+{
+    $actor = authzUser($email);
+    grantSuperAdmin((string) $actor->id);
+
+    return $actor;
+}
+
 function authz(): AuthorizationService
 {
     return app(AuthorizationService::class);
@@ -54,7 +63,7 @@ test('a user with no roles is allowed nothing', function (): void {
 
 test('a role grant is reflected in what is allowed', function (): void {
     $user = authzUser('granted@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('moderator'), (string) $actor->id);
 
@@ -64,7 +73,7 @@ test('a role grant is reflected in what is allowed', function (): void {
 
 test('allowsAll and allowsAny behave as their names claim', function (): void {
     $user = authzUser('combos@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('moderator'), (string) $actor->id);
 
@@ -78,7 +87,7 @@ test('an unknown permission name is refused, not treated as ungoverned', functio
     // Unknown-means-allowed would turn a typo in a Gate check into an
     // open door. Wrong direction for a mistake to fail in.
     $user = authzUser('unknown-perm@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('super_admin'), (string) $actor->id);
 
@@ -91,7 +100,7 @@ test('a deactivated account is allowed nothing, whatever it holds', function ():
     // permitted to act on them. This is why authorization is not a
     // synonym for resolution.
     $user = authzUser('deactivated@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('super_admin'), (string) $actor->id);
     expect(authz()->allows($user, 'seasons.view'))->toBeTrue();
@@ -104,7 +113,7 @@ test('a deactivated account is allowed nothing, whatever it holds', function ():
 
 test('a soft-deleted account is allowed nothing', function (): void {
     $user = authzUser('deleted@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('super_admin'), (string) $actor->id);
     $user->delete();
@@ -119,7 +128,7 @@ test('type is not consulted by authorization', function (): void {
     // (ADR-015 §1). Answering it here too would put the door check in two
     // places that could disagree.
     $contestant = authzUser('contestant@quran.test', UserType::CONTESTANT);
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $contestant->id, authzRoleId('moderator'), (string) $actor->id);
 
@@ -128,7 +137,7 @@ test('type is not consulted by authorization', function (): void {
 
 test('super_admin is allowed every catalogue permission', function (): void {
     $user = authzUser('super@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('super_admin'), (string) $actor->id);
 
@@ -163,7 +172,7 @@ test('no Gate ability exists that the catalogue does not define', function (): v
 
 test('Gate answers agree with the authorization service', function (): void {
     $user = authzUser('gate@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, authzRoleId('moderator'), (string) $actor->id);
 
@@ -173,7 +182,7 @@ test('Gate answers agree with the authorization service', function (): void {
 
 test('Gate reflects a role edit without any cache being touched by hand', function (): void {
     $user = authzUser('gate-live@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view']);
     app(AssignRoleToUserUseCase::class)->execute((string) $user->id, $role->id->value, (string) $actor->id);
@@ -191,7 +200,7 @@ test('there is no super-admin Gate bypass', function (): void {
     // is most dangerous. super_admin passes because it holds every
     // permission by enumeration, not because it is special-cased.
     $superAdmin = authzUser('bypass@quran.test');
-    $actor = authzUser('actor@quran.test');
+    $actor = authzActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute((string) $superAdmin->id, authzRoleId('super_admin'), (string) $actor->id);
 

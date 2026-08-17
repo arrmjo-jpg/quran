@@ -135,7 +135,7 @@ test('E2E Full Journey — Register -> Profile -> Upload -> App -> 5 Judges -> C
             'id' => fake()->uuid(),
             'email' => "judge{$i}@quran.test",
             'name' => "Judge {$i}",
-            'type' => 'judge',
+            'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

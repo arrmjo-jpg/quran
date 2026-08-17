@@ -9,6 +9,7 @@ use Modules\Core\Domain\Entities\Role;
 use Modules\Core\Domain\Entities\User;
 use Modules\Core\Domain\Events\UserRolesChanged;
 use Modules\Core\Domain\Exceptions\LastSystemRoleHolderException;
+use Modules\Core\Domain\Exceptions\PrivilegeEscalationException;
 use Modules\Core\Domain\Exceptions\SelfRoleChangeException;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
@@ -30,12 +31,11 @@ use RuntimeException;
  * wiring it to Gate — is the enforcement epic. Until then this use case
  * establishes only that a user holds roles.
  *
- * PE-1 IS NOT ENFORCED YET, and the reason is recorded here rather than
- * left as a silence: "you cannot grant a role whose permissions exceed
- * your own" needs the actor's effective permissions, which is exactly
- * the resolution the enforcement epic introduces. The check belongs in
- * this method. Until it exists, the only gate is that the whole admin
- * API sits behind EnsureUserIsAdmin.
+ * PE-1 IS ENFORCED HERE: an actor may only assign a role whose
+ * permissions are a subset of their own effective set. Without it,
+ * anyone able to edit users could assign themselves — or a confederate —
+ * a role far beyond their own reach, which would make every other guard
+ * in this design decorative.
  */
 final readonly class SyncUserRolesUseCase
 {
@@ -72,6 +72,16 @@ final readonly class SyncUserRolesUseCase
                 return $user;
             }
 
+            // PE-1 — only roles the actor could grant. Checked against
+            // the roles being ADDED: removing a role the actor does not
+            // themselves hold is not an escalation, and refusing it would
+            // stop an administrator from cleaning up after someone more
+            // privileged had left.
+            $this->assertActorCanGrant($byUserId, array_map(
+                static fn (string $id): Role => $desired[$id],
+                $addedIds
+            ));
+
             $this->assertSystemRoleHolderSurvives($removedIds);
 
             $user->syncRoles(array_map(static fn (string $id): RoleId => new RoleId($id), $after));
@@ -96,6 +106,40 @@ final readonly class SyncUserRolesUseCase
 
             return $user;
         });
+    }
+
+    /**
+     * PE-1 — you cannot grant what you do not hold.
+     *
+     * The actor's own effective permissions must be a superset of every
+     * permission the roles being granted carry. Expressed entirely in
+     * permissions: no role name, no ranking, no "is this actor senior
+     * enough" shortcut. A hierarchy would need an ordering nothing in
+     * this design defines, and would go stale the moment a role's
+     * contents changed.
+     *
+     * A null actor is a system action — a seeder or a console command —
+     * and is not subject to PE-1. Those run from code that is already
+     * trusted, and the alternative would be requiring the seeder to
+     * impersonate someone.
+     *
+     * @param  array<int, Role>  $rolesBeingGranted
+     */
+    private function assertActorCanGrant(?string $byUserId, array $rolesBeingGranted): void
+    {
+        if ($byUserId === null || $rolesBeingGranted === []) {
+            return;
+        }
+
+        $actorHolds = $this->permissions->forUser(new UserId($byUserId));
+
+        foreach ($rolesBeingGranted as $role) {
+            $exceeds = array_values(array_diff($role->getPermissionNames(), $actorHolds));
+
+            if ($exceeds !== []) {
+                throw new PrivilegeEscalationException($role->getName(), $exceeds);
+            }
+        }
     }
 
     /**

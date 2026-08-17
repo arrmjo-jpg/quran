@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Modules\Core\Application\UseCases\CreateRoleUseCase;
 use Modules\Core\Application\UseCases\DeleteRoleUseCase;
 use Modules\Core\Application\UseCases\RenameRoleUseCase;
@@ -20,6 +21,8 @@ use Modules\Core\Domain\Exceptions\UnknownPermissionException;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\ValueObjects\PermissionName;
 use Modules\Core\Domain\ValueObjects\RoleId;
+use Modules\Core\Domain\ValueObjects\UserType;
+use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
 use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
@@ -32,10 +35,47 @@ beforeEach(function (): void {
     (new PermissionsSeeder)->run();
 });
 
+/**
+ * A real acting administrator.
+ *
+ * These tests passed the literal string "admin-1" as an actor id. That
+ * was harmless while the id was only copied into a domain event, but
+ * PE-2 now builds a UserId from it to resolve what the actor holds, and
+ * "admin-1" is not a UUID — so the fixture has to name someone who
+ * actually exists and actually holds something.
+ *
+ * Idempotent: it is called inline at several call sites, and a test that
+ * needs an actor twice should get the same one rather than a duplicate
+ * key error.
+ */
+function roleUseCasesActor(): string
+{
+    $existing = UserModel::query()->where('email', 'role-actor@quran.test')->first();
+
+    if ($existing !== null) {
+        return (string) $existing->id;
+    }
+
+    app(RolesSeeder::class)->run();
+
+    $id = (string) Str::uuid();
+
+    UserModel::query()->create([
+        'id' => $id,
+        'email' => 'role-actor@quran.test',
+        'name' => 'Role Actor',
+        'type' => UserType::ADMIN,
+        'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
+        'is_active' => true,
+    ]);
+
+    return grantSuperAdmin($id);
+}
+
 test('CreateRoleUseCase persists a custom role and dispatches RoleCreated', function (): void {
     Event::fake();
 
-    $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.publish'], 'admin-1');
+    $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.publish'], roleUseCasesActor());
 
     expect($role->isSystem())->toBeFalse();
     expect($role->getPermissionNames())->toBe(['content.view', 'content.publish']);
@@ -77,7 +117,7 @@ test('RenameRoleUseCase renames a custom role and dispatches RoleRenamed', funct
     Event::fake();
     $role = app(CreateRoleUseCase::class)->execute('content_editor');
 
-    $renamed = app(RenameRoleUseCase::class)->execute($role->id->value, 'cms_editor', 'admin-1');
+    $renamed = app(RenameRoleUseCase::class)->execute($role->id->value, 'cms_editor', roleUseCasesActor());
 
     expect($renamed->getName())->toBe('cms_editor');
     expect(app(RoleRepositoryContract::class)->findByName('cms_editor'))->not->toBeNull();
@@ -98,7 +138,7 @@ test('DeleteRoleUseCase removes the role and its grants, dispatching RoleDeleted
     Event::fake();
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.publish']);
 
-    app(DeleteRoleUseCase::class)->execute($role->id->value, 'admin-1');
+    app(DeleteRoleUseCase::class)->execute($role->id->value, roleUseCasesActor());
 
     expect(app(RoleRepositoryContract::class)->find($role->id))->toBeNull();
     expect(DB::table('role_has_permissions')->where('role_id', $role->id->value)->count())->toBe(0);
@@ -243,7 +283,7 @@ test('SyncRolePermissionsUseCase replaces the set and dispatches the delta', fun
     Event::fake();
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.create']);
 
-    app(SyncRolePermissionsUseCase::class)->execute($role->id->value, ['content.view', 'content.publish'], 'admin-1');
+    app(SyncRolePermissionsUseCase::class)->execute($role->id->value, ['content.view', 'content.publish'], roleUseCasesActor());
 
     expect(app(RoleRepositoryContract::class)->findOrFail($role->id)->getPermissionNames())
         ->toBe(['content.publish', 'content.view']);

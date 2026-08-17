@@ -51,6 +51,12 @@ function roleIdNamed(string $name): string
     return app(RoleRepositoryContract::class)->findByName($name)->id->value;
 }
 
+/** An admin who holds real authority — see grantSuperAdmin() in Pest.php. */
+function makeActor(string $email): string
+{
+    return grantSuperAdmin(makeAdmin($email));
+}
+
 test('a user starts with no roles', function (): void {
     $userId = makeAdmin('no-roles@quran.test');
 
@@ -60,7 +66,7 @@ test('a user starts with no roles', function (): void {
 test('AssignRoleToUserUseCase gives the user a role and dispatches the delta by name', function (): void {
     Event::fake();
     $userId = makeAdmin('assign@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(AssignRoleToUserUseCase::class)->execute($userId, roleIdNamed('moderator'), $actor);
 
@@ -77,7 +83,7 @@ test('AssignRoleToUserUseCase gives the user a role and dispatches the delta by 
 test('assigning the same role twice changes nothing and records nothing', function (): void {
     Event::fake();
     $userId = makeAdmin('idempotent@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $moderator = roleIdNamed('moderator');
 
     app(AssignRoleToUserUseCase::class)->execute($userId, $moderator, $actor);
@@ -92,7 +98,7 @@ test('assigning the same role twice changes nothing and records nothing', functi
 
 test('RevokeRoleFromUserUseCase removes just that role', function (): void {
     $userId = makeAdmin('revoke@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [roleIdNamed('moderator'), roleIdNamed('judge')], $actor);
     app(RevokeRoleFromUserUseCase::class)->execute($userId, roleIdNamed('moderator'), $actor);
@@ -103,7 +109,7 @@ test('RevokeRoleFromUserUseCase removes just that role', function (): void {
 
 test('SyncUserRolesUseCase replaces the whole set and reports both directions', function (): void {
     $userId = makeAdmin('sync@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [roleIdNamed('moderator')], $actor);
 
@@ -124,7 +130,7 @@ test('SyncUserRolesUseCase replaces the whole set and reports both directions', 
 
 test('syncing to an empty set removes every role', function (): void {
     $userId = makeAdmin('clear@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [roleIdNamed('moderator')], $actor);
     app(SyncUserRolesUseCase::class)->execute($userId, [], $actor);
@@ -135,7 +141,7 @@ test('syncing to an empty set removes every role', function (): void {
 
 test('a duplicated role id in the request is deduplicated', function (): void {
     $userId = makeAdmin('dupes@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $moderator = roleIdNamed('moderator');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [$moderator, $moderator], $actor);
@@ -145,7 +151,7 @@ test('a duplicated role id in the request is deduplicated', function (): void {
 
 test('assigning a role that does not exist is refused and rolls back', function (): void {
     $userId = makeAdmin('ghost-role@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     expect(fn () => app(SyncUserRolesUseCase::class)->execute($userId, [RoleId::generate()->value], $actor))
         ->toThrow(RuntimeException::class);
@@ -184,10 +190,14 @@ test('PE-3 also blocks the assign and revoke conveniences', function (): void {
 
 test('the last super_admin cannot lose the role', function (): void {
     $onlyAdmin = makeAdmin('only-super@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $superAdmin = roleIdNamed('super_admin');
 
     app(AssignRoleToUserUseCase::class)->execute($onlyAdmin, $superAdmin, $actor);
+
+    // PE-1 required the actor to hold super_admin in order to grant it,
+    // which would make two holders and leave PE-5 nothing to defend.
+    revokeAllRoles($actor);
 
     expect(fn () => app(RevokeRoleFromUserUseCase::class)->execute($onlyAdmin, $superAdmin, $actor))
         ->toThrow(LastSystemRoleHolderException::class);
@@ -199,7 +209,7 @@ test('the last super_admin cannot lose the role', function (): void {
 test('a super_admin can lose the role while another active one remains', function (): void {
     $first = makeAdmin('super-1@quran.test');
     $second = makeAdmin('super-2@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $superAdmin = roleIdNamed('super_admin');
 
     app(AssignRoleToUserUseCase::class)->execute($first, $superAdmin, $actor);
@@ -216,7 +226,7 @@ test('a deactivated super_admin does not satisfy PE-5', function (): void {
     // what keeps the check passing.
     $active = makeAdmin('super-active@quran.test');
     $deactivated = makeAdmin('super-inactive@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $superAdmin = roleIdNamed('super_admin');
 
     app(AssignRoleToUserUseCase::class)->execute($active, $superAdmin, $actor);
@@ -224,13 +234,18 @@ test('a deactivated super_admin does not satisfy PE-5', function (): void {
 
     UserModel::query()->where('id', $deactivated)->update(['is_active' => false]);
 
+    // As above: the granting actor also held super_admin, and would
+    // otherwise be the active holder that keeps this check passing —
+    // hiding the very thing the test is about.
+    revokeAllRoles($actor);
+
     expect(fn () => app(RevokeRoleFromUserUseCase::class)->execute($active, $superAdmin, $actor))
         ->toThrow(LastSystemRoleHolderException::class);
 });
 
 test('removing an unrelated role never consults PE-5', function (): void {
     $userId = makeAdmin('unrelated@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [roleIdNamed('judge')], $actor);
     app(RevokeRoleFromUserUseCase::class)->execute($userId, roleIdNamed('judge'), $actor);
@@ -244,7 +259,7 @@ test('removing an unrelated role never consults PE-5', function (): void {
 
 test('the repository round-trips the roles a user holds', function (): void {
     $userId = makeAdmin('roundtrip@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
 
     app(SyncUserRolesUseCase::class)->execute($userId, [roleIdNamed('judge'), roleIdNamed('moderator')], $actor);
 
@@ -257,7 +272,7 @@ test('the repository round-trips the roles a user holds', function (): void {
 
 test('deleting a role removes it from everyone holding it', function (): void {
     $userId = makeAdmin('cascade@quran.test');
-    $actor = makeAdmin('actor@quran.test');
+    $actor = makeActor('actor@quran.test');
     $moderator = roleIdNamed('moderator');
 
     app(AssignRoleToUserUseCase::class)->execute($userId, $moderator, $actor);

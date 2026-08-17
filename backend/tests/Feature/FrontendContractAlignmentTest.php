@@ -173,7 +173,7 @@ test('PRG-003 Screen 6: Judges Screen — GET & POST /api/v1/admin/judges', func
         'id' => fake()->uuid(),
         'email' => 'judge-screen@quran.test',
         'name' => 'Judge Screen Name',
-        'type' => 'judge',
+        'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
     ]);

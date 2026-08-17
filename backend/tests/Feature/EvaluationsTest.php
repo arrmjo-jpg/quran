@@ -137,7 +137,7 @@ final class EvaluationsTest extends TestCase
 
     public function test_judge_can_submit_evaluation_directly_from_draft_without_crashing(): void
     {
-        $judgeUser = $this->makeUser('judge-direct-submit@quran.test');
+        $judgeUser = $this->makeUser('judge-direct-submit@quran.test', 'admin');
         $judge = $this->makeJudge($judgeUser);
         $app = $this->makeApplication();
 
@@ -166,7 +166,7 @@ final class EvaluationsTest extends TestCase
 
     public function test_judge_can_start_then_submit_evaluation(): void
     {
-        $judgeUser = $this->makeUser('judge-start-submit@quran.test');
+        $judgeUser = $this->makeUser('judge-start-submit@quran.test', 'admin');
         $judge = $this->makeJudge($judgeUser);
         $app = $this->makeApplication();
 
@@ -194,7 +194,7 @@ final class EvaluationsTest extends TestCase
 
     public function test_criteria_scores_are_persisted_and_visible_in_evaluation_scores_table(): void
     {
-        $judgeUser = $this->makeUser('judge-persist@quran.test');
+        $judgeUser = $this->makeUser('judge-persist@quran.test', 'admin');
         $judge = $this->makeJudge($judgeUser);
         $app = $this->makeApplication();
 
@@ -231,7 +231,7 @@ final class EvaluationsTest extends TestCase
     public function test_calculate_results_produces_real_category_averages_not_a_fake_split(): void
     {
         $admin = $this->makeUser('eval-admin@quran.test', 'admin');
-        $judgeUser = $this->makeUser('judge-calc@quran.test');
+        $judgeUser = $this->makeUser('judge-calc@quran.test', 'admin');
         $judge = $this->makeJudge($judgeUser);
         $app = $this->makeApplication();
 
@@ -274,7 +274,7 @@ final class EvaluationsTest extends TestCase
     public function test_recalculating_results_preserves_the_existing_row_id(): void
     {
         $admin = $this->makeUser('eval-admin-recalc@quran.test', 'admin');
-        $judgeUser = $this->makeUser('judge-recalc@quran.test');
+        $judgeUser = $this->makeUser('judge-recalc@quran.test', 'admin');
         $judge = $this->makeJudge($judgeUser);
         $app = $this->makeApplication();
 

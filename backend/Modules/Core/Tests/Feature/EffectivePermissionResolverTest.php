@@ -61,7 +61,7 @@ test('a user with no roles holds no permissions', function (): void {
 
 test('permissions resolve through the roles a user holds', function (): void {
     $userId = resolverUser('judge@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($userId, resolverRoleId('judge'), $actor);
 
@@ -73,7 +73,7 @@ test('permissions resolve through the roles a user holds', function (): void {
 
 test('holding two roles yields the union, without duplicates', function (): void {
     $userId = resolverUser('two-roles@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     // judge and evaluator overlap on evaluations.* and media.view.
     app(SyncUserRolesUseCase::class)->execute(
@@ -90,7 +90,7 @@ test('holding two roles yields the union, without duplicates', function (): void
 
 test('has() and hasAll() answer from the resolved set', function (): void {
     $userId = resolverUser('checks@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($userId, resolverRoleId('moderator'), $actor);
 
@@ -102,7 +102,7 @@ test('has() and hasAll() answer from the resolved set', function (): void {
 
 test('super_admin resolves to the entire catalogue', function (): void {
     $userId = resolverUser('super@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($userId, resolverRoleId('super_admin'), $actor);
 
@@ -112,7 +112,7 @@ test('super_admin resolves to the entire catalogue', function (): void {
 
 test('the result is cached rather than re-queried', function (): void {
     $userId = resolverUser('cached@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($userId, resolverRoleId('judge'), $actor);
 
@@ -131,7 +131,7 @@ test('the result is cached rather than re-queried', function (): void {
 
 test('WRITER 1 — changing a user\'s roles is visible on the next read', function (): void {
     $userId = resolverUser('writer1@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($userId, resolverRoleId('judge'), $actor);
     expect(resolver()->has(new UserId($userId), 'evaluations.submit'))->toBeTrue();
@@ -146,7 +146,7 @@ test('WRITER 2 — a role edit is visible to an affected user on their next read
     // ADR-015 §4.6's first named regression test: the stale-authorization
     // failure this design is most exposed to.
     $userId = resolverUser('writer2@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view']);
     app(AssignRoleToUserUseCase::class)->execute($userId, $role->id->value, $actor);
@@ -161,7 +161,7 @@ test('WRITER 2 — a role edit is visible to an affected user on their next read
 
 test('WRITER 2 — revoking from a role removes it from holders immediately', function (): void {
     $userId = resolverUser('writer2b@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.publish']);
     app(AssignRoleToUserUseCase::class)->execute($userId, $role->id->value, $actor);
@@ -179,7 +179,7 @@ test('WRITER 3 — deleting a role clears the cache of everyone who held it', fu
     // asking afterwards finds nobody.
     $first = resolverUser('writer3a@quran.test');
     $second = resolverUser('writer3b@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view', 'content.publish']);
     app(AssignRoleToUserUseCase::class)->execute($first, $role->id->value, $actor);
@@ -197,7 +197,7 @@ test('WRITER 3 — deleting a role clears the cache of everyone who held it', fu
 
 test('holdersOf finds every holder, and finds none once the role is gone', function (): void {
     $userId = resolverUser('holders@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     $role = app(CreateRoleUseCase::class)->execute('content_editor', ['content.view']);
     app(AssignRoleToUserUseCase::class)->execute($userId, $role->id->value, $actor);
@@ -213,7 +213,7 @@ test('holdersOf finds every holder, and finds none once the role is gone', funct
 test('one user\'s invalidation does not disturb another\'s cache', function (): void {
     $changed = resolverUser('isolated-a@quran.test');
     $untouched = resolverUser('isolated-b@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     app(AssignRoleToUserUseCase::class)->execute($changed, resolverRoleId('judge'), $actor);
     app(AssignRoleToUserUseCase::class)->execute($untouched, resolverRoleId('moderator'), $actor);
@@ -255,7 +255,7 @@ test('the resolver never calls Cache::flush', function (): void {
 
 test('a role with no permissions contributes nothing', function (): void {
     $userId = resolverUser('empty-role@quran.test');
-    $actor = resolverUser('actor@quran.test');
+    $actor = grantSuperAdmin(resolverUser('actor@quran.test'));
 
     $role = app(CreateRoleUseCase::class)->execute('empty_role');
     app(AssignRoleToUserUseCase::class)->execute($userId, $role->id->value, $actor);
