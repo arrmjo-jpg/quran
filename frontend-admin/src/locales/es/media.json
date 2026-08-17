@@ -1,0 +1,25 @@
+{
+  "title": "Biblioteca multimedia (Cloudflare R2)",
+  "subtitle": "Suba, previsualice y gestione los archivos e imágenes almacenados en la nube",
+  "empty": "Todavía no se ha subido ningún archivo a la biblioteca R2.",
+  "upload_button": "Subir un archivo a R2",
+
+  "col_filename": "Nombre y ruta del archivo",
+  "col_mime": "Tipo de archivo (MIME)",
+  "col_size": "Tamaño (MB)",
+  "col_storage": "Almacenamiento Cloudflare R2",
+  "size_mb": "{{size}} MB",
+  "status_ready": "Subido y disponible",
+
+  "preview_title": "Vista previa del archivo — {{name}}",
+  "close_preview": "Cerrar la vista previa",
+
+  "delete_title": "Confirmar la eliminación del archivo de la nube",
+  "delete_body": "¿Eliminar definitivamente {{name}} de Cloudflare R2? La acción quedará registrada en los registros de auditoría.",
+  "delete_confirm": "Eliminar el archivo",
+
+  "upload_success": "El archivo se subió al bucket de Cloudflare R2",
+  "upload_error": "No se pudo subir el archivo al servidor.",
+  "link_copied": "Enlace de R2 copiado al portapapeles",
+  "delete_success": "El archivo se eliminó definitivamente"
+}
