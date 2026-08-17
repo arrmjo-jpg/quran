@@ -1,6 +1,6 @@
 # ADR-015: Identity and Access Architecture
 
-* **Status**: **Proposed — mechanism decided (custom RBAC, 2026-08-17); awaiting final board sign-off before any implementation**
+* **Status**: ✅ **Accepted — 2026-08-17.** All five open questions settled. This document is the single reference for the Identity & Access implementation; changes to it require an amendment, not a decision at the keyboard.
 * **Deciders**: Quran Competition Platform Architecture Board
 * **Date**: 2026-08-17
 * **Supersedes**: nothing. **Complements**: ADR-003 (which decided *authentication* and explicitly left *authorization* undefined)
@@ -59,9 +59,11 @@ A User is **not** a person's role, job, or profile. Those attach to it.
 
 #### `users.type` — the authentication surface, not a role
 
-`type` stays exactly as ADR-003 defined it: `contestant` or `admin` (currently `'user'`/`'admin'`; see §8 on the rename). It answers one question and no other:
+`type` has exactly two values: **`contestant`** or **`admin`**. It answers one question and no other:
 
 > **Which authentication surface may this account use?**
+
+> **DECIDED 2026-08-17 — the rename happens.** The column currently stores `'user'` for contestants. Once admin accounts are first-class, "user" as a value on the `users` table is ambiguous to the point of being misleading. `'user'` is renamed to `'contestant'` and **no place in the codebase may use `"user"` to mean a contestant** thereafter. This lands in epic 1 (which already touches `EnsureUserIsAdmin`, the seeders and the affected tests) as a data migration plus a sweep of the string literal. An architecture test asserts `type` only ever holds one of the two values.
 
 Contestants authenticate via social providers on the public surface. Admins authenticate via email/password + MFA on the admin surface. That is an ADR-003 decision and this ADR does not reopen it.
 
@@ -360,7 +362,8 @@ resource.action
 | `publish` | make results or content publicly visible |
 | `assign` | attach an actor to something (judges to panels, roles to users) |
 | `export` | produce a downloadable artefact |
-| `manage` | **reserved and discouraged** — permitted only where an action genuinely has no finer split; every use must be justified in review |
+
+> **DECIDED 2026-08-17 — there is no `manage` verb.** An earlier draft admitted one as "reserved and discouraged"; the board removed it outright. The initial catalogue is **atomic only**: `users.view`, `users.create`, `users.update`, `users.delete`, `users.restore` — never `users.manage`. A coarse verb is a permission that cannot be reasoned about: it is unclear what it grants, it cannot be revoked partially, and it quietly becomes the default because it is easier to grant than to think. If a genuine need for a composite verb appears later it can be added by amending this ADR — but it does not exist on day one, when the temptation to reach for it is highest and the justification weakest.
 
 * **The group is `explode('.', $name)[0]`.** Nothing stores it (§1). Group display labels are i18n keys in the admin's `permissions` namespace.
 * Names are **immutable once shipped**. Renaming a permission silently strips capability from every role holding it; a rename is a new permission plus a data migration, never an `UPDATE`.
@@ -572,7 +575,7 @@ Rules:
 
 ### 7.3 Capability matrix — who holds what
 
-This is the **proposed seed** and the answer to open question 4. It is data, not code: every row below is editable in the panel after seeding, except where `is_system` forbids it.
+This is the **accepted seed** (decision 4). It is data, not code: every row below is editable in the panel after seeding, except where `is_system` forbids it.
 
 Legend: ● full · ◐ partial (see notes) · — none
 
@@ -603,10 +606,11 @@ Legend: ● full · ◐ partial (see notes) · — none
 
 Notes that the matrix cannot express and the code must:
 
+* **`group.*` in this table is shorthand for *this document only*.** It means "every atomic permission in that group, enumerated". **There is no `*` permission and no `manage` verb** — see §4.4 and §5. The seeder writes out `users.view`, `users.create`, `users.update`, `users.delete`, `users.restore` individually; it never writes `users.*`.
 * **"(assigned only)" is not a permission** — it is a policy check on top of one. `evaluations.create` says a judge may score; `judge_assignments` says *which* applications. Both are required; neither substitutes for the other (§1).
 * **`judges.view` (self)** likewise resolves through the policy to the judge's own profile.
 * `super_admin` holds every permission by enumeration, not by a wildcard (§5).
-* This seed is deliberately conservative: `competition_manager` runs the competition but cannot touch identity (`users.*`, `roles.*`, `audit.view`, `settings.*`). Separating "runs the competition" from "controls who can run it" is the point of having roles at all.
+* This seed is deliberately conservative: `competition_manager` runs the competition but cannot touch identity (`users`, `roles`, `audit.view`, `settings`). Separating "runs the competition" from "controls who can run it" is the point of having roles at all.
 
 ---
 
@@ -630,7 +634,8 @@ Notes that the matrix cannot express and the code must:
 * PE-1 and PE-2 require resolving the actor's effective permissions on every RBAC write — mitigated by the same cache.
 * No direct user permissions means an exception for one person requires a role. Intentional, occasionally inconvenient.
 * The permission catalogue and the `Gate` checks must be kept in step by an architecture test (§4.3); without it they drift, which is precisely how Shaabjo ended up with two grouping mechanisms.
-* `users.type` currently stores `'user'`, while this ADR's vocabulary says `'contestant'`. **A rename is proposed but not required for correctness**; it touches `EnsureUserIsAdmin`, seeders, and tests. If the board prefers, `'user'` may stand as-is and this ADR's `contestant` is read as its synonym. Recommendation: rename during this epic, since the epic already touches these files.
+* The `users.type` rename (`'user'` → `'contestant'`) is a data migration plus a literal sweep across `EnsureUserIsAdmin`, seeders, factories and tests. Small, but it must be done in one commit — a half-renamed enum is worse than either state.
+* Atomic-only permissions mean the catalogue is larger and role editing has more checkboxes than a `manage`-style scheme would. That is the accepted cost of every grant being reasonable about and revocable in part.
 
 ---
 
@@ -653,47 +658,44 @@ Rejected for now, per §1. Reconsider only against the concrete test stated ther
 
 ---
 
-## Decisions Taken and Questions Remaining
+## Decisions Taken
 
-### Settled
+All five questions are settled. **Nothing in this ADR remains open.**
 
 | # | Question | Decision | Where |
 |---|---|---|---|
-| 1 | Spatie or custom | **Custom RBAC.** `spatie/laravel-permission` removed. Binding; not reopened during implementation. | §4 |
-| 3 | Departments | **Deferred.** Reaffirmed by the board: built only if it enters a workflow — notifications, routing, approvals, responsibility. Filtering or organisation alone does not qualify. | §1 |
-| 4 | Initial role set | **Proposed seed in §7.3** — the six ADR-001 actors with an explicit capability matrix. Confirm or amend the matrix; the six names themselves follow ADR-001. | §7.3 |
-
-### Still open — neither blocks the start of epic 1
-
-**Q2 — rename `users.type` `'user'` → `'contestant'`?**
-Recommended, because "user" as a value of a column on the `users` table is genuinely ambiguous, and the epic already touches `EnsureUserIsAdmin`, the seeders and the tests that would need updating. Not required for correctness: if the board prefers, `'user'` stands and this ADR's `contestant` reads as its synonym. **Decide before epic 1 ships**, since epic 1 is where those files change.
-
-**Q5 — the `manage` verb.**
-§4.4 admits it as reserved and discouraged. Confirm whether it may appear in the initial catalogue at all, or whether every permission must decompose into the finer verbs.
+| 1 | Spatie or custom | **Custom RBAC.** `spatie/laravel-permission` removed from `composer.json`. | §4 |
+| 2 | Rename `users.type` | **Yes.** `'user'` → `'contestant'`. No code may use `"user"` to mean a contestant thereafter. Lands in epic 1, in one commit. | §1 |
+| 3 | Departments | **Deferred.** Built only if it enters a workflow — notifications, routing, approvals, responsibility. Filtering or organisation alone does not qualify. | §1 |
+| 4 | Initial role set | **The six ADR-001 actors**, with the capability matrix in §7.3 as the seed. | §7.3 |
+| 5 | The `manage` verb | **Removed.** Atomic verbs only in the initial catalogue. May be revisited by amending this ADR, but does not exist on day one. | §4.4 |
 
 ---
 
-## Implementation Order (after sign-off)
+## Implementation Order
 
-Set by the board, 2026-08-17:
+Set by the board, 2026-08-17. Nine epics.
 
 | # | Epic | Scope |
 |---|---|---|
-| 1 | **Users** | Admin user CRUD, activation/deactivation, invite/set-password flow, PE-3/PE-5/PE-6, audit, and the `UserResource` truth fix (§5). Ships the **permission catalogue file + seeder** as a prerequisite data artefact. |
-| 2 | **Roles** | Role aggregate, CRUD, `is_system` enforcement (PE-4), rename/delete lifecycle (§7.2), audit. |
-| 3 | **Permission Catalog** | The read-only catalogue API, grouping (§1), the architecture test binding catalogue ↔ `Gate` checks (§4.3). |
+| 1 | **Users** | Admin user CRUD, activation/deactivation, invite/set-password flow, PE-3/PE-5/PE-6, audit, the `UserResource` truth fix (§5), and the **`users.type` rename** (§1) in a single commit. |
+| 2 | **Permission Catalog** | The catalogue file, its seeder, the read-only API, derived grouping (§1), and the architecture test binding catalogue ↔ `Gate` checks in both directions (§4.3). Atomic verbs only (§4.4). |
+| 3 | **Roles** | Role aggregate, CRUD, `is_system` enforcement (PE-4), rename/delete lifecycle (§7.2), audit. Schema: the single `roles.is_system` migration. |
 | 4 | **Role ↔ Permission** | `SyncRolePermissionsUseCase`, PE-2, `RolePermissionsChanged`, cache invalidation for holders (§4.6). |
-| 5 | **User ↔ Role** | `SyncUserRolesUseCase`, PE-1/PE-3, `UserRolesChanged`, per-user cache invalidation. **Enforcement switched on at the end of this epic** — `Gate` becomes authoritative and `EnsureUserIsAdmin` narrows to the surface check it was always meant to be. |
-| 6 | **Judges** | The behaviour layer over a finished schema — an extension of User, never a Role. The module today has 0 use cases, 0 domain events, 2 routes. |
-| 7 | **Judge Assignments** | Currently no repository, no controller and **no route at all**; the table is referenced as a restore blocker yet no assignment can be created through the API. |
-| 8 | **Departments** | Only if the §1 behavioural test is met. Otherwise not built. |
+| 5 | **User ↔ Role** | `SyncUserRolesUseCase`, PE-1/PE-3, `UserRolesChanged`, per-user cache invalidation. |
+| 6 | **Switch authorization on** | `Gate` becomes authoritative across the admin API; every endpoint gets its `authorize()` call; the old blanket guard is retired **as the authorization mechanism**. See the note below — it is narrowed, not deleted. |
+| 7 | **Judges** | The behaviour layer over a finished schema — an extension of User, never a Role. The module today has 0 use cases, 0 domain events, 2 routes. |
+| 8 | **Judge Assignments** | Currently no repository, no controller and **no route at all**; the table is referenced as a restore blocker yet no assignment can be created through the API. |
+| 9 | **Departments** | Only if the §1 behavioural test is met. Otherwise not built. |
+
+**On epic 6 — `EnsureUserIsAdmin` is narrowed, not removed.** It stops being *the* authorization decision and becomes only what §1 says `users.type` is for: the surface gate answering "may this account reach the admin API at all?". Deleting it outright would drop the `type` check entirely and let a contestant's token reach admin routes guarded only by permissions they happen not to hold — which is a different and weaker guarantee than the two-tier surface ADR-003 decided. The middleware stays on the admin route group; `Gate` handles everything finer.
 
 Sequencing notes:
 
-* **The catalogue ships in epic 1, not epic 3.** A role editor has nothing to display without it. Epic 1 ships the *data*; epic 3 ships the *API and the drift test*; epic 5 switches *enforcement* on.
-* **Enforcement lands last, deliberately.** Through epics 1–4, `EnsureUserIsAdmin` remains the gate, so a half-populated role table can never lock an administrator out mid-sequence.
-* **Schema work is one migration** — `roles.is_system` — at the start of epic 2.
-* PE-1 and PE-2 become enforceable only once effective-permission resolution exists (epic 4/5). Until then the use cases must still *call* the guard, with the resolver returning the full catalogue for `type = 'admin'`, so the checks are exercised from the first day rather than retrofitted.
+* **The catalogue is epic 2, before Roles.** A role editor has nothing to display without it, and PE-2's subset check has nothing to compare against.
+* **Enforcement is its own epic, after all the management surfaces exist.** Through epics 1–5 the old guard remains authoritative, so a half-populated role table can never lock an administrator out mid-sequence. Epic 6 is the single, reviewable moment the model becomes real.
+* **Schema work is one migration** — `roles.is_system`, in epic 3. The `users.type` value migration in epic 1 is data, not structure.
+* PE-1 and PE-2 become fully enforceable only once effective-permission resolution exists (epics 4–5). Until then the use cases must still *call* the guard, with the resolver returning the full catalogue for `type = 'admin'`, so the checks are exercised from day one rather than retrofitted.
 
 ---
 
