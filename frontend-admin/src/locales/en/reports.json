@@ -1,0 +1,25 @@
+{
+  "title": "Reports and exports centre",
+  "subtitle": "Generate aggregate reports on contestants and results by country, season and stage in PDF, Excel or CSV",
+  "empty": "No export jobs have been run yet.",
+
+  "action_export_contestants": "Export contestants (CSV)",
+  "action_export_results": "Export official results (PDF)",
+
+  "stat_contestant_reports": "Contestant reports",
+  "stat_contestant_reports_value": "12 reports",
+  "stat_by_country": "Breakdown by country",
+  "stat_by_country_value": "24 countries",
+  "stat_completion": "Completion rate",
+  "stat_completed_requests": "Completed requests",
+
+  "col_type": "Report type and format",
+  "col_created_at": "Generated on",
+  "col_status": "Generation status",
+  "col_download": "Download",
+  "status_ready": "Ready to download",
+  "download_button": "Download CSV / PDF",
+
+  "export_success": "The export job was queued in the background",
+  "download_started": "The export download has started"
+}
