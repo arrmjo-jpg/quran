@@ -116,18 +116,30 @@ test('a system role cannot have permissions revoked', function (): void {
     $role->syncPermissions(PermissionName::fromMany(['users.view']));
 })->throws(SystemRoleImmutableException::class);
 
-test('a system role may still gain permissions', function (): void {
-    // Additive change is safe: PE-4 protects against losing capability,
-    // and a new catalogue entry must be grantable to super_admin or it
-    // could never hold every permission.
+test('a system role cannot be GRANTED permissions either', function (): void {
+    // Not merely "protected from losing capability" — a system role is
+    // immutable from the system's side entirely. Its set is defined in
+    // RolesSeeder and changes only when that code changes, so there is no
+    // path from an API, a UI or a use case to super_admin's grants.
     $role = new Role(RoleId::generate(), 'super_admin', isSystem: true, permissions: PermissionName::fromMany([
         'users.view',
     ]));
 
     $role->syncPermissions(PermissionName::fromMany(['users.view', 'users.create']));
+})->throws(SystemRoleImmutableException::class);
 
-    expect($role->getPermissionNames())->toBe(['users.view', 'users.create']);
-    expect($role->releaseEvents()[0]->added)->toBe(['users.create']);
+test('a no-op sync on a system role is not an error', function (): void {
+    // Refusing an identical set would make the seeder's reconstitution
+    // path depend on ordering, and there is nothing to protect against:
+    // nothing changes.
+    $role = new Role(RoleId::generate(), 'super_admin', isSystem: true, permissions: PermissionName::fromMany([
+        'users.view',
+    ]));
+
+    $role->syncPermissions(PermissionName::fromMany(['users.view']));
+
+    expect($role->releaseEvents())->toBeEmpty();
+    expect($role->getPermissionNames())->toBe(['users.view']);
 });
 
 test('a custom role can be renamed, deleted and stripped', function (): void {

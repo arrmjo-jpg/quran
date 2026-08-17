@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 
 uses()->group('core', 'architecture', 'identity', 'permissions');
@@ -58,6 +59,16 @@ test('no application file hardcodes a permission name', function (): void {
     $violations = [];
 
     foreach (permissionSourceFiles() as $path) {
+        // RolesSeeder is the one place a role's grants are DEFINED, the
+        // same way PermissionCatalog is the one place permissions are.
+        // Excluding it is not a loophole: a name that goes stale there is
+        // caught by 'every permission a seeded role grants exists in the
+        // catalogue' below, and by the repository refusing to persist a
+        // grant with no row.
+        if (str_contains(str_replace('\\', '/', $path), 'Seeders/RolesSeeder.php')) {
+            continue;
+        }
+
         $content = (string) file_get_contents($path);
 
         foreach ($known as $name) {
@@ -99,6 +110,36 @@ test('no application file hardcodes a role name', function (): void {
 
     expect($violations)->toBeEmpty(
         'Role names must never be hardcoded (ADR-015 §1): '.implode('; ', $violations)
+    );
+});
+
+test('every permission a seeded role grants exists in the catalogue', function (): void {
+    // Closes the loop left open by excluding RolesSeeder above. Reads the
+    // definitions through reflection rather than running the seeder, so
+    // this stays a pure architecture check with no database.
+    $seeder = new ReflectionClass(RolesSeeder::class);
+    $instance = $seeder->newInstanceWithoutConstructor();
+
+    $definitions = [];
+
+    foreach (['systemRoleDefinitions', 'seededRoleDefinitions'] as $methodName) {
+        $method = $seeder->getMethod($methodName);
+        $method->setAccessible(true);
+        $definitions[] = $method->invoke($instance);
+    }
+
+    $unknown = [];
+
+    foreach (array_merge(...$definitions) as $roleName => $permissions) {
+        foreach ($permissions as $permission) {
+            if (! PermissionCatalog::has($permission)) {
+                $unknown[] = "{$roleName} → {$permission}";
+            }
+        }
+    }
+
+    expect($unknown)->toBeEmpty(
+        'Seeded roles grant permissions the catalogue does not define: '.implode('; ', $unknown)
     );
 });
 

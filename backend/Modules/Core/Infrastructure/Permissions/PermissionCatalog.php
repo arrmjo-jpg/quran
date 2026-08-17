@@ -220,6 +220,32 @@ final class PermissionCatalog
         return array_keys(self::CATALOG);
     }
 
+    /**
+     * Every permission belonging to the given resources.
+     *
+     * Exists so a role definition can say "everything about seasons"
+     * without listing the actions, which would go stale the moment a new
+     * one is added — the drift this catalogue exists to prevent.
+     *
+     * @param  array<int, string>  $resources
+     * @return array<int, string>
+     */
+    public static function forResources(array $resources): array
+    {
+        $grouped = self::grouped();
+        $names = [];
+
+        foreach ($resources as $resource) {
+            if (! isset($grouped[$resource])) {
+                throw new \InvalidArgumentException("Unknown permission resource: {$resource}");
+            }
+
+            $names = array_merge($names, $grouped[$resource]);
+        }
+
+        return $names;
+    }
+
     public static function has(string $name): bool
     {
         return in_array($name, self::all(), true);

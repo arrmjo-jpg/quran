@@ -144,9 +144,16 @@ final class Role
      * changed. Callers pass the intended final set; the delta is derived
      * here so a caller cannot mis-report it.
      *
-     * A system role may gain permissions but never lose them (PE-4), so a
-     * sync that would remove any is refused outright rather than silently
-     * applying the additions.
+     * A SYSTEM ROLE REFUSES THIS ENTIRELY — additions included. Its
+     * permissions are defined in the seeder, in code, and change only
+     * when that definition changes and the seeder re-runs. There is
+     * deliberately no path by which an API, a UI, or a use case can alter
+     * super_admin, which is what makes "system role" mean immutable
+     * rather than merely inconvenient to edit.
+     *
+     * The seeder does not call this. It constructs the role from its
+     * definition and hands it to the repository, so a system role's set
+     * is written by reconstitution, never by mutation.
      *
      * @param  array<int, PermissionName>  $permissions
      */
@@ -164,8 +171,8 @@ final class Role
             return;
         }
 
-        if ($removed !== [] && $this->isSystem) {
-            throw new SystemRoleImmutableException($this->name, 'stripped of permissions');
+        if ($this->isSystem) {
+            throw new SystemRoleImmutableException($this->name, 'granted or revoked permissions');
         }
 
         $this->permissions = $desired;
