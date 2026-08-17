@@ -1,0 +1,22 @@
+{
+  "title": "Notifications and messages centre",
+  "subtitle": "Track the email, SMS and Firebase OTP push queues",
+  "empty": "No notifications have been logged yet.",
+
+  "stat_total": "Notifications sent",
+  "stat_email_queue": "Email queue",
+  "stat_sms_queue": "Firebase SMS queue",
+  "stat_failed": "Failed jobs",
+  "stat_pending_value": "0 pending",
+  "stat_failed_value": "0 failed",
+
+  "col_type": "Type and channel",
+  "col_recipient": "Recipient",
+  "col_sent_at": "Sent on",
+  "col_status": "Delivery status",
+  "col_retry": "Retry",
+
+  "status_delivered": "Delivered",
+  "retry_button": "Send again",
+  "retry_success": "The notification was queued again"
+}
