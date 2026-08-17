@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,6 +16,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Reference data: idempotent, safe on every deploy (ADR-015 §4.3).
+        $this->call(PermissionsSeeder::class);
+
         UserModel::query()->updateOrCreate(
             ['email' => 'admin@quran.test'],
             [
