@@ -12,6 +12,7 @@
 | Document | Purpose | File |
 |---|---|---|
 | API Domain Inventory | Complete endpoint matrix — prerequisite for ADR-004 | [API-DOMAIN-INVENTORY.md](./API-DOMAIN-INVENTORY.md) |
+| RBAC Implementation Comparison | Spatie vs. custom — decides open question 1 of ADR-015; must be settled before any Identity & Access code | [RBAC-IMPLEMENTATION-COMPARISON.md](./RBAC-IMPLEMENTATION-COMPARISON.md) |
 
 ---
 

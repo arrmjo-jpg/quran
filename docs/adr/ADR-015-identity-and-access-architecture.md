@@ -170,7 +170,12 @@ Its `role` column (`head_judge` / `panel_member`) is **a role within a panel and
 
 Notes that matter:
 
-* **Permissions attach to Roles only, never directly to Users.** Spatie supports direct user permissions (`model_has_permissions`); this design does not use them. A per-user exception is invisible in the roles UI, unauditable at a glance, and is how permission sprawl starts. If a user needs a capability, either their role grants it or a role exists that does. **`model_has_permissions` is not created.**
+* **Permissions attach to Roles only, never directly to Users.** A per-user exception is invisible in the roles UI, unauditable at a glance, and is how permission sprawl starts. If a user needs a capability, either their role grants it or a role exists that does.
+  **How strongly this is enforced depends on open question 1**, and the difference is not cosmetic:
+  * Under a **custom** implementation, `model_has_permissions` simply does not exist — direct grants are structurally impossible.
+  * Under **Spatie**, the table **must exist**: `HasRoles` pulls in `HasPermissions`, whose `permissions()` morphToMany is consulted on *every* permission check, and whose force-delete hook detaches it. The rule then degrades from structural to **policy** — no endpoint writes it, plus an architecture test asserting it stays empty.
+
+  See [RBAC-IMPLEMENTATION-COMPARISON.md](../RBAC-IMPLEMENTATION-COMPARISON.md) §3.2.
 * `judge_assignments.stage_id` references a Competition-module table. Per ADR-002 this crosses a module boundary, so it is referenced **by id only** — the Judges module never imports a Stage entity, and panel composition is read through a contract.
 
 ---
@@ -195,7 +200,11 @@ Notes that matter:
 
 This is the central technical decision, and it needs to be made with the §Context finding in view: **Spatie is installed but unused, and the current tables fit neither Spatie nor a clean own-implementation without a migration.**
 
-#### The decision: Spatie lives in Infrastructure. The Domain never sees it.
+> **This section is written for the Spatie path and is conditional on open question 1.** A full evidence-based comparison of both options — including the UUID cost, the `model_has_permissions` constraint, and a revised recommendation in favour of a **custom** implementation — is in
+> **[RBAC-IMPLEMENTATION-COMPARISON.md](../RBAC-IMPLEMENTATION-COMPARISON.md)**.
+> The layering rule below (domain never imports the mechanism) is **unconditional** and applies to either answer.
+
+#### The decision: the mechanism lives in Infrastructure. The Domain never sees it.
 
 ```
 Domain          Modules/Core/Domain/          — pure PHP. No Spatie, no Eloquent.
@@ -222,7 +231,7 @@ Infrastructure  Modules/Core/Infrastructure/  — Spatie may be used here and no
 * Appear in any `Modules/*/Domain/` file. Not an import, not a type hint.
 * Appear in any Controller. Controllers call use cases (ADR-014); authorization checks go through Gate/policies.
 * Be the source of truth for *business* rules. "Can this role be deleted?" is `Role::isSystem()`, a domain question, not a Spatie one.
-* Provide direct user permissions. `model_has_permissions` is not created (§2).
+* Provide direct user permissions. Under Spatie the table must exist, so this is enforced as policy plus an architecture test rather than by absence (§2).
 
 #### The migration this requires — stated, not glossed
 
@@ -234,7 +243,8 @@ Adopting Spatie means reconciling the existing tables with what Spatie expects:
 | `roles` | uuid, name, guard_name | same (+ `team_id` if teams; not used) | add `is_system` (§6) |
 | `role_has_permissions` | permission_id, role_id | same | none |
 | `role_user` | role_id, user_id | `model_has_roles(role_id, model_type, model_id)` | **rename + add polymorphic columns** |
-| `model_has_permissions` | absent | required by the package | **deliberately not created** (§2) |
+| `model_has_permissions` | absent | **required — `HasRoles` pulls in `HasPermissions`, which queries it on every check** | **must be created**, then kept empty by policy (§2) |
+| `roles` / `permissions` keys | uuid (ADR-005 D2) | stub ships `$table->id()` (bigint) | hand-written migration + subclassed models with `HasUuids`, `$keyType='string'`, `$incrementing=false`, and `'model_morph_key' => 'model_uuid'` |
 
 All four tables are empty of application usage, so this migration carries **no data risk today** and considerable risk if deferred until they hold real assignments. That is the strongest argument for settling this ADR before the epic starts rather than during it.
 
@@ -282,9 +292,11 @@ Neither by revoking the role, nor deactivating the account, nor soft-deleting it
 
 **PE-7 — Every RBAC change is explicitly audited.**
 
-This is the Shaabjo insight worth transferring wholesale, and it is subtle enough to be worth restating: **Eloquent model events never fire for role and permission changes, because those changes are writes to pivot tables (`role_user`, `role_has_permissions`), not to model attributes.** Any audit system relying on model observers records nothing at all and appears to work.
+This is the Shaabjo insight worth transferring wholesale, and it is subtle enough to be worth restating: **Eloquent model observers never fire for role and permission changes, because those changes are writes to pivot tables (`role_user`, `role_has_permissions`), not to model attributes.** Any audit system relying on model observers records nothing at all and appears to work.
 
-So RBAC mutations are logged explicitly, from the use case, recording: causer, subject, and old/new/added/removed sets. `spatie/laravel-activitylog` is already a dependency; it is used from the use case, never from an observer.
+Precisely: `spatie/laravel-permission` *does* ship its own pivot events (`RoleAttachedEvent`, `PermissionAttachedEvent`, …) — but `config/permission.php` defaults `'events_enabled' => false`, which is very likely the exact mechanism of Shaabjo's silent failure. Relying on them would also be wrong here for a second reason: a package event knows *what* changed but not *why*, and ADR-012 puts that knowledge in the use case.
+
+So RBAC mutations are logged explicitly, from the use case, recording: causer, subject, and old/new/added/removed sets. `spatie/laravel-activitylog` is already a dependency; it is used from the use case, never from an observer, under either answer to question 1.
 
 ---
 
@@ -340,7 +352,7 @@ The separation is the point. Step 2 says "may score". Step 4 says "may score *th
 ## Alternatives Considered
 
 **A1 — Drop Spatie, implement RBAC directly on the existing tables.**
-Attractive: removes a dependency, `role_user` already fits, and an API-only app uses little of the package. Rejected as the default — but genuinely close — because the permission cache and Gate wiring are real work with real failure modes, and re-implementing them buys nothing the project needs. **If the board disagrees, this is the alternative to take, and it should be taken explicitly.**
+Attractive: removes a dependency, `role_user` already fits, and an API-only app uses little of the package. Originally rejected here as the default — on the grounds that the permission cache and Gate wiring are real work — but **that judgement has since been revised**. Evidence gathered after this ADR was drafted (Spatie's integer-keyed stub versus this project's UUID keys; the mandatory `model_has_permissions` table; the scale actually involved) reverses the effort comparison. See [RBAC-IMPLEMENTATION-COMPARISON.md](../RBAC-IMPLEMENTATION-COMPARISON.md) §6. **This is now the recommended option, pending the board's decision.**
 
 **A2 — Adopt Spatie fully, including direct user permissions.**
 Rejected. `model_has_permissions` makes a user's effective capability the union of two sources, one of which is invisible in the roles UI. Unauditable in practice.
@@ -358,7 +370,8 @@ Rejected for now, per §1. Reconsider only against the concrete test stated ther
 
 ## Open Questions for the Board
 
-1. **Spatie or not** (§4, A1) — the one decision that must be settled before any code. Everything else in this ADR holds either way.
+1. **Spatie or custom** (§4, A1) — the one decision that must be settled before any code. Everything else in this ADR holds either way.
+   **A full comparison with costs, required migrations and architectural impact is in [RBAC-IMPLEMENTATION-COMPARISON.md](../RBAC-IMPLEMENTATION-COMPARISON.md), which revises this ADR's original recommendation and now recommends the custom implementation.** Once answered, the answer is recorded here and is not reopened during implementation.
 2. **`users.type`: rename `'user'` → `'contestant'`?** (§8)
 3. **Department** — is there a routing/queue rule that qualifies it? If not, it stays deferred (§1).
 4. **The initial role set** — are ADR-001's six actors (`super_admin`, `competition_manager`, `judge`, `evaluator`, `data_entry`, `moderator`) the right seed, and what does each hold?
@@ -367,15 +380,21 @@ Rejected for now, per §1. Reconsider only against the concrete test stated ther
 
 ## Implementation Order (after approval)
 
-Deliberately unchanged from the agreed sequence, with the Spatie migration inserted where it is cheapest:
+Set by the board:
 
-1. **Permission catalogue + seeder** — the `resource.action` list, and the Gate checks that make each real.
-2. **Schema reconciliation** — `is_system` column; `role_user` → `model_has_roles` if Spatie is adopted.
-3. **Roles** — CRUD, `is_system` enforcement, PE-2, PE-4, audit.
-4. **Users** — admin CRUD, role assignment, PE-1/PE-3/PE-5/PE-6, audit; `UserResource` truth fix (§5).
-5. **Judges** — the behaviour layer over the finished schema (the module today has 0 use cases, 0 events, 2 routes).
-6. **Judge Assignments** — currently has no repository, no controller and **no route at all**; the table is referenced as a restore blocker yet no assignment can be created through the API.
-7. **Departments** — only if question 3 is answered affirmatively.
+1. **Users** — admin CRUD, activation/deactivation, PE-3/PE-5/PE-6, audit; `UserResource` truth fix (§5).
+2. **Roles** — CRUD, `is_system` enforcement, role assignment to users, PE-1/PE-2/PE-4, audit.
+3. **Permissions** — the catalogue, attachment to roles, and **enforcement switched on**.
+4. **Judges** — an extension of User, never a Role. The behaviour layer over a finished schema (the module today has 0 use cases, 0 domain events, 2 routes).
+5. **Judge Assignments** — currently no repository, no controller and **no route at all**; the table is referenced as a restore blocker yet no assignment can be created through the API.
+6. **Departments** — only if question 3 is answered affirmatively; otherwise deferred indefinitely.
+
+Two notes on sequencing, neither of which changes the order:
+
+* **A role editor has nothing to display until the permission catalogue exists.** Recommend shipping the catalogue **seeder** — a data file, not a feature — during epic 1, so epic 2 has real permissions to attach. The *enforcement* (Gate checks, middleware) still lands in epic 3.
+* **Enforcement goes on last, deliberately.** Until epic 3, `EnsureUserIsAdmin` remains the gate, so no one can be locked out of the admin panel by a half-populated role table midway through the sequence.
+
+**Schema work** (`is_system`, plus whatever question 1 requires) lands at the start of epic 2, which is the first moment it is needed and still inside the window where all four tables are unused.
 
 ---
 
