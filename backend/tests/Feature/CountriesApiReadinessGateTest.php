@@ -39,14 +39,14 @@ test('Countries API Readiness Gate: public GET /api/v1/countries returns paginat
 });
 
 test('Countries API Readiness Gate: admin store and deactivate policy endpoints work correctly', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'admin@quranplatform.com',
         'name' => 'System Admin',
         'type' => 'admin',
         'password_hash' => password_hash('AdminPass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     // 1. Admin Create Country
     $createResponse = $this->actingAs($admin)->postJson('/api/v1/admin/countries', [

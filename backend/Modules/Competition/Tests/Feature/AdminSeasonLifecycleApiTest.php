@@ -21,14 +21,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'season-lifecycle-
 
 function lifecycleAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'lifecycle-admin-'.Str::random(8).'@quran.test',
         'name' => 'Lifecycle Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function lifecycleSeason(string $status = 'draft'): string

@@ -84,11 +84,55 @@ function grantSuperAdmin(string $userId): string
     $users = app(Modules\Core\Domain\Repositories\UserRepositoryContract::class);
     $roles = app(Modules\Core\Domain\Repositories\RoleRepositoryContract::class);
 
+    // Self-sufficient on purpose. Most test files never seeded roles —
+    // they had no reason to before authorization existed — and requiring
+    // each of them to remember a beforeEach would make this fixture fail
+    // in a way that looks like an authorization bug rather than a missing
+    // seed. Both seeders are safe to re-run: PermissionsSeeder inserts
+    // only what is missing, and RolesSeeder re-synchronises system roles
+    // while leaving the five editable ones untouched.
+    if ($roles->findByName('super_admin') === null) {
+        (new Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder)->run();
+        app(Modules\Core\Infrastructure\Database\Seeders\RolesSeeder::class)->run();
+    }
+
     $actor = $users->findOrFail(new Modules\Core\Domain\ValueObjects\UserId($userId));
     $actor->syncRoles([$roles->findByName('super_admin')->id]);
     $users->save($actor);
 
+    app(Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver::class)
+        ->forget(new Modules\Core\Domain\ValueObjects\UserId($userId));
+
     return $userId;
+}
+
+/**
+ * Wrap an admin the moment it is created, so it holds super_admin.
+ *
+ * TRANSITIONAL — ADR-015's activation epic. Until authorization is
+ * switched on, every admin in these tests could do everything by virtue
+ * of `type='admin'` alone. Once Gate checks guard the admin routes, an
+ * admin holding no roles can do nothing, and ~290 actingAs() calls
+ * across 36 files would start failing for a reason that has nothing to
+ * do with what they are testing. Granting super_admin keeps them
+ * meaning exactly what they meant before.
+ *
+ * Applied at each creation site rather than by a global model observer,
+ * deliberately. An observer would be five lines instead of thirty-five
+ * edits, but it would also make "an admin who is NOT allowed to do this"
+ * impossible to express — and the activation epic has eleven existing
+ * 403 assertions to re-examine, plus new denial tests to write. A
+ * fixture that cannot represent a refusal is the same mistake as a
+ * resolver that cannot represent one.
+ *
+ * Returns the model so it can be wrapped around a create() call without
+ * restructuring the surrounding statement.
+ */
+function withSuperAdmin(Modules\Core\Infrastructure\Database\Models\UserModel $user): Modules\Core\Infrastructure\Database\Models\UserModel
+{
+    grantSuperAdmin((string) $user->id);
+
+    return $user;
 }
 
 /**

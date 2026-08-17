@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Security\TotpService;
+use Symfony\Component\Uid\Uuid;
 use Tests\TestCase;
 
 final class MfaAndSessionsTest extends TestCase
@@ -23,23 +24,23 @@ final class MfaAndSessionsTest extends TestCase
     {
         parent::setUp();
 
-        $this->adminUser = UserModel::query()->create([
-            'id' => '00000000-0000-0000-0000-000000000099',
+        $this->adminUser = withSuperAdmin(UserModel::query()->create([
+            'id' => (string) Uuid::v7(),
             'email' => 'mfa-admin@quran.test',
             'name' => 'MFA Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
 
-        $this->otherUser = UserModel::query()->create([
-            'id' => '00000000-0000-0000-0000-000000000088',
+        $this->otherUser = withSuperAdmin(UserModel::query()->create([
+            'id' => (string) Uuid::v7(),
             'email' => 'other-admin@quran.test',
             'name' => 'Other Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     // ── Positive Tests ─────────────────────────────────────────────────────────

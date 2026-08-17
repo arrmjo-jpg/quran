@@ -25,14 +25,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'season-restore');
 
 function restoreAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'restore-admin-'.Str::random(8).'@quran.test',
         'name' => 'Restore Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 /** @param array<string, mixed> $overrides */

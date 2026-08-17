@@ -13,14 +13,14 @@ uses(RefreshDatabase::class);
 
 function audit_user(string $email): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Uuid::v4(),
         'email' => $email,
         'name' => 'Audit Test User',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 it('records the correlation id on the audit log entry', function (): void {

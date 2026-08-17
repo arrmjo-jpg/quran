@@ -29,14 +29,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'stages');
 
 function stageTestAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'stage-admin-'.Str::random(8).'@quran.test',
         'name' => 'Stage Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function stageTestDraftSeason(): string

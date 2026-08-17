@@ -23,14 +23,14 @@ use Modules\Countries\Infrastructure\Database\Seeders\CountriesSeeder;
 uses(RefreshDatabase::class)->group('applications_gate', 'api');
 
 test('Applications API Readiness Gate: submission workflow, admin review queue, and state machine transitions', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'admin-review@quranplatform.com',
         'name' => 'Queue Admin',
         'type' => 'admin',
         'password_hash' => password_hash('AdminPass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     $contestantUser = UserModel::query()->create([
         'id' => fake()->uuid(),

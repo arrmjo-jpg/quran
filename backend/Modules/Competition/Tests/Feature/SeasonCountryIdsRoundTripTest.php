@@ -23,14 +23,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'season-country-id
 
 function countryIdsAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'country-ids-admin-'.Str::random(8).'@quran.test',
         'name' => 'Country Ids Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function countryIdsCountry(string $iso2, string $iso3): CountryModel

@@ -26,14 +26,14 @@ final class ContestantsTest extends TestCase
 
     private function admin(): UserModel
     {
-        return $this->sharedAdmin ??= UserModel::query()->create([
+        return $this->sharedAdmin ??= withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => 'contestants-admin@quran.test',
             'name' => 'Contestants Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     private function countryId(): string

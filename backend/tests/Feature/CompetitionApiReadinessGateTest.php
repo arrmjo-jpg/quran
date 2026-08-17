@@ -59,14 +59,14 @@ function cargt_configureSeasonRules(string $seasonId): void
 }
 
 test('Competition API Readiness Gate: complete season lifecycle state machine and dry-run simulation endpoints', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'admin-comp@quranplatform.com',
         'name' => 'Competition Admin',
         'type' => 'admin',
         'password_hash' => password_hash('AdminPass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     // 1. Create Season
     $createResponse = $this->actingAs($admin)->postJson('/api/v1/admin/seasons', [

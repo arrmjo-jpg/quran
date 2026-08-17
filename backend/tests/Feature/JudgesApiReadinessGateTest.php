@@ -10,14 +10,14 @@ use Modules\Core\Infrastructure\Database\Models\UserModel;
 uses(RefreshDatabase::class)->group('judges_gate', 'api');
 
 test('Judges API Readiness Gate: admin judge creation, specialization filtering, and judge profile endpoint', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'admin-judge@quranplatform.com',
         'name' => 'Judge Admin',
         'type' => 'admin',
         'password_hash' => password_hash('AdminPass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     $judgeUser = UserModel::query()->create([
         'id' => fake()->uuid(),

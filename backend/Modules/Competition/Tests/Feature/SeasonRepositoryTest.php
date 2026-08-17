@@ -79,14 +79,14 @@ test('save() persists archive metadata and findOrFail() rehydrates it', function
     $repository = app(SeasonRepositoryContract::class);
     $repository->save($season);
 
-    $userId = UserModel::query()->create([
+    $userId = withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'season-repo-test-'.Str::random(8).'@quran.test',
         'name' => 'Season Repository Test User',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ])->id;
+    ]))->id;
 
     $season->cancel(new SeasonStateMachine, 'no interest', $userId);
     $repository->save($season);

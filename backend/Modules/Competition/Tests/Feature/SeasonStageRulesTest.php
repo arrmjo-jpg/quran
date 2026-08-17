@@ -19,14 +19,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'stage-rules');
 
 function stageRulesTestAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'stage-rules-admin-'.Str::random(8).'@quran.test',
         'name' => 'Stage Rules Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function stageRulesTestSeason(): string
