@@ -10,7 +10,9 @@ namespace Modules\Core\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
+use Modules\Core\Infrastructure\Database\Repositories\RoleRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 
 final class CoreServiceProvider extends ServiceProvider
@@ -20,6 +22,11 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserRepositoryContract::class,
             UserRepository::class
+        );
+
+        $this->app->singleton(
+            RoleRepositoryContract::class,
+            RoleRepository::class
         );
     }
 

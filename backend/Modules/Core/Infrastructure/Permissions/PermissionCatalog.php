@@ -73,6 +73,10 @@ final class PermissionCatalog
         // Application review workflow
         'ready_for_judging',
         'request_reupload',
+        // Judge scoring workflow (the /judge surface)
+        'start',
+        'save_draft',
+        'submit',
         // Appeal decisions
         'accept',
         'reject',
@@ -144,7 +148,12 @@ final class PermissionCatalog
 
         // ── Competition workflow ────────────────────────────────────
         'applications' => ['view', 'ready_for_judging', 'request_reupload'],
-        'evaluations' => ['view'],
+        // start/save_draft/submit are the /judge scoring surface, which the
+        // first pass at this catalogue missed by enumerating only the admin
+        // routes. Without them the judge role could view an evaluation and
+        // nothing else, so the ADR-015 §7.3 matrix's grant of scoring to
+        // judges had nothing to attach to.
+        'evaluations' => ['view', 'start', 'save_draft', 'submit'],
         'appeals' => ['view', 'accept', 'reject'],
 
         // ── Media ───────────────────────────────────────────────────
