@@ -14,7 +14,7 @@ uses(RefreshDatabase::class)->group('notifications', 'phase_16_10');
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function notif_user(string $email, string $type = 'user'): UserModel
+function notif_user(string $email, string $type = 'contestant'): UserModel
 {
     return UserModel::query()->create([
         'id' => fake()->uuid(),

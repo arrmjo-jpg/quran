@@ -60,7 +60,7 @@ test('Search 16.15.3 — Public multi-entity search endpoint (200)', function ()
         'display_order' => 1,
     ]);
 
-    $cUser = search_user('contestant-search@test.test', 'user');
+    $cUser = search_user('contestant-search@test.test', 'contestant');
 
     ContestantModel::query()->create([
         'id' => fake()->uuid(),

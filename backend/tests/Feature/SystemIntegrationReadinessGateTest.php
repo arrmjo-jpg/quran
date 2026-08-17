@@ -53,7 +53,7 @@ function irg_seed_jordan(): string
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: create a UserModel (contestant or admin)
 // ─────────────────────────────────────────────────────────────────────────────
-function irg_user(string $email, string $type = 'user'): UserModel
+function irg_user(string $email, string $type = 'contestant'): UserModel
 {
     return UserModel::query()->create([
         'id' => fake()->uuid(),

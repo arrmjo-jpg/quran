@@ -10,6 +10,7 @@ use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 
 final class UserRepository implements UserRepositoryContract
@@ -42,7 +43,7 @@ final class UserRepository implements UserRepositoryContract
             [
                 'email' => $user->getEmail()->value,
                 'name' => $user->getName(),
-                'type' => $user->getType(),
+                'type' => $user->getType()->value,
                 'password_hash' => $user->getPasswordHash()?->value,
                 'preferred_locale' => (string) $user->getPreferredLocale(),
                 'is_active' => $user->isActive(),
@@ -61,7 +62,7 @@ final class UserRepository implements UserRepositoryContract
             id: new UserId($model->id),
             email: new Email($model->email),
             name: $model->name,
-            type: $model->type,
+            type: new UserType($model->type),
             passwordHash: $model->password_hash !== null ? new PasswordHash($model->password_hash) : null,
             preferredLocale: new Locale($model->preferred_locale),
             isActive: (bool) $model->is_active,

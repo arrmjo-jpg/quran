@@ -236,7 +236,7 @@ final class SeasonsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'not-admin@quran.test',
             'name' => 'Not Admin',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

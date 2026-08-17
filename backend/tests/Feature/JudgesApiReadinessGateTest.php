@@ -23,7 +23,7 @@ test('Judges API Readiness Gate: admin judge creation, specialization filtering,
         'id' => fake()->uuid(),
         'email' => 'judge1@quranplatform.com',
         'name' => 'Sheikh Abdullah Al-Ghamdi',
-        'type' => 'user',
+        'type' => 'contestant',
         'password_hash' => password_hash('JudgePass123!', PASSWORD_BCRYPT),
         'is_active' => true,
     ]);

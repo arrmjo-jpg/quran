@@ -8,6 +8,7 @@ use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
 
 /**
  * User Aggregate Root
@@ -28,7 +29,7 @@ final class User
         public readonly UserId $id,
         private Email $email,
         private string $name,
-        private string $type, // 'user' or 'admin'
+        private UserType $type,
         private ?PasswordHash $passwordHash = null,
         private Locale $preferredLocale = new Locale('ar'),
         private bool $isActive = true,
@@ -41,7 +42,7 @@ final class User
         UserId $id,
         Email $email,
         string $name,
-        string $type, // 'user' or 'admin'
+        UserType $type,
         PasswordHash $passwordHash,
         Locale $preferredLocale = new Locale('ar')
     ): self {
@@ -66,9 +67,14 @@ final class User
         return $this->name;
     }
 
-    public function getType(): string
+    public function getType(): UserType
     {
         return $this->type;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->type->isAdmin();
     }
 
     public function getPasswordHash(): ?PasswordHash

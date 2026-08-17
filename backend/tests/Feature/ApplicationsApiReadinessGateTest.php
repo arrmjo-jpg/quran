@@ -36,7 +36,7 @@ test('Applications API Readiness Gate: submission workflow, admin review queue, 
         'id' => fake()->uuid(),
         'email' => 'contestant-app@quranplatform.com',
         'name' => 'Youssef Al-Hassan',
-        'type' => 'user',
+        'type' => 'contestant',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
     ]);

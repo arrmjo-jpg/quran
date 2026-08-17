@@ -33,7 +33,7 @@ final class JudgesTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => $email,
             'name' => 'Judge Candidate',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

@@ -31,7 +31,7 @@ beforeEach(function (): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Create a UserModel directly (no factory). */
-function eval_user(string $email, string $type = 'user'): UserModel
+function eval_user(string $email, string $type = 'contestant'): UserModel
 {
     return UserModel::query()->create([
         'id' => fake()->uuid(),

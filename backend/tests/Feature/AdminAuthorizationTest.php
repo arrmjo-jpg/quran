@@ -27,7 +27,7 @@ final class AdminAuthorizationTest extends TestCase
 
     public function test_non_admin_authenticated_user_is_rejected_from_admin_routes(): void
     {
-        $regularUser = $this->makeUser('user');
+        $regularUser = $this->makeUser('contestant');
 
         $endpoints = [
             ['method' => 'getJson', 'uri' => '/api/v1/admin/auth/me'],
@@ -44,14 +44,12 @@ final class AdminAuthorizationTest extends TestCase
         }
     }
 
-    public function test_contestant_type_user_is_rejected_from_admin_routes(): void
-    {
-        $contestant = $this->makeUser('contestant');
-
-        $this->actingAs($contestant)
-            ->getJson('/api/v1/admin/auth/sessions')
-            ->assertStatus(403);
-    }
+    // NOTE: a second test here previously created a 'contestant'-typed user
+    // and asserted one admin endpoint returned 403, to cover a non-admin
+    // type other than the then-current 'user'. After the ADR-015 rename
+    // both tests construct the identical user and the shorter one became a
+    // strict subset of the four-endpoint test above, so it was merged into
+    // it rather than left as a duplicate.
 
     public function test_admin_type_user_can_access_admin_routes(): void
     {
@@ -64,10 +62,10 @@ final class AdminAuthorizationTest extends TestCase
 
     public function test_deactivated_user_cannot_log_in(): void
     {
-        $this->makeUser('user', isActive: false);
+        $this->makeUser('contestant', isActive: false);
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'authz-user@quran.test',
+            'email' => 'authz-contestant@quran.test',
             'password' => 'Pass123!',
         ]);
 
@@ -77,10 +75,10 @@ final class AdminAuthorizationTest extends TestCase
 
     public function test_active_user_can_still_log_in(): void
     {
-        $this->makeUser('user');
+        $this->makeUser('contestant');
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'authz-user@quran.test',
+            'email' => 'authz-contestant@quran.test',
             'password' => 'Pass123!',
         ]);
 
@@ -97,8 +95,8 @@ final class AdminAuthorizationTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.type', 'user')
-            ->assertJsonPath('data.roles', ['user'])
+            ->assertJsonPath('data.type', 'contestant')
+            ->assertJsonPath('data.roles', ['contestant'])
             ->assertJsonPath('data.permissions', []);
     }
 }

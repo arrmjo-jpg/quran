@@ -46,7 +46,7 @@ final class ApplicationsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'app-contestant@quran.test',
             'name' => 'App Contestant',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

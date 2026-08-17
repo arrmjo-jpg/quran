@@ -16,6 +16,7 @@ use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Security\DeviceTrustService;
 use Modules\Core\Infrastructure\Security\FirebaseOtpService;
@@ -33,7 +34,7 @@ final class AuthController extends Controller
             id: UserId::generate(),
             email: new Email($request->validated('email')),
             name: $request->validated('name'),
-            type: 'user',
+            type: UserType::contestant(),
             passwordHash: PasswordHash::fromPlainPassword($request->validated('password')),
             preferredLocale: new Locale($request->validated('locale', 'ar'))
         );

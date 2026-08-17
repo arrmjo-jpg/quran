@@ -20,7 +20,7 @@ beforeEach(function (): void {
 // Helpers — positional args (named args not supported in free functions)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function media_user(string $email, string $type = 'user'): UserModel
+function media_user(string $email, string $type = 'contestant'): UserModel
 {
     return UserModel::query()->create([
         'id' => fake()->uuid(),

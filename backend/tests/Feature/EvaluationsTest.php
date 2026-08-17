@@ -28,7 +28,7 @@ final class EvaluationsTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeUser(string $email, string $type = 'user'): UserModel
+    private function makeUser(string $email, string $type = 'contestant'): UserModel
     {
         return UserModel::query()->create([
             'id' => (string) Uuid::v4(),

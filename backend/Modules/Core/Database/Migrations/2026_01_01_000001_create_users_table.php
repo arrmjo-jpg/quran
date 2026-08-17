@@ -15,7 +15,7 @@ return new class extends Migration
             PlatformBlueprint::uuidPrimary($table);
             $table->string('email')->unique('uk_users_email');
             $table->string('name');
-            $table->string('type', 50)->index('idx_users_type'); // 'user' or 'admin'
+            $table->string('type', 50)->index('idx_users_type'); // UserType: 'contestant' or 'admin'
             $table->string('password_hash')->nullable();
             $table->string('preferred_locale', 10)->default('ar');
             $table->boolean('is_active')->default(true);
