@@ -1,0 +1,16 @@
+{
+  "title": "Video processing centre",
+  "subtitle": "Track the jobs that transcode recitation clips to HLS 1080p and cut m3u8 segments through the FFmpeg workers",
+  "empty": "No videos are being processed right now.",
+
+  "col_id": "Processed video ID",
+  "col_application": "Application no.",
+  "col_media": "R2 file ID",
+  "col_status": "FFmpeg HLS status",
+  "col_hls": "m3u8 playlist URL",
+  "col_actions": "Reprocess",
+
+  "status_ready": "Ready (HLS 1080p)",
+  "reprocess_button": "Reprocess with FFmpeg",
+  "reprocess_success": "An FFmpeg HLS reprocessing job was queued in the background"
+}

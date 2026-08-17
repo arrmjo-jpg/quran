@@ -1,0 +1,16 @@
+{
+  "title": "مركز معالجة وتحويل الفيديوهات (Video Processing Center)",
+  "subtitle": "تتبع مهام تحويل مقاطع التلاوة لترميز HLS 1080p وتقسيم الشرائح م3u8 عبر FFmpeg Workers",
+  "empty": "لا توجد فيديوهات قيد المعالجة حالياً.",
+
+  "col_id": "معرف الفيديو المعالج",
+  "col_application": "رقم الطلب",
+  "col_media": "معرف ملف R2",
+  "col_status": "حالة معالجة FFmpeg HLS",
+  "col_hls": "رابط Playlist m3u8",
+  "col_actions": "إعادة المعالجة",
+
+  "status_ready": "جاهز (Ready HLS 1080p)",
+  "reprocess_button": "إعادة المعالجة FFmpeg",
+  "reprocess_success": "تم إرسال مهمة إعادة معالجة FFmpeg HLS في الخلفية بنجاح"
+}
