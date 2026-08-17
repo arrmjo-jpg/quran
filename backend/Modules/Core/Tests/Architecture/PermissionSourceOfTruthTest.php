@@ -23,6 +23,29 @@ uses()->group('core', 'architecture', 'identity', 'permissions');
 */
 
 /**
+ * A file's PHP with every comment removed.
+ *
+ * The scans below are about what the CODE does. A docblock explaining a
+ * rule — or showing `$this->authorize('seasons.create')` as an example —
+ * is documentation, not a hardcoded reference, and matching it would
+ * push authors toward writing vaguer comments to satisfy a test.
+ */
+function permissionSourceCode(string $path): string
+{
+    $code = '';
+
+    foreach (token_get_all((string) file_get_contents($path)) as $token) {
+        if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        $code .= is_array($token) ? $token[1] : $token;
+    }
+
+    return $code;
+}
+
+/**
  * @return array<int, string>
  */
 function permissionSourceFiles(): array
@@ -69,11 +92,9 @@ test('no application file hardcodes a permission name', function (): void {
             continue;
         }
 
-        $content = (string) file_get_contents($path);
+        $content = permissionSourceCode($path);
 
         foreach ($known as $name) {
-            // Only a quoted literal counts. A doc comment mentioning a
-            // permission in prose is fine and often useful.
             if (preg_match("/['\"]".preg_quote($name, '/')."['\"]/", $content) === 1) {
                 $violations[] = basename($path).' → '.$name;
             }
@@ -99,7 +120,7 @@ test('no application file hardcodes a role name', function (): void {
             continue;
         }
 
-        $content = (string) file_get_contents($path);
+        $content = permissionSourceCode($path);
 
         foreach ($roleNames as $role) {
             if (preg_match("/['\"]".preg_quote($role, '/')."['\"]/", $content) === 1) {
