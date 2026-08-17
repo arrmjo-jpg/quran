@@ -1,0 +1,21 @@
+{
+  "title": "Search console (Meilisearch)",
+  "subtitle": "Manage and refresh the Meilisearch / Laravel Scout indexes for every entity on the platform",
+  "empty": "No indexing runs have been recorded yet.",
+  "reindex_button": "Reindex everything",
+
+  "stat_server": "Meilisearch server status",
+  "stat_indexes": "Active indexes",
+  "stat_indexes_value": "4 indexes",
+  "stat_documents": "Indexed documents",
+  "stat_documents_value": "1,250 documents",
+  "stat_latency": "Average latency",
+
+  "col_index": "Index name",
+  "col_count": "Document count",
+  "col_indexed_at": "Indexed on",
+  "col_status": "Meilisearch status",
+  "status_complete": "Fully indexed (100%)",
+
+  "reindex_success": "A full Meilisearch reindex has started"
+}

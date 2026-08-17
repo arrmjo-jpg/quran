@@ -1,0 +1,21 @@
+{
+  "title": "وحدة التحكم بكشافات البحث (Meilisearch Search Console)",
+  "subtitle": "إدارة وتحديث كشافات البحث الفوري Meilisearch / Laravel Scout لجميع كيانات المنصة",
+  "empty": "لا توجد سجلات فهرسة سابقة.",
+  "reindex_button": "إعادة الفهرسة الكاملة Reindex",
+
+  "stat_server": "حالة Meilisearch Server",
+  "stat_indexes": "إجمالي الكشافات Active Indexes",
+  "stat_indexes_value": "4 كشافات",
+  "stat_documents": "الوثائق المفهرسة",
+  "stat_documents_value": "1,250 وثيقة",
+  "stat_latency": "زمن الاستجابة Average Latency",
+
+  "col_index": "اسم كشاف البحث Index",
+  "col_count": "عدد الوثائق المفهرسة Document Count",
+  "col_indexed_at": "تاريخ الفهرسة",
+  "col_status": "حالة محرك Meilisearch",
+  "status_complete": "فهرسة صحيحة 100%",
+
+  "reindex_success": "بدأت عملية إعادة الفهرسة الكاملة في محرك Meilisearch بنجاح"
+}

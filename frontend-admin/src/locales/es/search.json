@@ -1,0 +1,21 @@
+{
+  "title": "Consola de búsqueda (Meilisearch)",
+  "subtitle": "Gestione y actualice los índices de Meilisearch / Laravel Scout de todas las entidades de la plataforma",
+  "empty": "Todavía no se ha registrado ninguna indexación.",
+  "reindex_button": "Reindexar todo",
+
+  "stat_server": "Estado del servidor Meilisearch",
+  "stat_indexes": "Índices activos",
+  "stat_indexes_value": "4 índices",
+  "stat_documents": "Documentos indexados",
+  "stat_documents_value": "1.250 documentos",
+  "stat_latency": "Latencia media",
+
+  "col_index": "Nombre del índice",
+  "col_count": "Número de documentos",
+  "col_indexed_at": "Fecha de indexación",
+  "col_status": "Estado de Meilisearch",
+  "status_complete": "Indexado por completo (100%)",
+
+  "reindex_success": "Se inició una reindexación completa en Meilisearch"
+}
