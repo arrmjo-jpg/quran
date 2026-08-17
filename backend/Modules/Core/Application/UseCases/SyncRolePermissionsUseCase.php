@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Core\Domain\Entities\Role;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\ValueObjects\RoleId;
+use Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver;
 
 /**
  * Replaces a role's permission set — ADR-015 §4.5.
@@ -37,6 +38,7 @@ final readonly class SyncRolePermissionsUseCase
 {
     public function __construct(
         private RoleRepositoryContract $roles,
+        private EffectivePermissionResolver $permissions,
     ) {}
 
     /**
@@ -55,6 +57,12 @@ final readonly class SyncRolePermissionsUseCase
             $role->syncPermissions($permissions, $byUserId);
 
             $this->roles->save($role);
+
+            // Writer 2 of 3 (ADR-015 §4.6): every user holding this role
+            // now has a different effective set. The pivot is untouched
+            // by this operation, so the holders are still resolvable
+            // after the save.
+            $this->permissions->forgetHoldersOf($role->id);
 
             foreach ($role->releaseEvents() as $event) {
                 event($event);

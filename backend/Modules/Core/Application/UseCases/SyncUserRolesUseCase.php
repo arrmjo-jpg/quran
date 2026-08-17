@@ -14,6 +14,7 @@ use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
 use Modules\Core\Domain\ValueObjects\RoleId;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver;
 use RuntimeException;
 
 /**
@@ -41,6 +42,7 @@ final readonly class SyncUserRolesUseCase
     public function __construct(
         private UserRepositoryContract $users,
         private RoleRepositoryContract $roles,
+        private EffectivePermissionResolver $permissions,
     ) {}
 
     /**
@@ -75,6 +77,10 @@ final readonly class SyncUserRolesUseCase
             $user->syncRoles(array_map(static fn (string $id): RoleId => new RoleId($id), $after));
 
             $this->users->save($user);
+
+            // Writer 1 of 3 (ADR-015 §4.6): this user's effective set
+            // just changed, so their cached copy must go.
+            $this->permissions->forget($user->id);
 
             // Names, not ids: an audit entry reading "granted 0192…" is
             // unreadable, and the role may be renamed or gone by the time
