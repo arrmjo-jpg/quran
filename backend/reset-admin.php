@@ -1,12 +1,12 @@
 <?php
 
+use Illuminate\Contracts\Console\Kernel;
+use Modules\Core\Infrastructure\Database\Models\UserModel;
+
 require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
-
-use Illuminate\Contracts\Console\Kernel;
-use Modules\Core\Infrastructure\Database\Models\UserModel;
 
 $user = UserModel::query()->updateOrCreate(
     ['email' => 'admin@quran.test'],
