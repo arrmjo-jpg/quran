@@ -14,8 +14,8 @@ use Modules\Sponsors\Presentation\HTTP\Controllers\AdminSponsorController;
 */
 
 Route::prefix('sponsors')->group(function (): void {
-    Route::get('/', [AdminSponsorController::class, 'index'])->name('admin.sponsors.index');
-    Route::post('/', [AdminSponsorController::class, 'store'])->name('admin.sponsors.store');
-    Route::get('/{id}', [AdminSponsorController::class, 'show'])->name('admin.sponsors.show');
-    Route::delete('/{id}', [AdminSponsorController::class, 'destroy'])->name('admin.sponsors.destroy');
+    Route::get('/', [AdminSponsorController::class, 'index'])->name('admin.sponsors.index')->middleware('can:sponsors.view');
+    Route::post('/', [AdminSponsorController::class, 'store'])->name('admin.sponsors.store')->middleware('can:sponsors.create');
+    Route::get('/{id}', [AdminSponsorController::class, 'show'])->name('admin.sponsors.show')->middleware('can:sponsors.view');
+    Route::delete('/{id}', [AdminSponsorController::class, 'destroy'])->name('admin.sponsors.destroy')->middleware('can:sponsors.delete');
 });

@@ -15,14 +15,14 @@ final class AdminAuthorizationTest extends TestCase
 
     private function makeUser(string $type, bool $isActive = true): UserModel
     {
-        return UserModel::query()->create([
+        return withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => "authz-{$type}@quran.test",
             'name' => ucfirst($type),
             'type' => $type,
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => $isActive,
-        ]);
+        ]));
     }
 
     public function test_non_admin_authenticated_user_is_rejected_from_admin_routes(): void

@@ -16,14 +16,14 @@ uses(RefreshDatabase::class)->group('notifications', 'phase_16_10');
 
 function notif_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Notif Test',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function notif_log(

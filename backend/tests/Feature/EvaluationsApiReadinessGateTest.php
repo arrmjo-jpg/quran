@@ -33,14 +33,14 @@ beforeEach(function (): void {
 /** Create a UserModel directly (no factory). */
 function eval_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Eval Test User',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 /** Create a JudgeModel for a user. */

@@ -14,7 +14,7 @@ use Modules\Reports\Presentation\HTTP\Controllers\AdminReportController;
 */
 
 Route::prefix('reports')->group(function (): void {
-    Route::get('summary', [AdminReportController::class, 'summary'])->name('admin.reports.summary');
-    Route::get('exports', [AdminReportController::class, 'indexExports'])->name('admin.reports.exports.index');
-    Route::post('exports', [AdminReportController::class, 'createExport'])->name('admin.reports.exports.create');
+    Route::get('summary', [AdminReportController::class, 'summary'])->name('admin.reports.summary')->middleware('can:reports.view');
+    Route::get('exports', [AdminReportController::class, 'indexExports'])->name('admin.reports.exports.index')->middleware('can:reports.view');
+    Route::post('exports', [AdminReportController::class, 'createExport'])->name('admin.reports.exports.create')->middleware('can:reports.export');
 });

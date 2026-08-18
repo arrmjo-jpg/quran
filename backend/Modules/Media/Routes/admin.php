@@ -15,10 +15,10 @@ use Modules\Media\Presentation\HTTP\Controllers\AdminMediaController;
 */
 
 Route::prefix('media')->group(function (): void {
-    Route::get('/', [AdminMediaController::class, 'index'])->name('admin.media.index');
-    Route::post('/', [AdminMediaController::class, 'upload'])->name('admin.media.upload');
-    Route::get('/{id}', [AdminMediaController::class, 'show'])->name('admin.media.show');
-    Route::patch('/{id}', [AdminMediaController::class, 'update'])->name('admin.media.update');
-    Route::delete('/{id}', [AdminMediaController::class, 'destroy'])->name('admin.media.destroy');
-    Route::post('/{id}/reprocess', [AdminMediaController::class, 'reprocess'])->name('admin.media.reprocess');
+    Route::get('/', [AdminMediaController::class, 'index'])->name('admin.media.index')->middleware('can:media.view');
+    Route::post('/', [AdminMediaController::class, 'upload'])->name('admin.media.upload')->middleware('can:media.create');
+    Route::get('/{id}', [AdminMediaController::class, 'show'])->name('admin.media.show')->middleware('can:media.view');
+    Route::patch('/{id}', [AdminMediaController::class, 'update'])->name('admin.media.update')->middleware('can:media.update');
+    Route::delete('/{id}', [AdminMediaController::class, 'destroy'])->name('admin.media.destroy')->middleware('can:media.delete');
+    Route::post('/{id}/reprocess', [AdminMediaController::class, 'reprocess'])->name('admin.media.reprocess')->middleware('can:media.reprocess');
 });

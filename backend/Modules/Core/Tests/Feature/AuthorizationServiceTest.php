@@ -209,11 +209,16 @@ test('there is no super-admin Gate bypass', function (): void {
     expect(Gate::forUser($superAdmin)->allows('seasons.teleport'))->toBeFalse();
 });
 
-test('the old middleware is still the only thing guarding the admin API', function (): void {
-    // 6.2 registers abilities; it does not switch anything on. Activation
-    // is deliberately its own reviewable change.
+test('the admin API now depends on the abilities this service answers', function (): void {
+    // The inverse of what this asserted through 6.2, and deliberately
+    // inverted rather than deleted: it was the marker for "abilities are
+    // registered but nothing consults them", and the same line is the
+    // clearest place to record that the switch has been thrown.
+    //
+    // Route-by-route coverage lives in AdminRoutePermissionCoverageTest;
+    // this only pins the fact that enforcement exists, next to the
+    // service that makes the decision.
     $routeFile = (string) file_get_contents(base_path('Modules/Competition/Routes/admin.php'));
 
-    expect(str_contains($routeFile, 'can:'))->toBeFalse();
-    expect(str_contains($routeFile, 'authorize'))->toBeFalse();
+    expect(str_contains($routeFile, 'can:'))->toBeTrue();
 });

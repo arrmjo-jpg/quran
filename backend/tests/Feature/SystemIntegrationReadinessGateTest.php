@@ -55,14 +55,14 @@ function irg_seed_jordan(): string
 // ─────────────────────────────────────────────────────────────────────────────
 function irg_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'IRG Test User',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

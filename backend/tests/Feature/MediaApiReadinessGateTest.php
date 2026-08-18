@@ -22,14 +22,14 @@ beforeEach(function (): void {
 
 function media_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Media Test',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function media_asset(

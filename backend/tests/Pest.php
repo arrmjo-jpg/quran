@@ -130,6 +130,16 @@ function grantSuperAdmin(string $userId): string
  */
 function withSuperAdmin(Modules\Core\Infrastructure\Database\Models\UserModel $user): Modules\Core\Infrastructure\Database\Models\UserModel
 {
+    // A no-op for anyone who is not an admin, which is what lets this
+    // wrap the helpers that take their type as a parameter — several
+    // files use one factory for both admins and contestants, defaulting
+    // to admin. Deciding here rather than at each call site means a
+    // contestant fixture can never be handed super_admin by a wrap that
+    // looked right at the time.
+    if ($user->type !== Modules\Core\Domain\ValueObjects\UserType::ADMIN) {
+        return $user;
+    }
+
     grantSuperAdmin((string) $user->id);
 
     return $user;

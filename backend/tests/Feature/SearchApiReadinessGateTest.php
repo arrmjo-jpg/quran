@@ -13,14 +13,14 @@ uses(RefreshDatabase::class)->group('search', 'phase_16_15');
 
 function search_user(string $email, string $type = 'admin'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Search Admin',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('Search 16.15.1 — Admin can trigger reindex job (200)', function (): void {

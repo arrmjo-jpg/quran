@@ -30,14 +30,14 @@ final class EvaluationsTest extends TestCase
 
     private function makeUser(string $email, string $type = 'contestant'): UserModel
     {
-        return UserModel::query()->create([
+        return withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => $email,
             'name' => 'Evaluations Test User',
             'type' => $type,
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     private function makeJudge(UserModel $user): JudgeModel
