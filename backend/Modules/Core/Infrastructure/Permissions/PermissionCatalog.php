@@ -81,6 +81,11 @@ final class PermissionCatalog
         // workflow above — the verb set is global, and a verb meaning
         // "begin this thing" reads correctly for both.
         'stop',
+        // Identity. Editing what a role can DO is separated from editing
+        // what it is called: renaming is cosmetic, granting is the
+        // escalation surface PE-2 guards, and one permission covering both
+        // would let whoever may tidy a label also hand out capability.
+        'grant_permissions',
         // Appeal decisions
         'accept',
         'reject',
@@ -110,7 +115,7 @@ final class PermissionCatalog
         // ── Identity ────────────────────────────────────────────────
         // NO ENDPOINT YET — built across the Identity & Access epics.
         'users' => ['view', 'create', 'update', 'delete', 'restore'],
-        'roles' => ['view', 'create', 'update', 'delete'],
+        'roles' => ['view', 'create', 'update', 'grant_permissions', 'delete'],
         'permissions' => ['view'],
 
         // ── Competition ─────────────────────────────────────────────
