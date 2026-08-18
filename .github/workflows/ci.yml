@@ -48,6 +48,15 @@ jobs:
         working-directory: backend
         run: php artisan key:generate
 
+      # MUST run before the stack starts. The frontend-admin service mounts a
+      # named volume at /app/node_modules inside a bind mount of this checkout,
+      # so starting it makes Docker create frontend-admin/node_modules on the
+      # runner as root — and npm ci then runs as `runner` and fails EACCES.
+      # Installing first means the directory already exists, owned correctly.
+      - name: Install frontend-admin dependencies
+        working-directory: frontend-admin
+        run: npm ci
+
       # docker-compose's "app" service environment block overrides these
       # for the running container regardless of what's in .env; this only
       # needs to satisfy Laravel's own boot requirements (APP_KEY, etc).
@@ -67,10 +76,6 @@ jobs:
           echo "App container did not become ready in time."
           docker compose logs app
           exit 1
-
-      - name: Install frontend-admin dependencies
-        working-directory: frontend-admin
-        run: npm ci
 
       - name: Run functional gate
         working-directory: frontend-admin
