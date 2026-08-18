@@ -17,6 +17,12 @@ export const queryKeys = {
   countries: {
     all: () => ['countries'] as const,
   },
+  roles: {
+    all: () => ['roles'] as const,
+  },
+  permissions: {
+    all: () => ['permissions'] as const,
+  },
   contestants: {
     all:    () => ['contestants'] as const,
     search: (q: string) => ['contestants', 'search', q] as const,

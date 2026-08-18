@@ -1,15 +1,17 @@
 /**
  * Every permission the server defines — ADR-015 §4.3.
  *
- * A verbatim mirror of PermissionCatalog.php. Not a translation layer and
- * not a set of aliases: a name here that the server does not define is a
- * check that can never pass, and the previous version of this file was
- * exactly that — it used a `manage` vocabulary (seasons.manage,
- * streaming.manage, media.upload) that the catalogue had removed, so not
- * one of its nineteen constants matched a real permission.
+ * GENERATED FILE. Do not edit by hand.
  *
- * Kept in catalogue order and grouped by resource so a diff against the
- * PHP file is readable.
+ *     npm run generate:permissions
+ *
+ * Source of truth is the server's PermissionCatalog.php. This mirror exists
+ * so that a permission name the server does not define is a compile error
+ * rather than a control that silently never renders. It was hand-maintained
+ * once and drifted completely, which is why it is generated now.
+ *
+ * Kept in catalogue order and grouped by resource so a diff against the PHP
+ * file is readable.
  */
 export const PERMISSIONS = [
   // users
@@ -22,6 +24,7 @@ export const PERMISSIONS = [
   'roles.view',
   'roles.create',
   'roles.update',
+  'roles.grant_permissions',
   'roles.delete',
   // permissions
   'permissions.view',
