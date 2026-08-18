@@ -57,7 +57,7 @@ final class AuthController extends Controller
                 'error' => [
                     'code' => 'INVALID_CREDENTIALS',
                     'message' => __('Invalid login credentials.'),
-                    'request_id' => $request->header('X-Request-ID'),
+                    'correlation_id' => $request->header('X-Correlation-ID'),
                 ],
             ], 401);
         }
