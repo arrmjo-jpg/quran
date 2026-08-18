@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         UserModel::query()->updateOrCreate(
             ['email' => 'admin@quran.test'],
             [
-                'id' => '00000000-0000-0000-0000-000000000001',
+                'id' => '01920000-0000-7000-8000-000000000001',
                 'name' => 'Platform Admin',
                 'type' => 'admin',
                 'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
