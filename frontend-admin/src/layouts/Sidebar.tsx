@@ -23,20 +23,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils';
 import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
-import type { PermissionKey } from '@/core/permissions';
+import { requiredPermissionFor } from '@/core/navigation/routeAccess';
 
 interface NavItem {
   path: string;
   labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
-  /**
-   * Hides the link from anyone the server would refuse. Optional because
-   * most of these pages have no single permission that gates them — several
-   * are read-only dashboards, and inventing one per link would be a second
-   * authorization model living in the sidebar. Set it only where the page
-   * genuinely has one.
-   */
-  permission?: PermissionKey;
 }
 
 /** Labels are translation keys, resolved at render so they follow the language. */
@@ -55,8 +47,8 @@ const navItems: NavItem[] = [
   { path: '/reports',       labelKey: 'reports',       icon: FileText },
   { path: '/notifications', labelKey: 'notifications', icon: Bell },
   { path: '/countries',     labelKey: 'countries',     icon: Globe },
-  { path: '/users',         labelKey: 'users',         icon: UserCog,     permission: 'users.view' },
-  { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck, permission: 'roles.view' },
+  { path: '/users',         labelKey: 'users',         icon: UserCog },
+  { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck },
   { path: '/search',        labelKey: 'search',        icon: Search },
 ];
 
@@ -98,10 +90,14 @@ export default function Sidebar(): React.JSX.Element {
             </NavLink>
           );
 
-          if (item.permission === undefined) return link;
+          // The same map the router enforces, so a hidden link and a
+          // reachable page cannot drift apart.
+          const permission = requiredPermissionFor(item.path);
+
+          if (permission === undefined) return link;
 
           return (
-            <PermissionWrapper key={item.path} permission={item.permission}>
+            <PermissionWrapper key={item.path} permission={permission}>
               {link}
             </PermissionWrapper>
           );

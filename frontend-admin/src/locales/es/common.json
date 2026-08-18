@@ -39,5 +39,9 @@
 
   "crash_title": "Se produjo un error inesperado en la interfaz",
   "crash_message": "El Crash Boundary contuvo este error para mantener estable el resto de la plataforma.",
-  "reload_page": "Recargar la página"
+  "reload_page": "Recargar la página",
+
+  "access_denied_title": "No tienes acceso",
+  "access_denied_body": "Esta página existe, pero tu cuenta no tiene el permiso necesario para verla. Solicítalo a un administrador.",
+  "access_denied_permission": "Permiso requerido: {{permission}}"
 }

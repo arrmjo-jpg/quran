@@ -39,5 +39,9 @@
 
   "crash_title": "An unexpected interface error occurred",
   "crash_message": "The Crash Boundary contained this error to keep the rest of the platform stable.",
-  "reload_page": "Reload the page"
+  "reload_page": "Reload the page",
+
+  "access_denied_title": "You do not have access",
+  "access_denied_body": "This page exists, but your account does not hold the permission needed to view it. Ask an administrator to grant it.",
+  "access_denied_permission": "Required permission: {{permission}}"
 }
