@@ -7,6 +7,7 @@ namespace Modules\Core\Application\UseCases;
 use Illuminate\Support\Facades\DB;
 use Modules\Core\Domain\Entities\User;
 use Modules\Core\Domain\Exceptions\LastSystemRoleHolderException;
+use Modules\Core\Domain\Events\UserDeactivated;
 use Modules\Core\Domain\Exceptions\SelfDeactivationException;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
@@ -37,8 +38,8 @@ final class DeactivateUserUseCase
     public function execute(string $userId, ?string $byUserId = null): User
     {
         return DB::transaction(function () use ($userId, $byUserId): User {
-            // PE-3, applied to account state. Checked before anything is
-            // read about roles, because it holds regardless of them.
+            // PE-6 — you cannot deactivate yourself. Checked before anything
+            // is read about roles, because it holds regardless of them.
             if ($byUserId !== null && $byUserId === $userId) {
                 throw new SelfDeactivationException($userId);
             }
@@ -47,8 +48,24 @@ final class DeactivateUserUseCase
 
             $this->assertSystemRoleHolderSurvives($user);
 
+            // Nothing to record when the account is already out of service.
+            // An audit entry saying "deactivated" for an account that was
+            // already deactivated is noise in the log that matters most.
+            if (! $user->isActive()) {
+                return $user;
+            }
+
             $user->deactivate();
             $this->users->save($user);
+
+            // Emitted from the use case, as ADR-015 §4.5 specifies for this
+            // pair: the aggregate does not know who acted, and byUserId is
+            // the whole point of the entry.
+            event(new UserDeactivated(
+                userId: $userId,
+                byUserId: $byUserId,
+                occurredAt: now()->toIso8601String(),
+            ));
 
             // No cache invalidation here on purpose. The effective set is
             // derived from roles and has not changed; what changed is

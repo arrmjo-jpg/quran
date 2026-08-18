@@ -6,6 +6,7 @@ namespace Modules\Core\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Core\Domain\Entities\User;
+use Modules\Core\Domain\Events\UserReactivated;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
 use Modules\Core\Domain\ValueObjects\UserId;
 
@@ -28,11 +29,21 @@ final class ActivateUserUseCase
 
     public function execute(string $userId, ?string $byUserId = null): User
     {
-        return DB::transaction(function () use ($userId): User {
+        return DB::transaction(function () use ($userId, $byUserId): User {
             $user = $this->users->findOrFail(new UserId($userId));
+
+            if ($user->isActive()) {
+                return $user;
+            }
 
             $user->activate();
             $this->users->save($user);
+
+            event(new UserReactivated(
+                userId: $userId,
+                byUserId: $byUserId,
+                occurredAt: now()->toIso8601String(),
+            ));
 
             return $user;
         });

@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\Core\Domain\Events\UserDeactivated;
+use Modules\Core\Domain\Events\UserReactivated;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
@@ -323,6 +326,81 @@ test('activation and deactivation are separately grantable', function (): void {
     $this->actingAs($reactivator)
         ->patchJson("/api/v1/admin/users/{$second->id}/activate")
         ->assertOk();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Audit — PE-7 applies to activation, not only to roles
+|--------------------------------------------------------------------------
+|
+| ADR-015 §4.5 names UserDeactivated and UserReactivated. Neither existed
+| until the document was read back against the code: the account's roles do
+| not change here, so nothing else was watching, and cutting someone's access
+| to the platform left no trace at all. These pin the pair that closes it.
+*/
+
+test('deactivating an account records UserDeactivated with who did it', function (): void {
+    Event::fake([UserDeactivated::class, UserReactivated::class]);
+
+    $actor = userApiAdmin();
+    $subject = withSuperAdmin(userApiUser('audited-off@quran.test'));
+
+    $this->actingAs($actor)
+        ->patchJson("/api/v1/admin/users/{$subject->id}/deactivate")
+        ->assertOk();
+
+    Event::assertDispatched(UserDeactivated::class, function (UserDeactivated $e) use ($subject, $actor): bool {
+        return $e->userId === (string) $subject->id
+            && $e->byUserId === (string) $actor->id
+            && $e->occurredAt !== '';
+    });
+    Event::assertNotDispatched(UserReactivated::class);
+});
+
+test('reactivating an account records UserReactivated', function (): void {
+    $actor = userApiAdmin();
+    $subject = withSuperAdmin(userApiUser('audited-on@quran.test', active: false));
+
+    Event::fake([UserDeactivated::class, UserReactivated::class]);
+
+    $this->actingAs($actor)
+        ->patchJson("/api/v1/admin/users/{$subject->id}/activate")
+        ->assertOk();
+
+    Event::assertDispatched(UserReactivated::class, function (UserReactivated $e) use ($subject, $actor): bool {
+        return $e->userId === (string) $subject->id && $e->byUserId === (string) $actor->id;
+    });
+    Event::assertNotDispatched(UserDeactivated::class);
+});
+
+test('a no-op activation records nothing', function (): void {
+    // An audit entry claiming a change that did not happen is worse than a
+    // missing one: it puts a name against an act nobody performed.
+    Event::fake([UserDeactivated::class, UserReactivated::class]);
+
+    $actor = userApiAdmin();
+    $subject = withSuperAdmin(userApiUser('already-active@quran.test'));
+
+    $this->actingAs($actor)
+        ->patchJson("/api/v1/admin/users/{$subject->id}/activate")
+        ->assertOk();
+
+    Event::assertNotDispatched(UserReactivated::class);
+    Event::assertNotDispatched(UserDeactivated::class);
+});
+
+test('a refused deactivation records nothing', function (): void {
+    // PE-6 refuses this one. Nothing changed, so nothing may be logged.
+    Event::fake([UserDeactivated::class]);
+
+    $actor = userApiAdmin();
+    withSuperAdmin(userApiUser('another-holder@quran.test'));
+
+    $this->actingAs($actor)
+        ->patchJson("/api/v1/admin/users/{$actor->id}/deactivate")
+        ->assertStatus(403);
+
+    Event::assertNotDispatched(UserDeactivated::class);
 });
 
 /*
