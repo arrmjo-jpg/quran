@@ -27,7 +27,7 @@ final class Evaluation
         public readonly EvaluationId $id,
         public readonly string $applicationId,
         public readonly string $judgeId,
-        private string $status = 'pending',
+        private string $status = 'draft',
         private float $totalScore = 0.0,
         private ?string $notes = null,
         private array $criteriaScores = [],
@@ -42,7 +42,7 @@ final class Evaluation
             id: $id,
             applicationId: $applicationId,
             judgeId: $judgeId,
-            status: 'pending',
+            status: 'draft',
             totalScore: 0.0
         );
     }
@@ -68,13 +68,23 @@ final class Evaluation
         return $this->criteriaScores;
     }
 
+    public function beginReview(EvaluationStateMachine $stateMachine): void
+    {
+        $this->status = $stateMachine->transition($this->status, 'in_progress');
+    }
+
     public function submitScores(array $criteriaScores, ?string $notes, EvaluationStateMachine $stateMachine): void
     {
         $this->criteriaScores = $criteriaScores;
         $this->notes = $notes;
         $this->totalScore = array_sum($criteriaScores);
 
-        $this->status = $stateMachine->transition($this->status, 'in_progress');
+        // A judge may submit directly from 'draft' (skipping the explicit
+        // /start step) or from 'in_progress' (after /start was called) —
+        // only hop through in_progress when we're not already there.
+        if ($this->status !== 'in_progress') {
+            $this->status = $stateMachine->transition($this->status, 'in_progress');
+        }
         $this->status = $stateMachine->transition($this->status, 'submitted');
 
         $this->recordEvent(new EvaluationSubmitted($this->id->value, $this->applicationId, $this->judgeId, $this->totalScore, now()->toIso8601String()));

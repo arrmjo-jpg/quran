@@ -36,7 +36,7 @@ final class FirebaseOtpService
         return [
             'phone' => $phone,
             'expires_in' => self::OTP_TTL_SECONDS,
-            'otp_code' => config('app.env') === 'testing' || config('app.debug') ? $otpCode : null,
+            'otp_code' => config('app.env') === 'testing' || config('services.otp.debug_mode') ? $otpCode : null,
         ];
     }
 
@@ -58,7 +58,7 @@ final class FirebaseOtpService
             throw new \DomainException('MAX_ATTEMPTS_EXCEEDED');
         }
 
-        if ($cachedCode !== trim($code)) {
+        if (! hash_equals((string) $cachedCode, trim($code))) {
             $newAttempts = $attempts + 1;
             if ($newAttempts >= self::MAX_ATTEMPTS) {
                 Cache::forget($otpKey);

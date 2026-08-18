@@ -21,28 +21,30 @@ final class UserResource extends JsonResource
                 'id' => $resource->id->value,
                 'name' => $resource->getName(),
                 'email' => (string) $resource->getEmail(),
-                'type' => 'admin',
+                'type' => $resource->getType(),
                 'status' => $resource->isActive() ? 'active' : 'inactive',
                 'is_active' => $resource->isActive(),
                 'email_verified' => true,
                 'avatar' => null,
-                'roles' => ['admin'],
-                'permissions' => ['*'],
+                'roles' => [$resource->getType()],
+                'permissions' => $resource->getType() === 'admin' ? ['*'] : [],
                 'preferred_locale' => (string) $resource->getPreferredLocale(),
             ];
         }
+
+        $type = $resource->type ?? 'user';
 
         return [
             'id' => $resource->id,
             'name' => $resource->name,
             'email' => $resource->email,
-            'type' => $resource->type ?? 'admin',
+            'type' => $type,
             'status' => ($resource->is_active ?? true) ? 'active' : 'inactive',
             'is_active' => (bool) ($resource->is_active ?? true),
             'email_verified' => true,
             'avatar' => null,
-            'roles' => [$resource->type ?? 'admin'],
-            'permissions' => ['*'],
+            'roles' => [$type],
+            'permissions' => $type === 'admin' ? ['*'] : [],
             'preferred_locale' => $resource->preferred_locale ?? 'ar',
         ];
     }

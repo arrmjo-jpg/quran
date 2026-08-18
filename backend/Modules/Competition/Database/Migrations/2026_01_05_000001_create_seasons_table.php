@@ -15,10 +15,13 @@ return new class extends Migration
             PlatformBlueprint::uuidPrimary($table);
             $table->string('slug', 100)->unique('uk_seasons_slug');
             $table->unsignedSmallInteger('year');
-            $table->timestamp('registration_start');
-            $table->timestamp('registration_end');
-            $table->timestamp('start_date');
-            $table->timestamp('end_date');
+            // dateTime(), not timestamp(): MySQL TIMESTAMP caps at
+            // 2038-01-19 (the Y2038 problem) — CreateSeasonRequest
+            // validates "year" up to 2100.
+            $table->dateTime('registration_start');
+            $table->dateTime('registration_end');
+            $table->dateTime('start_date');
+            $table->dateTime('end_date');
             $table->string('status', 50)->default('draft')->index('idx_seasons_status');
             $table->boolean('is_active')->default(false);
             PlatformBlueprint::softDeletes($table);

@@ -8,6 +8,8 @@ use Modules\Evaluations\Domain\Entities\Evaluation;
 use Modules\Evaluations\Domain\Repositories\EvaluationRepositoryContract;
 use Modules\Evaluations\Domain\ValueObjects\EvaluationId;
 use Modules\Evaluations\Infrastructure\Database\Models\EvaluationModel;
+use Modules\Evaluations\Infrastructure\Database\Models\EvaluationScoreModel;
+use Symfony\Component\Uid\Uuid;
 
 final class EvaluationRepository implements EvaluationRepositoryContract
 {
@@ -63,20 +65,42 @@ final class EvaluationRepository implements EvaluationRepositoryContract
                 'application_id' => $evaluation->applicationId,
                 'judge_id' => $evaluation->judgeId,
                 'total_score' => $evaluation->getTotalScore(),
+                'notes' => $evaluation->getNotes(),
                 'status' => $evaluation->getStatus(),
             ]
         );
+
+        foreach ($evaluation->getCriteriaScores() as $criterionId => $score) {
+            $scoreModel = EvaluationScoreModel::query()->firstOrNew([
+                'evaluation_id' => $evaluation->id->value,
+                'criterion_id' => $criterionId,
+            ]);
+
+            if (! $scoreModel->exists) {
+                $scoreModel->id = (string) Uuid::v7();
+            }
+
+            $scoreModel->score = $score;
+            $scoreModel->save();
+        }
     }
 
     private function toDomain(EvaluationModel $model): Evaluation
     {
+        $criteriaScores = EvaluationScoreModel::query()
+            ->where('evaluation_id', $model->id)
+            ->pluck('score', 'criterion_id')
+            ->map(fn ($score): float => (float) $score)
+            ->all();
+
         return new Evaluation(
             id: new EvaluationId($model->id),
             applicationId: $model->application_id,
             judgeId: $model->judge_id,
             status: $model->status,
             totalScore: (float) $model->total_score,
-            notes: $model->notes
+            notes: $model->notes,
+            criteriaScores: $criteriaScores
         );
     }
 }

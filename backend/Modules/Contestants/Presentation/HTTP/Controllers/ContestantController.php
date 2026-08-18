@@ -7,6 +7,7 @@ namespace Modules\Contestants\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Competition\Contracts\CompetitionServiceContract;
 use Modules\Contestants\Domain\Entities\Contestant;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
 use Modules\Contestants\Domain\Services\EligibilityService;
@@ -21,6 +22,7 @@ final class ContestantController extends Controller
     public function __construct(
         private readonly ContestantRepositoryContract $repository,
         private readonly EligibilityService $eligibilityService,
+        private readonly CompetitionServiceContract $competitionService,
     ) {}
 
     public function showProfile(Request $request): JsonResponse
@@ -88,7 +90,16 @@ final class ContestantController extends Controller
             ], 422);
         }
 
-        $result = $this->eligibilityService->checkEligibility($contestant, '2026-08-01 00:00:00');
+        $seasonStartIso = $this->competitionService->getActiveSeasonStartDateIso();
+
+        if (! $seasonStartIso) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'NO_ACTIVE_SEASON', 'message' => __('No active competition season currently open.')],
+            ], 422);
+        }
+
+        $result = $this->eligibilityService->checkEligibility($contestant, $seasonStartIso);
 
         return response()->json([
             'success' => true,

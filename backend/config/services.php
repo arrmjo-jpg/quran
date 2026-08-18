@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'otp' => [
+        // Deliberately separate from APP_DEBUG: leaving APP_DEBUG=true on
+        // in a misconfigured production environment must not also leak
+        // OTP codes to every caller of the send-otp endpoint.
+        'debug_mode' => (bool) env('OTP_DEBUG_MODE', false),
+    ],
+
 ];

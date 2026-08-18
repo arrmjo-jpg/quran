@@ -32,7 +32,9 @@ final class SeasonResource extends JsonResource
             'year' => (int) $resource->year,
             'status' => $resource->status,
             'is_active' => (bool) $resource->is_active,
-            'title' => $resource->translations->first()?->title ?? $resource->slug,
+            'title' => $resource->translations->firstWhere('locale', app()->getLocale())?->title
+                ?? $resource->translations->first()?->title
+                ?? $resource->slug,
             'registration_start' => $resource->registration_start?->toIso8601String(),
             'registration_end' => $resource->registration_end?->toIso8601String(),
         ];

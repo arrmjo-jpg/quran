@@ -16,8 +16,10 @@ export interface CreateSeasonPayload {
   slug:               string;
   registration_start: string;
   registration_end:   string;
-  start_date?:        string;
-  end_date?:          string;
+  start_date:         string;
+  end_date:           string;
+  title_ar:           string;
+  title_en:           string;
 }
 
 export interface SeasonFilters {

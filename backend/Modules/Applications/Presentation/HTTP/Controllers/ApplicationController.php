@@ -14,6 +14,7 @@ use Modules\Applications\Presentation\HTTP\Requests\RequestReuploadRequest;
 use Modules\Applications\Presentation\HTTP\Requests\SubmitApplicationRequest;
 use Modules\Applications\Presentation\HTTP\Resources\ApplicationResource;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
+use Symfony\Component\Uid\Uuid;
 
 final class ApplicationController extends Controller
 {
@@ -33,8 +34,24 @@ final class ApplicationController extends Controller
             ], 422);
         }
 
+        $existing = $this->repository->findByContestantSeasonStage(
+            (string) $contestant->id,
+            $request->validated('season_id'),
+            $request->validated('stage_id')
+        );
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'DUPLICATE_APPLICATION',
+                    'message' => __('An application already exists for this contestant, season, and stage.'),
+                ],
+            ], 409);
+        }
+
         $application = Application::submit(
-            id: fake()->uuid(),
+            id: (string) Uuid::v7(),
             contestantId: (string) $contestant->id,
             seasonId: $request->validated('season_id'),
             stageId: $request->validated('stage_id'),

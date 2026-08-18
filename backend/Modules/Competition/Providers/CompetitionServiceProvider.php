@@ -10,10 +10,12 @@ namespace Modules\Competition\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Competition\Contracts\CompetitionServiceContract;
 use Modules\Competition\Contracts\RuleEngineContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Infrastructure\Database\Repositories\SeasonRepository;
+use Modules\Competition\Infrastructure\Services\CompetitionService;
 
 final class CompetitionServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,11 @@ final class CompetitionServiceProvider extends ServiceProvider
         $this->app->singleton(
             RuleEngineContract::class,
             CompetitionRuleEngine::class
+        );
+
+        $this->app->singleton(
+            CompetitionServiceContract::class,
+            CompetitionService::class
         );
     }
 
@@ -51,7 +58,7 @@ final class CompetitionServiceProvider extends ServiceProvider
         }
 
         if (file_exists(__DIR__.'/../Routes/admin.php')) {
-            Route::middleware(['api', 'auth:sanctum'])
+            Route::middleware(['api', 'auth:sanctum', 'admin'])
                 ->prefix('api/v1/admin')
                 ->group(__DIR__.'/../Routes/admin.php');
         }

@@ -5,8 +5,10 @@ export const seasonSchema = z.object({
   slug: z.string().min(3, 'المعرف يجب أن يكون 3 أحرف على الأقل').regex(/^[a-z0-9-]+$/, 'المعرف يجب أن يحوي أحرفاً صغيرة وأرقام وخطوط فقط'),
   registration_start: z.string().min(1, 'يرجى تحديد تاريخ بداية التسجيل'),
   registration_end: z.string().min(1, 'يرجى تحديد تاريخ نهاية التسجيل'),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
+  start_date: z.string().min(1, 'يرجى تحديد تاريخ بداية الموسم'),
+  end_date: z.string().min(1, 'يرجى تحديد تاريخ نهاية الموسم'),
+  title_ar: z.string().min(1, 'يرجى إدخال العنوان بالعربية'),
+  title_en: z.string().min(1, 'يرجى إدخال العنوان بالإنجليزية'),
 });
 
 export type SeasonFormValues = z.infer<typeof seasonSchema>;

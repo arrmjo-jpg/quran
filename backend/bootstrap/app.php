@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuditLoggingMiddleware;
 use App\Http\Middleware\CorrelationIdMiddleware;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // (RouteNotFoundException) for any client that didn't send an
         // explicit Accept: application/json header.
         $middleware->redirectGuestsTo(null);
+
+        $middleware->alias([
+            'admin' => EnsureUserIsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

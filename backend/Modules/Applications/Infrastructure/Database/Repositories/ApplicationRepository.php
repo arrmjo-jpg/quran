@@ -31,6 +31,17 @@ final class ApplicationRepository implements ApplicationRepositoryContract
         return $model ? $this->toDomain($model) : null;
     }
 
+    public function findByContestantSeasonStage(string $contestantId, string $seasonId, string $stageId): ?Application
+    {
+        $model = ApplicationModel::query()
+            ->where('contestant_id', $contestantId)
+            ->where('season_id', $seasonId)
+            ->where('stage_id', $stageId)
+            ->first();
+
+        return $model ? $this->toDomain($model) : null;
+    }
+
     public function save(Application $application): void
     {
         ApplicationModel::query()->updateOrCreate(
@@ -43,6 +54,7 @@ final class ApplicationRepository implements ApplicationRepositoryContract
                 'video_media_id' => $application->videoMediaId,
                 'application_number' => $application->applicationNumber,
                 'status' => $application->getStatus(),
+                'reupload_reason' => $application->getReuploadReason(),
             ]
         );
     }
@@ -57,8 +69,10 @@ final class ApplicationRepository implements ApplicationRepositoryContract
             applicationNumber: $model->application_number,
             status: $model->status,
             videoId: $model->video_id,
+            videoMediaId: $model->video_media_id,
             submittedAtIso: $model->submitted_at?->toIso8601String(),
-            deletedAt: $model->deleted_at?->toIso8601String()
+            deletedAt: $model->deleted_at?->toIso8601String(),
+            reuploadReason: $model->reupload_reason
         );
     }
 }

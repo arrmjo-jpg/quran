@@ -29,7 +29,7 @@ export function Contestant360Drawer({ contestant, isOpen, onClose }: Contestant3
   ] as const;
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title={`الملف الشخصي 360° — ${contestant.first_name} ${contestant.last_name}`}>
+    <Dialog isOpen={isOpen} onClose={onClose} title={`الملف الشخصي 360° — ${contestant.full_name}`}>
       <div className="space-y-4 text-xs text-right">
         {/* Tabs Bar */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1 gap-1">
@@ -59,13 +59,13 @@ export function Contestant360Drawer({ contestant, isOpen, onClose }: Contestant3
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-3 border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-sm text-slate-900 dark:text-white">
-                  {contestant.first_name} {contestant.last_name}
+                  {contestant.full_name}
                 </span>
-                <Badge variant="info">{contestant.country_code ?? 'عالمي'}</Badge>
+                <Badge variant="info">{contestant.profile_completeness ? `${contestant.profile_completeness.completeness_percent}%` : '—'}</Badge>
               </div>
               <div className="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-                <p>البريد الإلكتروني: <span className="font-mono text-slate-900 dark:text-white">{contestant.email ?? '—'}</span></p>
-                <p>رقم الهاتف: <span className="font-mono text-slate-900 dark:text-white">{contestant.phone ?? '—'}</span></p>
+                <p>تاريخ الميلاد: <span className="font-mono text-slate-900 dark:text-white">{contestant.date_of_birth ?? '—'}</span></p>
+                <p>رقم الهاتف: <span className="font-mono text-slate-900 dark:text-white">{contestant.phone_number ?? '—'}</span></p>
                 <p>تاريخ التسجيل: <span className="font-mono">{contestant.created_at ?? '—'}</span></p>
                 <p>حالة الحساب: <Badge variant="success">نشط ومتحقق</Badge></p>
               </div>

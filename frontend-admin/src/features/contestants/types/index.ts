@@ -1,11 +1,17 @@
 export interface ContestantProfile {
   id:             string;
-  first_name:     string;
-  last_name:      string;
-  email?:         string;
-  phone?:         string;
-  country_code?:  string;
+  full_name:      string;
+  country_id:     string;
+  date_of_birth?: string;
+  gender?:        string;
+  phone_number?:  string;
+  national_id?:   string;
   created_at?:    string;
+  profile_completeness?: {
+    completeness_percent: number;
+    is_complete:           boolean;
+    missing_fields:        string[];
+  };
   applications?: {
     id:             string;
     season_id:      string;

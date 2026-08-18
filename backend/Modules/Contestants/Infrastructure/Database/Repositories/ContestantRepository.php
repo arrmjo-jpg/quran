@@ -34,6 +34,24 @@ final class ContestantRepository implements ContestantRepositoryContract
         return $model ? $this->toDomain($model) : null;
     }
 
+    public function search(?string $query): array
+    {
+        $builder = ContestantModel::query();
+
+        if ($query !== null && $query !== '') {
+            $builder->where(function ($inner) use ($query): void {
+                $inner->where('full_name', 'like', "%{$query}%")
+                    ->orWhere('phone_number', 'like', "%{$query}%")
+                    ->orWhere('national_id', 'like', "%{$query}%");
+            });
+        }
+
+        return $builder->orderBy('full_name')
+            ->get()
+            ->map(fn (ContestantModel $model): Contestant => $this->toDomain($model))
+            ->all();
+    }
+
     public function save(Contestant $contestant): void
     {
         ContestantModel::query()->updateOrCreate(
@@ -45,6 +63,7 @@ final class ContestantRepository implements ContestantRepositoryContract
                 'date_of_birth' => (string) $contestant->getDateOfBirth(),
                 'gender' => (string) $contestant->getGender(),
                 'phone_number' => $contestant->getPhoneNumber(),
+                'national_id' => $contestant->getNationalId(),
                 'photo_media_id' => $contestant->getPhotoMediaId(),
             ]
         );

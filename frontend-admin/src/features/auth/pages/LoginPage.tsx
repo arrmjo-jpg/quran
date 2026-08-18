@@ -1,26 +1,38 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Lock, Mail } from 'lucide-react';
+import { BookOpen, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/core/auth/AuthContext';
-import { authService } from '../api/auth.service';
+import { authService, isMfaChallenge } from '../api/auth.service';
 import Button from '@/ui/Button';
+import { Input } from '@/ui/input/Input';
 import { extractErrorMessage } from '@/core/api/errors';
 import { toast } from 'sonner';
 
 export default function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@quran.test');
-  const [password, setPassword] = useState('Pass123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Set once login() returns mfa_required — switches the form to the
+  // second step (TOTP/recovery code) instead of completing login.
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const data = await authService.login({ email, password });
-      login(data.token, data.user);
+      const result = await authService.login({ email, password });
+
+      if (isMfaChallenge(result)) {
+        setChallengeToken(result.challenge_token);
+        return;
+      }
+
+      login(result.token, result.user);
       toast.success('تم تسجيل الدخول بنجاح');
       navigate('/');
     } catch (err) {
@@ -29,6 +41,61 @@ export default function LoginPage(): React.JSX.Element {
       setLoading(false);
     }
   };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challengeToken) return;
+    setLoading(true);
+
+    try {
+      const data = await authService.completeMfaChallenge(challengeToken, mfaCode);
+      login(data.token, data.user);
+      toast.success('تم تسجيل الدخول بنجاح');
+      navigate('/');
+    } catch (err) {
+      toast.error(extractErrorMessage(err, 'رمز التحقق غير صحيح.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (challengeToken) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 font-sans text-slate-100" dir="rtl">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-brand-600/30">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-bold text-white">التحقق بخطوتين</h1>
+            <p className="text-xs text-slate-400 mt-1">أدخل رمز التطبيق المصادق أو أحد رموز الاسترجاع الثمانية</p>
+          </div>
+
+          <form onSubmit={handleMfaSubmit} className="space-y-4">
+            <Input
+              label="رمز التحقق"
+              placeholder="123456"
+              maxLength={8}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
+            />
+
+            <Button type="submit" isLoading={loading} className="w-full py-3 mt-2 text-sm font-semibold">
+              تأكيد
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => { setChallengeToken(null); setMfaCode(''); }}
+              className="w-full text-center text-xs text-slate-400 hover:text-slate-200 mt-2"
+            >
+              العودة لتسجيل الدخول
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 font-sans text-slate-100" dir="rtl">

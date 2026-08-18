@@ -5,11 +5,11 @@ import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { DataTable } from '@/ui/datatable/DataTable';
 import Badge from '@/ui/Badge';
 import Button from '@/ui/Button';
-import { Dialog, ConfirmDialog } from '@/ui/dialog/Dialog';
+import { Dialog } from '@/ui/dialog/Dialog';
 import { VideoPlayer } from '@/ui/media/VideoPlayer';
 import { applicationService } from '../api/application.service';
 import type { ApplicationItem } from '../types';
-import { Play, Check, X, Send } from 'lucide-react';
+import { Play, X, Send } from 'lucide-react';
 import { formatDate } from '@/core/utils';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ export default function ApplicationsPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [previewApp, setPreviewApp] = useState<ApplicationItem | null>(null);
   const [rejectApp, setRejectApp] = useState<ApplicationItem | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const { data: applications, isLoading, refetch } = useQuery({
     queryKey: ['applications'],
@@ -28,6 +29,19 @@ export default function ApplicationsPage(): React.JSX.Element {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       toast.success('تمت إحالة الطلب إلى طابور تحكيم اللجنة بنجاح');
+    },
+  });
+
+  const requestReupload = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => applicationService.requestReupload(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast.success('تم إرسال طلب إعادة الرفع إلى المتسابق');
+      setRejectApp(null);
+      setRejectReason('');
+    },
+    onError: () => {
+      toast.error('تعذر إرسال طلب إعادة الرفع، يرجى المحاولة مرة أخرى');
     },
   });
 
@@ -48,9 +62,9 @@ export default function ApplicationsPage(): React.JSX.Element {
       cell: ({ row }) => <span>{row.original.season_id} / {row.original.stage_id}</span>,
     },
     {
-      accessorKey: 'created_at',
+      accessorKey: 'submitted_at',
       header: 'تاريخ التقديم',
-      cell: ({ row }) => formatDate(row.original.created_at),
+      cell: ({ row }) => (row.original.submitted_at ? formatDate(row.original.submitted_at) : '—'),
     },
     {
       accessorKey: 'status',
@@ -89,7 +103,7 @@ export default function ApplicationsPage(): React.JSX.Element {
           )}
           <Button size="sm" variant="danger" onClick={() => setRejectApp(row.original)}>
             <X className="w-3 h-3" />
-            <span>رفض</span>
+            <span>طلب إعادة رفع</span>
           </Button>
         </div>
       ),
@@ -123,19 +137,40 @@ export default function ApplicationsPage(): React.JSX.Element {
         </Dialog>
       )}
 
-      {/* Reject Confirm Dialog */}
+      {/* Request Reupload Dialog */}
       {rejectApp && (
-        <ConfirmDialog
+        <Dialog
           isOpen={Boolean(rejectApp)}
-          onClose={() => setRejectApp(null)}
-          title="تأكيد رفض الطلب"
-          description={`هل أنت متأكد من رفض الطلب رقم ${rejectApp.id}؟ سيتم إشعار المتسابق وتسجيل القرار في Audit Trail.`}
-          confirmLabel="تأكيد الرفض"
-          onConfirm={() => {
-            toast.success('تم تسجيل قرار الرفض');
-            setRejectApp(null);
-          }}
-        />
+          onClose={() => { setRejectApp(null); setRejectReason(''); }}
+          title={`طلب إعادة رفع الفيديو — طلب رقم ${rejectApp.id}`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              سيتم إشعار المتسابق بضرورة إعادة رفع فيديو التلاوة مع توضيح السبب أدناه، وتسجيل القرار في Audit Trail.
+            </p>
+            <textarea
+              className="w-full min-h-[90px] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-xs text-right focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="سبب طلب إعادة الرفع (إلزامي)..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              maxLength={500}
+            />
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button variant="secondary" size="sm" onClick={() => { setRejectApp(null); setRejectReason(''); }} disabled={requestReupload.isPending}>
+                إلغاء
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={requestReupload.isPending}
+                disabled={rejectReason.trim().length === 0}
+                onClick={() => requestReupload.mutate({ id: rejectApp.id, reason: rejectReason.trim() })}
+              >
+                إرسال طلب إعادة الرفع
+              </Button>
+            </div>
+          </div>
+        </Dialog>
       )}
     </PageLayout>
   );

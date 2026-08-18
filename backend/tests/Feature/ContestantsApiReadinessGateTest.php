@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Competition\Infrastructure\Database\Models\SeasonModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Countries\Domain\Repositories\CountryRepositoryContract;
 use Modules\Countries\Domain\ValueObjects\CountryIso2;
 use Modules\Countries\Infrastructure\Database\Seeders\CountriesSeeder;
+use Symfony\Component\Uid\Uuid;
 
 uses(RefreshDatabase::class)->group('contestants_gate', 'api');
 
@@ -25,6 +27,20 @@ test('Contestants API Readiness Gate: complete contestant profile creation, comp
     $repository = app(CountryRepositoryContract::class);
     (new CountriesSeeder)->run($repository);
     $country = $repository->findByIso2(new CountryIso2('JO'));
+
+    // Eligibility is evaluated against the active season's start date,
+    // not a hardcoded value — a season must be active for the gate below.
+    SeasonModel::query()->create([
+        'id' => (string) Uuid::v7(),
+        'slug' => 'gate-season',
+        'year' => 2026,
+        'registration_start' => '2026-01-01 00:00:00',
+        'registration_end' => '2026-01-15 00:00:00',
+        'start_date' => '2026-08-01 00:00:00',
+        'end_date' => '2026-09-01 00:00:00',
+        'status' => 'registration_open',
+        'is_active' => true,
+    ]);
 
     // 1. Create Profile
     $profileResponse = $this->actingAs($user)->postJson('/api/v1/contestant/profile', [

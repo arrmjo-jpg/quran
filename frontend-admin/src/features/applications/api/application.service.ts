@@ -12,4 +12,9 @@ export const applicationService = {
     const { data } = await http.post<ApiSuccess<ApplicationItem>>(`/admin/applications/${id}/ready-for-judging`);
     return data.data;
   },
+
+  async requestReupload(id: string, reason: string): Promise<ApplicationItem> {
+    const { data } = await http.post<ApiSuccess<ApplicationItem>>(`/admin/applications/${id}/request-reupload`, { reason });
+    return data.data;
+  },
 };

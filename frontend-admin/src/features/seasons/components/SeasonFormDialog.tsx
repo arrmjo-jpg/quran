@@ -27,6 +27,10 @@ export function SeasonFormDialog({ isOpen, onClose }: SeasonFormDialogProps): Re
       slug: 'season-2026',
       registration_start: new Date().toISOString().split('T')[0],
       registration_end: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      start_date: new Date(Date.now() + 31 * 86400000).toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+      title_ar: '',
+      title_en: '',
     },
   });
 
@@ -69,6 +73,34 @@ export function SeasonFormDialog({ isOpen, onClose }: SeasonFormDialogProps): Re
             type="date"
             {...register('registration_end')}
             error={errors.registration_end?.message}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="بداية الموسم"
+            type="date"
+            {...register('start_date')}
+            error={errors.start_date?.message}
+          />
+          <Input
+            label="نهاية الموسم"
+            type="date"
+            {...register('end_date')}
+            error={errors.end_date?.message}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="عنوان الموسم (عربي)"
+            {...register('title_ar')}
+            error={errors.title_ar?.message}
+          />
+          <Input
+            label="عنوان الموسم (إنجليزي)"
+            {...register('title_en')}
+            error={errors.title_en?.message}
           />
         </div>
 

@@ -8,6 +8,7 @@ use Modules\Core\Domain\Entities\User;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
+use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 
@@ -61,8 +62,8 @@ final class UserRepository implements UserRepositoryContract
             email: new Email($model->email),
             name: $model->name,
             type: $model->type,
-            passwordHash: null,
-            preferredLocale: new Locale('ar'),
+            passwordHash: $model->password_hash !== null ? new PasswordHash($model->password_hash) : null,
+            preferredLocale: new Locale($model->preferred_locale),
             isActive: (bool) $model->is_active,
             deletedAt: $model->deleted_at?->toIso8601String()
         );

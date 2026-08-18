@@ -24,6 +24,7 @@ final class ApplicationResource extends JsonResource
                 'stage_id' => $resource->stageId,
                 'status' => (string) $resource->getStatus(),
                 'video_media_asset_id' => $resource->videoMediaId,
+                'reupload_reason' => $resource->getReuploadReason(),
             ];
         }
 
@@ -34,6 +35,7 @@ final class ApplicationResource extends JsonResource
             'stage_id' => $resource->stage_id,
             'status' => $resource->status,
             'video_media_asset_id' => $resource->video_media_id,
+            'reupload_reason' => $resource->reupload_reason,
             'submitted_at' => $resource->created_at?->toIso8601String(),
         ];
     }

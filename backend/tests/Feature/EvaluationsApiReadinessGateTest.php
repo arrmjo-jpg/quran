@@ -101,6 +101,52 @@ function eval_contestant_user(string $email): array
     return ['user' => $user, 'contestant_id' => $contestantId];
 }
 
+/** Insert a season + stage + application row for a given contestant and return the application id. */
+function eval_application(string $contestantId): string
+{
+    $seasonId = fake()->uuid();
+    DB::table('seasons')->insert([
+        'id' => $seasonId,
+        'slug' => 'eval-appeal-season-'.fake()->unique()->numerify('####'),
+        'year' => 2026,
+        'registration_start' => now(),
+        'registration_end' => now()->addDays(10),
+        'start_date' => now()->addDays(11),
+        'end_date' => now()->addDays(40),
+        'status' => 'registration_open',
+        'is_active' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $stageId = fake()->uuid();
+    DB::table('stages')->insert([
+        'id' => $stageId,
+        'season_id' => $seasonId,
+        'stage_number' => 1,
+        'type' => 'preliminary',
+        'start_date' => now(),
+        'end_date' => now()->addDays(10),
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $applicationId = fake()->uuid();
+    DB::table('applications')->insert([
+        'id' => $applicationId,
+        'contestant_id' => $contestantId,
+        'season_id' => $seasonId,
+        'stage_id' => $stageId,
+        'application_number' => 'APP-'.strtoupper(substr(md5($applicationId), 0, 8)),
+        'status' => 'ready_for_judging',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $applicationId;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // JUDGE BLINDNESS TESTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -277,7 +323,7 @@ test('Evaluations 16.7.11 — Contestant can submit appeal', function (): void {
     $data = eval_contestant_user('contestant-appeal@eval.test');
     $user = $data['user'];
     $contestantId = $data['contestant_id'];
-    $appId = fake()->uuid();
+    $appId = eval_application($contestantId);
 
     $this->actingAs($user)
         ->postJson('/api/v1/contestant/appeals', [

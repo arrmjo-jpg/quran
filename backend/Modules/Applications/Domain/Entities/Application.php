@@ -28,6 +28,7 @@ final class Application
         public ?string $videoMediaId = null,
         private ?string $submittedAtIso = null,
         private ?string $deletedAt = null,
+        private ?string $reuploadReason = null,
     ) {}
 
     public static function create(
@@ -80,9 +81,15 @@ final class Application
         return $this->status;
     }
 
+    public function getReuploadReason(): ?string
+    {
+        return $this->reuploadReason;
+    }
+
     public function requestReupload(string $reason): void
     {
         $this->status = 'reupload_requested';
+        $this->reuploadReason = $reason;
     }
 
     public function markReadyForJudging(): void

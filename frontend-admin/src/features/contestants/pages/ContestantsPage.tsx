@@ -9,7 +9,7 @@ import type { ContestantProfile } from '../types';
 import { Eye } from 'lucide-react';
 
 export default function ContestantsPage(): React.JSX.Element {
-  const [query, setQuery] = useState('test');
+  const [query, setQuery] = useState('');
   const [selectedContestant, setSelectedContestant] = useState<ContestantProfile | null>(null);
 
   const { data: contestants, isLoading, refetch } = useContestants({ query });
@@ -21,19 +21,14 @@ export default function ContestantsPage(): React.JSX.Element {
       cell: ({ row }) => <span className="font-mono text-[10px] text-slate-400">{row.original.id}</span>,
     },
     {
-      accessorKey: 'first_name',
-      header: 'الاسم الأول',
-      cell: ({ row }) => <span className="font-semibold text-slate-900 dark:text-white">{row.original.first_name}</span>,
+      accessorKey: 'full_name',
+      header: 'الاسم الكامل',
+      cell: ({ row }) => <span className="font-semibold text-slate-900 dark:text-white">{row.original.full_name}</span>,
     },
     {
-      accessorKey: 'last_name',
-      header: 'اسم العائلة',
-      cell: ({ row }) => row.original.last_name,
-    },
-    {
-      accessorKey: 'country_code',
-      header: 'الدولة',
-      cell: ({ row }) => row.original.country_code ?? '—',
+      accessorKey: 'phone_number',
+      header: 'رقم الهاتف',
+      cell: ({ row }) => row.original.phone_number ?? '—',
     },
     {
       id: 'actions',

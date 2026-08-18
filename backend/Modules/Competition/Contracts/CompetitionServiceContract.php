@@ -17,6 +17,11 @@ namespace Modules\Competition\Contracts;
  */
 interface CompetitionServiceContract
 {
-    // Define public methods that other modules may call.
-    // Keep this interface minimal — expose only what cross-module consumers need.
+    /**
+     * ISO8601 start date of the currently active season, or null if no
+     * season is active. Used by other modules (e.g. Contestants) to
+     * evaluate age eligibility against the real competition, not a
+     * hardcoded date.
+     */
+    public function getActiveSeasonStartDateIso(): ?string;
 }

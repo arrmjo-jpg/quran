@@ -7,6 +7,7 @@ namespace Modules\Core\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Core\Application\Commands\CreateUserCommand;
@@ -60,6 +61,17 @@ final class AuthController extends Controller
                     'correlation_id' => $request->header('X-Correlation-ID'),
                 ],
             ], 401);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'ACCOUNT_DEACTIVATED',
+                    'message' => __('This account has been deactivated.'),
+                    'correlation_id' => $request->header('X-Correlation-ID'),
+                ],
+            ], 403);
         }
 
         // Enforcement: If MFA is enabled, issue challenge token instead of full auth token
@@ -141,6 +153,12 @@ final class AuthController extends Controller
         $user = $request->user();
         $secret = $totpService->generateSecret();
 
+        // Stored server-side and consulted by mfaVerify() instead of
+        // trusting a client-supplied "secret" field — otherwise anything
+        // able to influence the verify request body could register its
+        // own attacker-controlled secret as the account's real MFA seed.
+        Cache::put(self::mfaPendingSecretKey((string) $user->id), $secret, now()->addMinutes(10));
+
         $qrCodeUrl = sprintf(
             'otpauth://totp/QuranPlatform:%s?secret=%s&issuer=QuranPlatform',
             urlencode($user->email),
@@ -159,13 +177,20 @@ final class AuthController extends Controller
     public function mfaVerify(Request $request, TotpService $totpService): JsonResponse
     {
         $request->validate([
-            'secret' => ['required', 'string'],
             'code' => ['required', 'string', 'size:6'],
         ]);
 
         $user = $request->user();
-        $secret = $request->input('secret');
         $code = $request->input('code');
+
+        $secret = Cache::get(self::mfaPendingSecretKey((string) $user->id));
+
+        if (! $secret) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'MFA_SETUP_EXPIRED', 'message' => __('MFA setup session expired. Please start again.')],
+            ], 422);
+        }
 
         if (! $totpService->verifyCode($secret, $code)) {
             return response()->json([
@@ -173,6 +198,8 @@ final class AuthController extends Controller
                 'error' => ['code' => 'INVALID_MFA_CODE', 'message' => __('Invalid 6-digit MFA code.')],
             ], 422);
         }
+
+        Cache::forget(self::mfaPendingSecretKey((string) $user->id));
 
         $recoveryCodes = $totpService->generateRecoveryCodes(8);
         $hashedRecoveryCodes = array_map(fn ($c) => password_hash($c, PASSWORD_BCRYPT), $recoveryCodes);
@@ -418,5 +445,10 @@ final class AuthController extends Controller
             'success' => true,
             'message' => __('Device trust revoked successfully.'),
         ]);
+    }
+
+    private static function mfaPendingSecretKey(string $userId): string
+    {
+        return "mfa_pending_secret:{$userId}";
     }
 }

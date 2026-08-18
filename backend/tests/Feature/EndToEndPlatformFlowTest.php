@@ -156,7 +156,7 @@ test('E2E Full Journey — Register -> Profile -> Upload -> App -> 5 Judges -> C
             'id' => fake()->uuid(),
             'application_id' => $appId,
             'judge_id' => (string) $jModel->id,
-            'status' => 'pending',
+            'status' => 'draft',
             'total_score' => 0,
         ]);
 

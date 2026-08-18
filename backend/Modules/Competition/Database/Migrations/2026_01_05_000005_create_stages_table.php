@@ -17,8 +17,10 @@ return new class extends Migration
             $table->uuid('evaluation_template_id')->nullable();
             $table->unsignedInteger('stage_number');
             $table->string('type', 50); // 'preliminary', 'semi_final', 'final'
-            $table->timestamp('start_date');
-            $table->timestamp('end_date');
+            // dateTime(), not timestamp(): see the seasons table migration
+            // for why (Y2038 ceiling vs. year-2100-validated input).
+            $table->dateTime('start_date');
+            $table->dateTime('end_date');
             $table->string('status', 50)->default('pending');
             $table->timestamps();
 

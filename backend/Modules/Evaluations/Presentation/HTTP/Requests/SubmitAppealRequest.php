@@ -16,7 +16,7 @@ final class SubmitAppealRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'application_id' => ['required', 'string', 'uuid'],
+            'application_id' => ['required', 'string', 'uuid', 'exists:applications,id'],
             'reason' => ['required', 'string', 'min:20', 'max:2000'],
         ];
     }

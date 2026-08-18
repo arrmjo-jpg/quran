@@ -18,7 +18,7 @@ final class UpdateProfileRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'preferred_locale' => ['sometimes', 'string', 'in:ar,en'],
+            'preferred_locale' => ['sometimes', 'string', 'in:ar,en,fr'],
         ];
     }
 }

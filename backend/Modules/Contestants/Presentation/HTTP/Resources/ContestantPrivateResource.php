@@ -29,6 +29,7 @@ final class ContestantPrivateResource extends JsonResource
                 'date_of_birth' => (string) $resource->getDateOfBirth(),
                 'gender' => (string) $resource->getGender(),
                 'phone_number' => $resource->getPhoneNumber(),
+                'national_id' => $resource->getNationalId(),
                 'photo_media_asset_id' => $resource->getPhotoMediaId(),
                 'profile_completeness' => $completeness,
             ];
@@ -42,6 +43,7 @@ final class ContestantPrivateResource extends JsonResource
             'date_of_birth' => $resource->date_of_birth?->format('Y-m-d'),
             'gender' => $resource->gender,
             'phone_number' => $resource->phone_number,
+            'national_id' => $resource->national_id,
             'photo_media_asset_id' => $resource->photo_media_id,
         ];
     }
