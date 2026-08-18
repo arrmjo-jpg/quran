@@ -9,11 +9,14 @@ export interface LoginPayload {
 }
 
 export interface AuthUserData {
-  id:    string;
-  name:  string;
-  email: string;
-  type:  string;
-  roles: string[];
+  id:          string;
+  name:        string;
+  email:       string;
+  type:        string;
+  /** Display only — the names of the roles held. Never an authorization input. */
+  roles:       string[];
+  /** What UserResource resolved through those roles. The only basis for a UI decision. */
+  permissions: string[];
 }
 
 export interface AuthResponseData {

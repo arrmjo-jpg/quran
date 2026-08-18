@@ -94,9 +94,14 @@ final class AdminAuthorizationTest extends TestCase
             'password' => 'SecurePass123!',
         ]);
 
+        // `roles` was previously fabricated as [$type], which made the account
+        // type look like a role and gave a client something authorization-
+        // shaped to branch on. It now reports the roles actually held, and a
+        // newly registered contestant holds none. The type is still reported,
+        // as a type, in its own field.
         $response->assertStatus(201)
             ->assertJsonPath('data.type', 'contestant')
-            ->assertJsonPath('data.roles', ['contestant'])
+            ->assertJsonPath('data.roles', [])
             ->assertJsonPath('data.permissions', []);
     }
 }

@@ -17,9 +17,10 @@ use Modules\Core\Infrastructure\Database\Models\UserModel;
  * the set": an inactive account holds its roles but may do nothing, and
  * that rule belongs to authorization rather than to resolution.
  *
- * NOT WIRED TO ANYTHING YET. Registering these as Gates happens in this
- * epic; narrowing EnsureUserIsAdmin and making the API depend on them is
- * the activation step, deliberately kept as its own reviewable change.
+ * WIRED: every catalogue permission is registered as a Gate ability, and
+ * every admin route carries a `can:` check that lands here. EnsureUserIsAdmin
+ * still guards the surface and answers only "may this account reach the
+ * admin API at all"; everything past that door is decided below.
  */
 final class AuthorizationService
 {
@@ -92,6 +93,22 @@ final class AuthorizationService
         }
 
         return $this->permissions->forUser(new UserId((string) $user->id));
+    }
+
+    /**
+     * The roles this account holds, by name.
+     *
+     * Unlike permissionsOf(), this does NOT empty for a deactivated
+     * account: it still holds those roles, and a screen listing users
+     * needs to say so. The difference is the point — roles describe the
+     * account, permissions describe what it may do right now, and only
+     * the second is safe to make a UI decision with.
+     *
+     * @return array<int, string>
+     */
+    public function rolesOf(UserModel $user): array
+    {
+        return $this->permissions->roleNamesFor(new UserId((string) $user->id));
     }
 
     /**

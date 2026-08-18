@@ -60,7 +60,7 @@ export default function CountriesPage(): React.JSX.Element {
       subtitle={t('subtitle')}
       breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
-        <PermissionWrapper role="admin">
+        <PermissionWrapper permission="countries.create">
           <Button onClick={() => setIsFormOpen(true)}>
             <Plus className="w-4 h-4" />
             <span>{t('create_button')}</span>

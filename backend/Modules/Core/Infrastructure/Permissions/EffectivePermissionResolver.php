@@ -124,6 +124,26 @@ final class EffectivePermissionResolver
     }
 
     /**
+     * The names of the roles this user holds.
+     *
+     * Not cached, and not part of the effective set: roles are what a UI
+     * displays ("Competition Manager"), permissions are what it decides
+     * with. Caching this would mean a second invalidation set to keep
+     * exhaustive for a read that happens once per login.
+     *
+     * @return array<int, string>
+     */
+    public function roleNamesFor(UserId $userId): array
+    {
+        return DB::table('role_user')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->where('role_user.user_id', $userId->value)
+            ->orderBy('roles.name')
+            ->pluck('roles.name')
+            ->all();
+    }
+
+    /**
      * @return array<int, string>
      */
     private function resolve(UserId $userId): array
