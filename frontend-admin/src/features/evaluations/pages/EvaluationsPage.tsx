@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -13,6 +14,8 @@ import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
 import { toast } from 'sonner';
 
 export default function EvaluationsPage(): React.JSX.Element {
+  const { t } = useTranslation('evaluations');
+  const { t: tc } = useTranslation('common');
   const queryClient = useQueryClient();
   const [confirmReopen, setConfirmReopen] = useState(false);
   const [stageId, setStageId] = useState('');
@@ -26,29 +29,29 @@ export default function EvaluationsPage(): React.JSX.Element {
     mutationFn: () => evaluationService.calculateResults(stageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluations'] });
-      toast.success('تم احتساب نتائج وتصنيف المرحلة بنجاح وفق محرك RankingService');
+      toast.success(t('calculate_success'));
     },
-    onError: () => toast.error('تعذر احتساب النتائج، تحقق من رقم المرحلة'),
+    onError: () => toast.error(t('calculate_error')),
   });
 
   const publishMutation = useMutation({
     mutationFn: () => evaluationService.publishResults(stageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluations'] });
-      toast.success('تم نشر نتائج المرحلة رسميًا وتأهيل المتسابقين الفائزين');
+      toast.success(t('publish_success'));
     },
-    onError: () => toast.error('تعذر نشر النتائج، تحقق من رقم المرحلة'),
+    onError: () => toast.error(t('publish_error')),
   });
 
   const reopenMutation = useMutation({
     mutationFn: () => evaluationService.reopenResults(stageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['evaluations'] });
-      toast.success('تمت إعادة فتح نتائج المرحلة');
+      toast.success(t('reopen_success'));
       setConfirmReopen(false);
     },
     onError: () => {
-      toast.error('تعذر إعادة فتح النتائج، تحقق من رقم المرحلة');
+      toast.error(t('reopen_error'));
       setConfirmReopen(false);
     },
   });
@@ -58,34 +61,34 @@ export default function EvaluationsPage(): React.JSX.Element {
   const columns: ColumnDef<EvaluationItem>[] = [
     {
       accessorKey: 'id',
-      header: 'معرف التقييم',
+      header: t('col_id'),
       cell: ({ row }) => <span className="font-mono text-[10px] text-slate-400">{row.original.id}</span>,
     },
     {
       accessorKey: 'application_id',
-      header: 'رقم الطلب المتسابق',
+      header: t('col_application'),
       cell: ({ row }) => <span className="font-mono text-slate-700 dark:text-slate-300">{row.original.application_id}</span>,
     },
     {
       accessorKey: 'judge_id',
-      header: 'رقم الحكم',
+      header: t('col_judge'),
       cell: ({ row }) => <span className="font-mono text-slate-500">{row.original.judge_id}</span>,
     },
     {
       accessorKey: 'total_score',
-      header: 'الدرجة الكلية (100)',
+      header: t('col_score'),
       cell: ({ row }) => (
-        <span className="font-bold text-brand-600 dark:text-brand-400 text-sm">
-          {row.original.total_score} / 100
+        <span className="text-sm font-bold text-brand-600 dark:text-brand-400">
+          {t('score_out_of', { score: row.original.total_score })}
         </span>
       ),
     },
     {
       accessorKey: 'status',
-      header: 'حالة التقييم',
+      header: t('col_status'),
       cell: ({ row }) => (
         <Badge variant={row.original.status === 'submitted' ? 'success' : 'warning'}>
-          {row.original.status === 'submitted' ? 'مكتمل ومغلق' : row.original.status}
+          {row.original.status === 'submitted' ? t('status_submitted') : row.original.status}
         </Badge>
       ),
     },
@@ -93,9 +96,9 @@ export default function EvaluationsPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="مركز قيادة التقييمات والنتائج (Evaluations Center)"
-      subtitle="متابعة إنجاز الحكام، تطبيق خوارزميات الترتيب، ونشر النتائج الرسمية للمراحل"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'التقييمات والنتائج' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
         <PermissionWrapper role="admin">
           <div className="flex items-center gap-2">
@@ -103,7 +106,7 @@ export default function EvaluationsPage(): React.JSX.Element {
               type="text"
               value={stageId}
               onChange={(e) => setStageId(e.target.value)}
-              placeholder="معرف المرحلة (Stage ID)"
+              placeholder={t('stage_id_placeholder')}
               className="w-56 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <Button
@@ -114,7 +117,7 @@ export default function EvaluationsPage(): React.JSX.Element {
               onClick={() => calculateMutation.mutate()}
             >
               <Calculator className="w-4 h-4 text-brand-600" />
-              <span>احتساب نتائج المرحلة</span>
+              <span>{t('action_calculate')}</span>
             </Button>
             <Button
               variant="primary"
@@ -124,7 +127,7 @@ export default function EvaluationsPage(): React.JSX.Element {
               onClick={() => publishMutation.mutate()}
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>نشر النتائج الرسمية</span>
+              <span>{t('action_publish')}</span>
             </Button>
             <Button
               variant="danger"
@@ -133,7 +136,7 @@ export default function EvaluationsPage(): React.JSX.Element {
               onClick={() => setConfirmReopen(true)}
             >
               <RotateCcw className="w-4 h-4" />
-              <span>إعادة فتح نتائج المرحلة</span>
+              <span>{t('action_reopen')}</span>
             </Button>
           </div>
         </PermissionWrapper>
@@ -141,15 +144,15 @@ export default function EvaluationsPage(): React.JSX.Element {
     >
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard title="إجمالي التقييمات" value={evaluations?.length ?? 0} icon={<Award className="w-5 h-5" />} color="brand" />
-        <StatCard title="التقييمات المكتملة" value={evaluations?.filter((e) => e.status === 'submitted').length ?? 0} icon={<Users className="w-5 h-5" />} color="emerald" />
+        <StatCard title={t('stat_total')} value={evaluations?.length ?? 0} icon={<Award className="w-5 h-5" />} color="brand" />
+        <StatCard title={t('stat_completed')} value={evaluations?.filter((e) => e.status === 'submitted').length ?? 0} icon={<Users className="w-5 h-5" />} color="emerald" />
         <StatCard
-          title="متوسط الدرجات المكتملة"
+          title={t('stat_average')}
           value={(() => {
             const submitted = evaluations?.filter((e) => e.status === 'submitted') ?? [];
             if (submitted.length === 0) return '—';
             const avg = submitted.reduce((sum, e) => sum + e.total_score, 0) / submitted.length;
-            return `${avg.toFixed(1)} / 100`;
+            return t('score_out_of', { score: avg.toFixed(1) });
           })()}
           icon={<TrendingUp className="w-5 h-5" />}
           color="amber"
@@ -162,16 +165,16 @@ export default function EvaluationsPage(): React.JSX.Element {
         loading={isLoading}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد تقييمات مخصصة لهذه المرحلة."
+        emptyMessage={t('empty')}
       />
 
       {confirmReopen && (
         <ConfirmDialog
           isOpen={confirmReopen}
           onClose={() => setConfirmReopen(false)}
-          title="تأكيد إعادة فتح نتائج المرحلة"
-          description="هل أنت متأكد من إلغاء نشر نتائج هذه المرحلة وإتاحتها للعد والتعديل من جديد؟ سيتم تسجيل هذا الإجراء في Audit Logs."
-          confirmLabel="إعادة الفتح"
+          title={t('reopen_title')}
+          description={t('reopen_body')}
+          confirmLabel={t('reopen_confirm')}
           isLoading={reopenMutation.isPending}
           onConfirm={() => reopenMutation.mutate()}
         />

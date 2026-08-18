@@ -1,0 +1,25 @@
+{
+  "title": "مركز التقارير والاستخراجات الشاملة (Reports & Analytics Center)",
+  "subtitle": "توليد التقارير التجميعية للمتسابقين والنتائج حسب الدول والمواسم والمراحل بصيغ PDF/Excel/CSV",
+  "empty": "لا توجد مهام تصدير سابقة.",
+
+  "action_export_contestants": "تصدير المتسابقين CSV",
+  "action_export_results": "تصدير النتائج الرسمية PDF",
+
+  "stat_contestant_reports": "تقارير المتسابقين",
+  "stat_contestant_reports_value": "12 تقرير",
+  "stat_by_country": "التصنيف حسب الدول",
+  "stat_by_country_value": "24 دولة",
+  "stat_completion": "نسب الإنجاز",
+  "stat_completed_requests": "الطلبات المكتملة",
+
+  "col_type": "نوع التقرير وصيغة الملف",
+  "col_created_at": "تاريخ الاستخراج",
+  "col_status": "حالة التوليد",
+  "col_download": "تحميل الملف",
+  "status_ready": "جاهز للتحميل",
+  "download_button": "تحميل CSV / PDF",
+
+  "export_success": "تم إنشاء مهمة تصدير التقارير في الخلفية بنجاح",
+  "download_started": "بدأ تحميل تقرير التصدير"
+}

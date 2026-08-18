@@ -1,0 +1,28 @@
+{
+  "title": "Mesa de solicitudes",
+  "subtitle": "Revise los vídeos de recitación en el momento y decida si enviarlos a evaluación o pedir una nueva subida",
+  "empty": "No hay solicitudes pendientes de revisión.",
+
+  "col_id": "N.º de solicitud",
+  "col_contestant": "Concursante",
+  "col_season_stage": "Temporada y etapa",
+  "col_submitted_at": "Fecha de envío",
+  "col_preview": "Vídeo de recitación",
+  "col_actions": "Decisiones",
+
+  "play_video": "Reproducir el vídeo",
+  "send_to_judging": "Enviar a evaluación",
+  "request_reupload": "Pedir nueva subida",
+
+  "preview_title": "Vídeo de la solicitud — {{id}}",
+  "close_preview": "Cerrar la vista previa",
+
+  "reupload_title": "Pedir una nueva subida del vídeo — solicitud {{id}}",
+  "reupload_notice": "Se notificará al concursante que debe volver a subir su vídeo de recitación, con el motivo indicado abajo, y la decisión quedará registrada en el registro de auditoría.",
+  "reupload_placeholder": "Motivo de la nueva subida (obligatorio)...",
+  "reupload_submit": "Enviar la petición",
+
+  "send_success": "La solicitud se envió a la cola de evaluación",
+  "reupload_success": "La petición de nueva subida se envió al concursante",
+  "reupload_error": "No se pudo enviar la petición de nueva subida. Inténtelo de nuevo."
+}

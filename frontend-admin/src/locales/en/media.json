@@ -1,0 +1,25 @@
+{
+  "title": "Media library (Cloudflare R2)",
+  "subtitle": "Upload, preview and manage the files and images stored in cloud storage",
+  "empty": "No files have been uploaded to the R2 library yet.",
+  "upload_button": "Upload a file to R2",
+
+  "col_filename": "File name and path",
+  "col_mime": "File type (MIME)",
+  "col_size": "Size (MB)",
+  "col_storage": "Cloudflare R2 storage",
+  "size_mb": "{{size}} MB",
+  "status_ready": "Uploaded and available",
+
+  "preview_title": "File preview — {{name}}",
+  "close_preview": "Close the preview",
+
+  "delete_title": "Confirm deleting the file from cloud storage",
+  "delete_body": "Permanently delete {{name}} from Cloudflare R2? The action will be recorded in the audit logs.",
+  "delete_confirm": "Delete the file",
+
+  "upload_success": "The file was uploaded to the Cloudflare R2 bucket",
+  "upload_error": "Could not upload the file to the server.",
+  "link_copied": "R2 link copied to the clipboard",
+  "delete_success": "The file was permanently deleted"
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -11,6 +12,8 @@ import Button from '@/ui/Button';
 import { toast } from 'sonner';
 
 export default function AuditExplorerPage(): React.JSX.Element {
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: logs, isLoading, refetch } = useQuery({
@@ -21,7 +24,7 @@ export default function AuditExplorerPage(): React.JSX.Element {
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
       accessorKey: 'user_name',
-      header: 'المستخدم والدور',
+      header: t('audit_col_user'),
       cell: ({ row }) => (
         <div>
           <span className="font-semibold text-slate-900 dark:text-white block">{row.original.user_name}</span>
@@ -31,7 +34,7 @@ export default function AuditExplorerPage(): React.JSX.Element {
     },
     {
       accessorKey: 'action',
-      header: 'العملية ونوع الكيان',
+      header: t('audit_col_action'),
       cell: ({ row }) => (
         <div>
           <span className="font-mono text-brand-600 dark:text-brand-400 block font-semibold">{row.original.action}</span>
@@ -41,7 +44,7 @@ export default function AuditExplorerPage(): React.JSX.Element {
     },
     {
       accessorKey: 'ip_address',
-      header: 'عنوان IP والمتصفح',
+      header: t('audit_col_ip'),
       cell: ({ row }) => (
         <div className="font-mono text-[11px] text-slate-500">
           <p>{row.original.ip_address}</p>
@@ -51,15 +54,15 @@ export default function AuditExplorerPage(): React.JSX.Element {
     },
     {
       accessorKey: 'created_at',
-      header: 'تاريخ الإجراء',
+      header: t('audit_col_date'),
       cell: ({ row }) => formatDate(row.original.created_at),
     },
     {
       accessorKey: 'result',
-      header: 'النتيجة',
+      header: t('audit_col_result'),
       cell: ({ row }) => (
         <Badge variant={row.original.result === 'success' ? 'success' : 'danger'}>
-          {row.original.result === 'success' ? 'ناجح ✅' : 'فشل ❌'}
+          {row.original.result === 'success' ? t('audit_result_success') : t('audit_result_failure')}
         </Badge>
       ),
     },
@@ -67,13 +70,13 @@ export default function AuditExplorerPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="مستكشف سجلات التدقيق والأمان (Audit Explorer)"
-      subtitle="تتبع وتدقيق جميع حركات المشرفين والحكام والعمليات الحساسة في المنصة"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'سجلات التدقيق' }]}
+      title={t('audit_title')}
+      subtitle={t('audit_subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('audit_title') }]}
       actions={
-        <Button variant="outline" size="sm" onClick={() => toast.success('بدأ تصدير سجلات التدقيق CSV')}>
+        <Button variant="outline" size="sm" onClick={() => toast.success(t('audit_export_started'))}>
           <Download className="w-4 h-4" />
-          <span>تصدير السجل CSV</span>
+          <span>{t('audit_export')}</span>
         </Button>
       }
     >
@@ -84,7 +87,7 @@ export default function AuditExplorerPage(): React.JSX.Element {
         onSearchChange={(q) => setSearchTerm(q)}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد سجلات تدقيق مسجلة."
+        emptyMessage={t('audit_empty')}
       />
     </PageLayout>
   );

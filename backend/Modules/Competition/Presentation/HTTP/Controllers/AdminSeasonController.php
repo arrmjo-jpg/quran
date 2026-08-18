@@ -13,16 +13,23 @@ use Modules\Competition\Application\UseCases\CancelSeasonUseCase;
 use Modules\Competition\Application\UseCases\CloseSeasonRegistrationUseCase;
 use Modules\Competition\Application\UseCases\CreateSeasonUseCase;
 use Modules\Competition\Application\UseCases\OpenSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\ReopenSeasonRegistrationUseCase;
+use Modules\Competition\Application\UseCases\RestoreSeasonUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonRulesUseCase;
 use Modules\Competition\Application\UseCases\UpdateSeasonUseCase;
+use Modules\Competition\Domain\Entities\Season;
 use Modules\Competition\Domain\Exceptions\IncompleteSeasonRulesException;
 use Modules\Competition\Domain\Exceptions\InvalidSeasonTransitionException;
 use Modules\Competition\Domain\Exceptions\SeasonAlreadyFrozenException;
+use Modules\Competition\Domain\Exceptions\SeasonNotReopenableException;
+use Modules\Competition\Domain\Exceptions\SeasonNotRestorableException;
+use Modules\Competition\Domain\Repositories\SeasonCountryRepositoryContract;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
 use Modules\Competition\Domain\Services\CompetitionRuleEngine;
 use Modules\Competition\Presentation\HTTP\Requests\ArchiveSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CancelSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\CreateSeasonRequest;
+use Modules\Competition\Presentation\HTTP\Requests\ReopenRegistrationRequest;
 use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRequest;
 use Modules\Competition\Presentation\HTTP\Requests\UpdateSeasonRulesRequest;
 use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
@@ -38,9 +45,24 @@ final class AdminSeasonController extends Controller
         private readonly UpdateSeasonUseCase $updateSeason,
         private readonly ArchiveSeasonUseCase $archiveSeason,
         private readonly CancelSeasonUseCase $cancelSeason,
+        private readonly RestoreSeasonUseCase $restoreSeason,
+        private readonly ReopenSeasonRegistrationUseCase $reopenSeasonRegistration,
         private readonly CompetitionRuleEngine $ruleEngine,
         private readonly SeasonRepositoryContract $seasons,
+        private readonly SeasonCountryRepositoryContract $seasonCountries,
     ) {}
+
+    /**
+     * Every admin season response carries country_ids, without exception.
+     * Making it conditional would leave callers unable to tell "this season
+     * has no eligible countries" from "this endpoint didn't load them" —
+     * and a client that guesses wrong there wipes the set on its next
+     * PATCH .../rules, since that endpoint replaces the whole thing.
+     */
+    private function seasonResource(Season $season): SeasonResource
+    {
+        return new SeasonResource($season, $this->seasonCountries->findEligibleCountryIds($season->id));
+    }
 
     /**
      * The admin projection of a season. Separate from the public routes
@@ -50,9 +72,20 @@ final class AdminSeasonController extends Controller
      */
     public function index(): JsonResponse
     {
+        $seasons = $this->seasons->findAll();
+
+        // Batched rather than per-row: seasonResource() would issue one
+        // query per season here.
+        $countryIds = $this->seasonCountries->findEligibleCountryIdsBySeasons(
+            array_map(static fn (Season $season): string => $season->id, $seasons)
+        );
+
         return response()->json([
             'success' => true,
-            'data' => SeasonResource::collection($this->seasons->findAll()),
+            'data' => array_map(
+                fn (Season $season): SeasonResource => new SeasonResource($season, $countryIds[$season->id] ?? []),
+                $seasons
+            ),
         ]);
     }
 
@@ -60,7 +93,7 @@ final class AdminSeasonController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => new SeasonResource($this->seasons->findOrFail($id)),
+            'data' => $this->seasonResource($this->seasons->findOrFail($id)),
         ]);
     }
 
@@ -84,7 +117,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season created successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ], 201);
     }
 
@@ -107,7 +140,42 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration opened successfully for season.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
+        ]);
+    }
+
+    /**
+     * Reopen a closed registration window. Refusals are 409s carrying the
+     * specific code — the season is not in registration_closed, or another
+     * season already holds the single active slot, in which case the
+     * response names it so the admin knows what to close first.
+     */
+    public function reopenRegistration(string $id, ReopenRegistrationRequest $request): JsonResponse
+    {
+        try {
+            $season = $this->reopenSeasonRegistration->execute(
+                $id,
+                $request->validated('reason'),
+                $request->user()?->id,
+            );
+        } catch (SeasonNotReopenableException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => $e->reason,
+                    'message' => $e->getMessage(),
+                    // Identified well enough to act on without a lookup.
+                    'active_season_id' => $e->activeSeasonId,
+                    'active_season_slug' => $e->activeSeasonSlug,
+                    'active_season_year' => $e->activeSeasonYear,
+                ],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season registration reopened successfully.'),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -138,7 +206,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season updated successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -156,7 +224,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season archived successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -174,7 +242,31 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season cancelled successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
+        ]);
+    }
+
+    /**
+     * Undo an accidental archival. Every refusal is a 409 carrying the
+     * specific reason code, so the operator learns which condition blocked
+     * the restore rather than being told "no" — the details list names the
+     * tables and row counts holding the season.
+     */
+    public function restore(string $id, Request $request): JsonResponse
+    {
+        try {
+            $season = $this->restoreSeason->execute($id, $request->user()?->id);
+        } catch (SeasonNotRestorableException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => $e->reason, 'message' => $e->getMessage(), 'details' => $e->details],
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Season restored to draft successfully.'),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -199,7 +291,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Season rules updated successfully.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 
@@ -217,7 +309,7 @@ final class AdminSeasonController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Registration closed successfully for season.'),
-            'data' => new SeasonResource($season),
+            'data' => $this->seasonResource($season),
         ]);
     }
 

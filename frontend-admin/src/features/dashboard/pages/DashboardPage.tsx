@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -27,6 +28,8 @@ import {
 import { toast } from 'sonner';
 
 export default function DashboardPage(): React.JSX.Element {
+  const { t } = useTranslation('dashboard');
+  const { t: tc } = useTranslation('common');
   const navigate = useNavigate();
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
 
@@ -58,18 +61,18 @@ export default function DashboardPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="غرفة القيادة المركزية (Mission Control Dashboard)"
-      subtitle="متابعة لحظية وشاملة لمؤشرات الأداء، صحة خدمات Docker، والنشاطات الحية في المنصة"
-      breadcrumbs={[{ label: 'الرئيسية' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home') }]}
       actions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => navigate('/about')}>
             <Shield className="w-3.5 h-3.5" />
-            <span>تشخيصات النظام</span>
+            <span>{t('action_diagnostics')}</span>
           </Button>
           <Button variant="primary" size="sm" onClick={() => navigate('/audit-logs')}>
             <FileCheck className="w-3.5 h-3.5" />
-            <span>سجلات التدقيق Audit</span>
+            <span>{t('action_audit_logs')}</span>
           </Button>
         </div>
       }
@@ -79,25 +82,25 @@ export default function DashboardPage(): React.JSX.Element {
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-center justify-between text-amber-900 dark:text-amber-200 text-xs">
           <div className="flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-amber-600" />
-            <span className="font-bold">تنبيه انتحال الصلاحيات: أنت تعمل حالياً بصلاحيات المستخدم ({impersonatedUser}) — يتم تسجيل كافة تصرفاتك في Audit Logs.</span>
+            <span className="font-bold">{t('impersonation_warning', { user: impersonatedUser })}</span>
           </div>
-          <Button size="sm" variant="danger" onClick={() => { setImpersonatedUser(null); toast.success('تم الخروج من وضع انتحال الصلاحية'); }}>
-            إنهاء الانتحال
+          <Button size="sm" variant="danger" onClick={() => { setImpersonatedUser(null); toast.success(t('impersonation_ended')); }}>
+            {t('impersonation_end')}
           </Button>
         </div>
       )}
 
       {/* 📊 Section 1: Executive KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="إجمالي المتسابقين" value={summary?.total_contestants ?? 0} icon={<Users className="w-5 h-5" />} color="brand" />
-        <StatCard title="إجمالي الطلبات" value={summary?.total_applications ?? 0} icon={<FileCheck className="w-5 h-5" />} color="emerald" />
-        <StatCard title="التقييمات المكتملة" value={summary?.completed_evaluations ?? 0} icon={<Award className="w-5 h-5" />} color="amber" />
-        <StatCard title="نسبة النجاح والتأهل" value="94.2%" icon={<ClipboardList className="w-5 h-5" />} color="purple" />
+        <StatCard title={t('kpi_contestants')} value={summary?.total_contestants ?? 0} icon={<Users className="w-5 h-5" />} color="brand" />
+        <StatCard title={t('kpi_applications')} value={summary?.total_applications ?? 0} icon={<FileCheck className="w-5 h-5" />} color="emerald" />
+        <StatCard title={t('kpi_evaluations')} value={summary?.completed_evaluations ?? 0} icon={<Award className="w-5 h-5" />} color="amber" />
+        <StatCard title={t('kpi_pass_rate')} value="94.2%" icon={<ClipboardList className="w-5 h-5" />} color="purple" />
       </div>
 
       {/* 🟢 Section 2: System Health Desk */}
       <Card className="mb-6">
-        <CardHeader title="حالة ونشاط خدمات الخادم (System Health Monitor)" subtitle="فحص مباشر لخدمات Docker وسرعة الاستجابة" />
+        <CardHeader title={t('health_title')} subtitle={t('health_subtitle')} />
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-2">
           {dockerServices.map((svc, i) => (
             <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
@@ -113,58 +116,58 @@ export default function DashboardPage(): React.JSX.Element {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Action Center */}
         <Card>
-          <CardHeader title="مركز التنبيهات والتدخل العاجل (Action Center)" subtitle="المهام التي تتطلب قراراً من إدارة المنصة" />
+          <CardHeader title={t('action_center_title')} subtitle={t('action_center_subtitle')} />
           <div className="space-y-2.5">
             <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5 text-amber-900 dark:text-amber-200">
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>12 طلب اشتراك بانتظار المراجعة والتحويل للتحكيم</span>
+                <span>{t('alert_pending_applications')}</span>
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate('/applications')}>مراجعة الطلبات</Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/applications')}>{t('alert_review_applications')}</Button>
             </div>
 
             <div className="p-3 bg-sky-50/60 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5 text-sky-900 dark:text-sky-200">
                 <Award className="w-4 h-4 text-sky-600" />
-                <span>2 محكمين لم يكملوا تقييم درجات المرحلة حتى الآن</span>
+                <span>{t('alert_pending_judges')}</span>
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate('/judges')}>متابعة الحكام</Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/judges')}>{t('alert_follow_judges')}</Button>
             </div>
           </div>
         </Card>
 
         {/* Quick Actions Shortcuts */}
         <Card>
-          <CardHeader title="اختصارات الأوامر السريعة (Quick Actions)" subtitle="التنفيذ الفوري لأكثر الإجراءات استخداماً" />
+          <CardHeader title={t('quick_actions_title')} subtitle={t('quick_actions_subtitle')} />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
             <Button size="sm" variant="outline" onClick={() => navigate('/seasons')}>
               <Plus className="w-3.5 h-3.5 text-brand-600" />
-              <span>إضافة موسم</span>
+              <span>{t('quick_add_season')}</span>
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => navigate('/streaming')}>
               <Radio className="w-3.5 h-3.5 text-rose-600" />
-              <span>بدء بث مباشر</span>
+              <span>{t('quick_start_stream')}</span>
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => navigate('/search')}>
               <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
-              <span>إعادة الفهرسة</span>
+              <span>{t('quick_reindex')}</span>
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => navigate('/reports')}>
               <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
-              <span>إنشاء تقرير</span>
+              <span>{t('quick_create_report')}</span>
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => navigate('/judges')}>
               <Users className="w-3.5 h-3.5 text-sky-600" />
-              <span>قائمة الحكام</span>
+              <span>{t('quick_judges_list')}</span>
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => navigate('/countries')}>
               <Globe className="w-3.5 h-3.5 text-amber-600" />
-              <span>الدول المعتمدة</span>
+              <span>{t('quick_countries')}</span>
             </Button>
           </div>
         </Card>
@@ -172,24 +175,24 @@ export default function DashboardPage(): React.JSX.Element {
 
       {/* 📈 Section 5: Live Activity Timeline */}
       <Card>
-        <CardHeader title="سجل الأحداث والأنشطة الحية (Live Activity Feed)" subtitle="متابعة الحركات والنشاطات اللحظية على المستوى القومي" />
+        <CardHeader title={t('activity_title')} subtitle={t('activity_subtitle')} />
         <div className="space-y-3 relative pr-4 border-r-2 border-slate-200 dark:border-slate-800 text-xs">
           <div className="relative">
             <span className="w-2.5 h-2.5 rounded-full bg-brand-600 absolute -right-[21px] top-1" />
-            <p className="font-semibold text-slate-900 dark:text-white">أنهى الحكم د. أحمد تقييم المتسابق 251 درجة (95/100)</p>
-            <p className="text-slate-400 text-[10px]">منذ دقيقة واحدة</p>
+            <p className="font-semibold text-slate-900 dark:text-white">{t('activity_evaluation_done')}</p>
+            <p className="text-slate-400 text-[10px]">{t('activity_evaluation_done_when')}</p>
           </div>
 
           <div className="relative">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 absolute -right-[21px] top-1" />
-            <p className="font-semibold text-slate-900 dark:text-white">تم نشر نتائج المرحلة الأولى للموسم الحالي رسمياً</p>
-            <p className="text-slate-400 text-[10px]">منذ 3 دقائق</p>
+            <p className="font-semibold text-slate-900 dark:text-white">{t('activity_results_published')}</p>
+            <p className="text-slate-400 text-[10px]">{t('activity_results_published_when')}</p>
           </div>
 
           <div className="relative">
             <span className="w-2.5 h-2.5 rounded-full bg-sky-600 absolute -right-[21px] top-1" />
-            <p className="font-semibold text-slate-900 dark:text-white">تم تحويل فيديو تلاوة جديد لترميز HLS 1080p بنجاح</p>
-            <p className="text-slate-400 text-[10px]">منذ 5 دقائق</p>
+            <p className="font-semibold text-slate-900 dark:text-white">{t('activity_video_encoded')}</p>
+            <p className="text-slate-400 text-[10px]">{t('activity_video_encoded_when')}</p>
           </div>
         </div>
       </Card>

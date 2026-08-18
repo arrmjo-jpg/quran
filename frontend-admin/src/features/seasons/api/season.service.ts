@@ -1,12 +1,26 @@
 import { http } from '@/core/api/http';
 import type { ApiSuccess } from '@/core/types';
-import type { Season, CreateSeasonPayload, SeasonFilters } from '../types';
+import type {
+  Season,
+  CreateSeasonPayload,
+  UpdateSeasonPayload,
+  UpdateSeasonRulesPayload,
+  ArchiveSeasonPayload,
+  CancelSeasonPayload,
+  ReopenRegistrationPayload,
+  SeasonFilters,
+} from '../types';
 
+/**
+ * Every call here hits the admin routes, never the public /seasons ones:
+ * the public endpoints return PublicSeasonResource, which withholds the
+ * judging configuration and all archive metadata these screens rely on.
+ */
 export const seasonService = {
-  // Admin endpoints, not the public /seasons ones: the public resource
-  // withholds the judging configuration and archive metadata these
-  // screens need.
   async getSeasons(filters?: SeasonFilters): Promise<Season[]> {
+    // NOTE: the API ignores query params today — GET /admin/seasons returns
+    // every season. Filtering is applied client-side until a season count
+    // justifies real server-side filtering and pagination.
     const { data } = await http.get<ApiSuccess<Season[]>>('/admin/seasons', { params: filters });
     return data.data;
   },
@@ -21,6 +35,21 @@ export const seasonService = {
     return data.data;
   },
 
+  async updateSeason(id: string, payload: UpdateSeasonPayload): Promise<Season> {
+    const { data } = await http.patch<ApiSuccess<Season>>(`/admin/seasons/${id}`, payload);
+    return data.data;
+  },
+
+  /**
+   * Replaces the season's whole rule set, eligible countries included —
+   * anything omitted from country_ids is removed, so callers must send
+   * back the season's current country_ids for everything they want kept.
+   */
+  async updateSeasonRules(id: string, payload: UpdateSeasonRulesPayload): Promise<Season> {
+    const { data } = await http.patch<ApiSuccess<Season>>(`/admin/seasons/${id}/rules`, payload);
+    return data.data;
+  },
+
   async openRegistration(id: string): Promise<Season> {
     const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/open-registration`);
     return data.data;
@@ -28,6 +57,43 @@ export const seasonService = {
 
   async closeRegistration(id: string): Promise<Season> {
     const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/close-registration`);
+    return data.data;
+  },
+
+  /** Only legal from `completed` — the API answers 409 otherwise. */
+  async archiveSeason(id: string, payload: ArchiveSeasonPayload = {}): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/archive`, payload);
+    return data.data;
+  },
+
+  /** Only legal from `draft`, and the reason is mandatory. */
+  async cancelSeason(id: string, payload: CancelSeasonPayload): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/cancel`, payload);
+    return data.data;
+  },
+
+  /**
+   * Puts a closed registration window back open. Legal only from
+   * `registration_closed`, needs a reason, and is refused with a 409 if
+   * another season holds the single active slot — the API names that
+   * season so the admin knows what to close first.
+   */
+  async reopenRegistration(id: string, payload: ReopenRegistrationPayload): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(
+      `/admin/seasons/${id}/reopen-registration`,
+      payload,
+    );
+    return data.data;
+  },
+
+  /**
+   * Undo an accidental archival: archived → draft, and only for a season
+   * that never froze and that nothing references. Any other archived
+   * season is refused with a 409 naming what blocks it — see
+   * restoreErrors for the codes.
+   */
+  async restoreSeason(id: string): Promise<Season> {
+    const { data } = await http.post<ApiSuccess<Season>>(`/admin/seasons/${id}/restore`);
     return data.data;
   },
 };

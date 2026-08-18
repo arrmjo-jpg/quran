@@ -1,0 +1,25 @@
+{
+  "title": "مكتبة الوسائط المركزية (Cloudflare R2 Media Library)",
+  "subtitle": "رفع ومعاينة وإدارة الملفات والصور المرفوعة في المستودعات السحابية",
+  "empty": "لا توجد ملفات مرفوعة في مكتبة R2 حتى الآن.",
+  "upload_button": "رفع ملف جديد R2",
+
+  "col_filename": "اسم الملف والمسار",
+  "col_mime": "نوع الملف (MIME)",
+  "col_size": "الحجم (MB)",
+  "col_storage": "تخزين Cloudflare R2",
+  "size_mb": "{{size}} MB",
+  "status_ready": "مرفوع وقابل للاستخدام",
+
+  "preview_title": "معاينة الملف — {{name}}",
+  "close_preview": "إغلاق المعاينة",
+
+  "delete_title": "تأكيد حذف الملف من السحابة",
+  "delete_body": "هل أنت متأكد من حذف الملف {{name}} نهائياً من Cloudflare R2؟ سيتم تسجيل الإجراء في Audit Logs.",
+  "delete_confirm": "حذف الملف",
+
+  "upload_success": "تم رفع الملف بنجاح إلى Cloudflare R2 Bucket",
+  "upload_error": "فشل رفع الملف إلى السيرفر.",
+  "link_copied": "تم نسخ رابط R2 إلى الحافظة",
+  "delete_success": "تم حذف الملف نهائياً"
+}

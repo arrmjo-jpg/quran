@@ -1,0 +1,25 @@
+{
+  "title": "Centro de informes y exportaciones",
+  "subtitle": "Genere informes agregados de concursantes y resultados por país, temporada y etapa en PDF, Excel o CSV",
+  "empty": "Todavía no se ha ejecutado ninguna exportación.",
+
+  "action_export_contestants": "Exportar concursantes (CSV)",
+  "action_export_results": "Exportar resultados oficiales (PDF)",
+
+  "stat_contestant_reports": "Informes de concursantes",
+  "stat_contestant_reports_value": "12 informes",
+  "stat_by_country": "Desglose por país",
+  "stat_by_country_value": "24 países",
+  "stat_completion": "Tasa de finalización",
+  "stat_completed_requests": "Solicitudes completadas",
+
+  "col_type": "Tipo de informe y formato",
+  "col_created_at": "Fecha de generación",
+  "col_status": "Estado de la generación",
+  "col_download": "Descarga",
+  "status_ready": "Listo para descargar",
+  "download_button": "Descargar CSV / PDF",
+
+  "export_success": "La tarea de exportación se puso en cola en segundo plano",
+  "download_started": "La descarga del informe ha comenzado"
+}

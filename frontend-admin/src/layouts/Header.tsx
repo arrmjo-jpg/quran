@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sun, Moon, LogOut, User, Search } from 'lucide-react';
 import { useAuth } from '@/core/auth/AuthContext';
 import { STORAGE_KEYS } from '@/core/constants';
@@ -7,6 +8,7 @@ import LanguageSwitcher from '@/ui/language-switcher/LanguageSwitcher';
 import { CommandPalette } from '@/ui/command-palette/CommandPalette';
 
 export default function Header(): React.JSX.Element {
+  const { t } = useTranslation('navigation');
   const { user, logout } = useAuth();
   const [isDark, setIsDark] = useState<boolean>(() => {
     return localStorage.getItem(STORAGE_KEYS.theme) === 'dark' || document.documentElement.classList.contains('dark');
@@ -34,7 +36,7 @@ export default function Header(): React.JSX.Element {
           className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors"
         >
           <Search className="w-3.5 h-3.5" />
-          <span>البحث السريع</span>
+          <span>{t('quick_search')}</span>
           <kbd className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono">Ctrl K</kbd>
         </button>
       </div>
@@ -47,7 +49,7 @@ export default function Header(): React.JSX.Element {
         <button
           onClick={() => setIsDark(!isDark)}
           className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
-          title="تغيير المظهر"
+          title={t('toggle_theme')}
         >
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
@@ -63,7 +65,7 @@ export default function Header(): React.JSX.Element {
           </div>
           <Button variant="ghost" size="sm" onClick={logout} className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
             <LogOut className="w-3.5 h-3.5" />
-            <span>خروج</span>
+            <span>{t('logout')}</span>
           </Button>
         </div>
       </div>

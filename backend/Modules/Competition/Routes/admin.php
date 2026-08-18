@@ -19,8 +19,10 @@ Route::patch('seasons/{id}', [AdminSeasonController::class, 'update'])->name('ad
 Route::patch('seasons/{id}/rules', [AdminSeasonController::class, 'updateRules'])->name('admin.seasons.update_rules');
 Route::post('seasons/{id}/archive', [AdminSeasonController::class, 'archive'])->name('admin.seasons.archive');
 Route::post('seasons/{id}/cancel', [AdminSeasonController::class, 'cancel'])->name('admin.seasons.cancel');
+Route::post('seasons/{id}/restore', [AdminSeasonController::class, 'restore'])->name('admin.seasons.restore');
 Route::post('seasons/{id}/open-registration', [AdminSeasonController::class, 'openRegistration'])->name('admin.seasons.open_registration');
 Route::post('seasons/{id}/close-registration', [AdminSeasonController::class, 'closeRegistration'])->name('admin.seasons.close_registration');
+Route::post('seasons/{id}/reopen-registration', [AdminSeasonController::class, 'reopenRegistration'])->name('admin.seasons.reopen_registration');
 
 Route::get('seasons/{seasonId}/stages', [AdminStageController::class, 'index'])->name('admin.stages.index');
 Route::post('seasons/{seasonId}/stages', [AdminStageController::class, 'store'])->name('admin.stages.store');

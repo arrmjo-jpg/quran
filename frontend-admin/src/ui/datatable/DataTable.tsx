@@ -92,7 +92,7 @@ export function DataTable<TData>({
           {exportable && onExport && (
             <Button variant="outline" size="sm" onClick={onExport}>
               <Download className="w-3.5 h-3.5" />
-              <span>تصدير CSV</span>
+              <span>{t('export_csv')}</span>
             </Button>
           )}
         </div>
@@ -101,12 +101,12 @@ export function DataTable<TData>({
       {/* Main Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-right text-slate-600 dark:text-slate-300">
+          <table className="w-full text-xs text-start text-slate-600 dark:text-slate-300">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-slate-800">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 select-none">
+                    <th key={header.id} className="px-4 py-3 text-start select-none">
                       {header.isPlaceholder ? null : (
                         <div
                           className={`flex items-center gap-1.5 ${header.column.getCanSort() ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''}`}
@@ -158,7 +158,11 @@ export function DataTable<TData>({
         {pagination && (
           <div className="flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 text-xs">
             <span className="text-slate-500 dark:text-slate-400">
-              عرضالصفحة {pagination.pageIndex + 1} من {Math.ceil(pagination.total / pagination.pageSize) || 1} (إجمالي {pagination.total})
+              {t('pagination_summary', {
+                page:  pagination.pageIndex + 1,
+                pages: Math.ceil(pagination.total / pagination.pageSize) || 1,
+                total: pagination.total,
+              })}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -167,7 +171,7 @@ export function DataTable<TData>({
                 disabled={pagination.pageIndex <= 0 || loading}
                 onClick={() => onPageChange?.(pagination.pageIndex - 1)}
               >
-                السابق
+                {t('previous')}
               </Button>
               <Button
                 variant="outline"
@@ -175,7 +179,7 @@ export function DataTable<TData>({
                 disabled={(pagination.pageIndex + 1) * pagination.pageSize >= pagination.total || loading}
                 onClick={() => onPageChange?.(pagination.pageIndex + 1)}
               >
-                التالي
+                {t('next')}
               </Button>
             </div>
           </div>

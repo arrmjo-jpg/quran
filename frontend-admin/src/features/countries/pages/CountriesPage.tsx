@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { DataTable } from '@/ui/datatable/DataTable';
@@ -11,6 +12,8 @@ import type { Country } from '../types';
 import { Plus, Globe } from 'lucide-react';
 
 export default function CountriesPage(): React.JSX.Element {
+  const { t } = useTranslation('countries');
+  const { t: tc } = useTranslation('common');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { data: countries, isLoading, refetch } = useCountries();
 
@@ -27,25 +30,25 @@ export default function CountriesPage(): React.JSX.Element {
     },
     {
       accessorKey: 'phone_code',
-      header: 'مفتاح الهاتف',
+      header: t('col_phone_code'),
       cell: ({ row }) => <span className="font-mono dir-ltr">{row.original.phone_code}</span>,
     },
     {
       accessorKey: 'name_ar',
-      header: 'الاسم بالعربية',
+      header: t('col_name_ar'),
       cell: ({ row }) => row.original.name_ar ?? '—',
     },
     {
       accessorKey: 'name_en',
-      header: 'الاسم بالإنجليزية',
+      header: t('col_name_en'),
       cell: ({ row }) => row.original.name_en ?? '—',
     },
     {
       accessorKey: 'is_active',
-      header: 'الحالة',
+      header: tc('status'),
       cell: ({ row }) => (
         <Badge variant={row.original.is_active ? 'success' : 'neutral'}>
-          {row.original.is_active ? 'نشط' : 'معطل'}
+          {row.original.is_active ? t('status_active') : t('status_inactive')}
         </Badge>
       ),
     },
@@ -53,14 +56,14 @@ export default function CountriesPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="إدارة الدول المعتمدة"
-      subtitle="إدارة رموز الدول ISO ومفاتيح الاتصال الهاتفي للمشاركين"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'الدول المعتمدة' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
         <PermissionWrapper role="admin">
           <Button onClick={() => setIsFormOpen(true)}>
             <Plus className="w-4 h-4" />
-            <span>إضافة دولة جديدة</span>
+            <span>{t('create_button')}</span>
           </Button>
         </PermissionWrapper>
       }
@@ -71,7 +74,7 @@ export default function CountriesPage(): React.JSX.Element {
         loading={isLoading}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد دول مسجلة حتى الآن."
+        emptyMessage={t('empty')}
       />
 
       <CountryFormDialog isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />

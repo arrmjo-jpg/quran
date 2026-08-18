@@ -1,0 +1,48 @@
+{
+  "title": "إدارة وشاشات المتسابقين (360° Profile Hub)",
+  "subtitle": "البحث المتخصص باسم المتسابق، رقم الطلب، الهاتف، أو الدولة ومعاينة الملف الكامل",
+  "empty": "لم يتم العثور على أي متسابق مطابق للبحث.",
+
+  "col_id": "معرف المتسابق",
+  "col_full_name": "الاسم الكامل",
+  "col_phone": "رقم الهاتف",
+  "col_profile": "عرض الملف 360°",
+  "view_full_profile": "الملف الكامل",
+
+  "drawer_title": "الملف الشخصي 360° — {{name}}",
+
+  "tab_profile": "الملف الشخصي",
+  "tab_application": "الطلب الحالي",
+  "tab_video": "الفيديو المعالج",
+  "tab_evaluations": "التقييمات",
+  "tab_results": "النتائج والتأهل",
+  "tab_appeals": "الاعتراضات",
+  "tab_timeline": "سجل النشاطات",
+
+  "field_date_of_birth": "تاريخ الميلاد",
+  "field_phone": "رقم الهاتف",
+  "field_registered_at": "تاريخ التسجيل",
+  "field_account_status": "حالة الحساب",
+  "account_verified": "نشط ومتحقق",
+
+  "application_number": "طلب رقم: {{id}}",
+  "application_season_stage": "الموسم: {{season}} | المرحلة: {{stage}}",
+
+  "video_heading": "معاينة فيديو التلاوة (HLS Stream)",
+  "video_empty": "لا يوجد فيديو تلاوة مرفوع حالياً.",
+
+  "evaluations_heading": "تقييمات لجنة التحكيم",
+  "evaluations_note": "درجات التجويد والحفظ وحسن الصوت المعتمدة من الحكام.",
+
+  "results_heading": "النتيجة النهائية للمرحلة",
+  "results_average": "متوسط الدرجة: 94.5 / 100 —",
+  "results_qualified": "متأهل للمرحلة التالية",
+
+  "appeal_label": "اعتراض",
+  "appeals_empty": "لا توجد اعتراضات مقدمة.",
+
+  "timeline_submitted": "تم تقديم طلب الاشتراك",
+  "timeline_submitted_when": "منذ يومين",
+  "timeline_video_reviewed": "تم فحص الفيديو وتحويله للتحكيم",
+  "timeline_video_reviewed_when": "منذ يوم واحد"
+}

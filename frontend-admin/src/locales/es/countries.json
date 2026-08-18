@@ -1,0 +1,31 @@
+{
+  "title": "Países aprobados",
+  "subtitle": "Gestione los códigos ISO de país y los prefijos telefónicos de los participantes",
+  "create_button": "Añadir país",
+  "empty": "Todavía no se ha añadido ningún país.",
+
+  "col_phone_code": "Prefijo telefónico",
+  "col_name_ar": "Nombre (árabe)",
+  "col_name_en": "Nombre (inglés)",
+  "status_active": "Activo",
+  "status_inactive": "Desactivado",
+
+  "form_title": "Añadir un nuevo país a la plataforma",
+  "field_iso2": "ISO 2 (dos letras)",
+  "field_iso3": "ISO 3 (tres letras)",
+  "field_phone_code": "Prefijo telefónico",
+  "field_name_ar": "Nombre en árabe",
+  "field_name_en": "Nombre en inglés",
+  "field_flag_url": "URL de la bandera o el logotipo (opcional)",
+  "form_save": "Guardar el país",
+
+  "create_success": "El país se añadió correctamente",
+  "create_error": "No se pudo añadir el país. Compruebe que los códigos no estén ya en uso.",
+
+  "v_iso2_length": "El código ISO2 debe tener exactamente dos letras",
+  "v_iso3_length": "El código ISO3 debe tener exactamente tres letras",
+  "v_phone_code_prefix": "El prefijo telefónico debe empezar por +",
+  "v_name_ar_required": "El nombre en árabe es obligatorio",
+  "v_name_en_required": "El nombre en inglés es obligatorio",
+  "v_flag_url_invalid": "La URL de la bandera no es válida"
+}

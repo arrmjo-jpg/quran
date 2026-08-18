@@ -1,0 +1,28 @@
+{
+  "title": "Applications desk",
+  "subtitle": "Review recitation videos in place and decide whether to send them to judging or ask for a new upload",
+  "empty": "No applications are waiting for review.",
+
+  "col_id": "Application no.",
+  "col_contestant": "Contestant",
+  "col_season_stage": "Season and stage",
+  "col_submitted_at": "Submitted on",
+  "col_preview": "Recitation video",
+  "col_actions": "Decisions",
+
+  "play_video": "Play the video",
+  "send_to_judging": "Send to judging",
+  "request_reupload": "Request a new upload",
+
+  "preview_title": "Application video — {{id}}",
+  "close_preview": "Close the preview",
+
+  "reupload_title": "Request a new video upload — application {{id}}",
+  "reupload_notice": "The contestant will be notified that their recitation video must be uploaded again, with the reason below, and the decision is recorded in the audit trail.",
+  "reupload_placeholder": "Reason for requesting a new upload (required)...",
+  "reupload_submit": "Send the request",
+
+  "send_success": "The application was sent to the judging queue",
+  "reupload_success": "The re-upload request was sent to the contestant",
+  "reupload_error": "Could not send the re-upload request. Please try again."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Official partners and sponsors",
+  "subtitle": "Manage sponsorship tiers and logos for the partners supporting the competition",
+
+  "card_title": "Sponsor list",
+  "card_subtitle": "Sponsors: {{count}}",
+
+  "col_name": "Sponsor name",
+  "col_tier": "Sponsorship tier"
+}

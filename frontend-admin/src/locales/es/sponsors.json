@@ -1,0 +1,10 @@
+{
+  "title": "Socios y patrocinadores oficiales",
+  "subtitle": "Gestione los niveles de patrocinio y los logotipos de los socios que apoyan la competición",
+
+  "card_title": "Lista de patrocinadores",
+  "card_subtitle": "Patrocinadores: {{count}}",
+
+  "col_name": "Nombre del patrocinador",
+  "col_tier": "Nivel de patrocinio"
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Anuncios y páginas",
+  "subtitle": "Controle los anuncios oficiales y los avisos dirigidos a los usuarios",
+
+  "card_title": "Anuncios publicados",
+  "card_subtitle": "Anuncios: {{count}}",
+
+  "col_slug": "Slug",
+  "col_target": "Superficie de destino",
+  "col_published": "Publicación",
+
+  "status_published": "Publicado",
+  "status_draft": "Borrador"
+}

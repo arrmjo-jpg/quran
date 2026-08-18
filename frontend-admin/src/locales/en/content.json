@@ -1,0 +1,14 @@
+{
+  "title": "Announcements and pages",
+  "subtitle": "Control the official announcements and the alerts shown to users",
+
+  "card_title": "Published announcements",
+  "card_subtitle": "Announcements: {{count}}",
+
+  "col_slug": "Slug",
+  "col_target": "Target surface",
+  "col_published": "Publishing",
+
+  "status_published": "Published",
+  "status_draft": "Draft"
+}

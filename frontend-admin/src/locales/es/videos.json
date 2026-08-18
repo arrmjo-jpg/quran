@@ -1,0 +1,16 @@
+{
+  "title": "Centro de procesamiento de vídeo",
+  "subtitle": "Siga las tareas que transcodifican las recitaciones a HLS 1080p y generan los segmentos m3u8 con los workers de FFmpeg",
+  "empty": "Ahora mismo no se está procesando ningún vídeo.",
+
+  "col_id": "ID del vídeo procesado",
+  "col_application": "N.º de solicitud",
+  "col_media": "ID del archivo en R2",
+  "col_status": "Estado de FFmpeg HLS",
+  "col_hls": "URL de la lista m3u8",
+  "col_actions": "Reprocesar",
+
+  "status_ready": "Listo (HLS 1080p)",
+  "reprocess_button": "Reprocesar con FFmpeg",
+  "reprocess_success": "Se puso en cola una tarea de reprocesamiento HLS con FFmpeg"
+}

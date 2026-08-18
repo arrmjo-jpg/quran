@@ -1,0 +1,22 @@
+{
+  "title": "مركز الرسائل والإشعارات (Notification & Message Center)",
+  "subtitle": "تتبع طوابير إرسال البريد الإلكتروني والـ SMS والإشعارات الفورية Firebase OTP",
+  "empty": "لا توجد إشعارات في سجل الرسائل حتى الآن.",
+
+  "stat_total": "إجمالي الإشعارات المرسلة",
+  "stat_email_queue": "طابور البريد Email Queue",
+  "stat_sms_queue": "طابور SMS Firebase",
+  "stat_failed": "الرسائل الفاشلة Failed Jobs",
+  "stat_pending_value": "0 معلق",
+  "stat_failed_value": "0 فشل",
+
+  "col_type": "نوع الإشعار والقناة",
+  "col_recipient": "المستلم والوجهة",
+  "col_sent_at": "تاريخ الإرسال",
+  "col_status": "حالة التسليم",
+  "col_retry": "إعادة المحاولة",
+
+  "status_delivered": "تم التسليم بنجاح",
+  "retry_button": "إعادة إرسال",
+  "retry_success": "تمت إعادة إرسال الإشعار لـ Queue"
+}

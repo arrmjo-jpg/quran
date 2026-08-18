@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -12,6 +13,8 @@ import { formatDate } from '@/core/utils';
 import { toast } from 'sonner';
 
 export default function SearchPage(): React.JSX.Element {
+  const { t } = useTranslation('search');
+  const { t: tc } = useTranslation('common');
   const queryClient = useQueryClient();
 
   const { data: logs, isLoading, refetch } = useQuery({
@@ -23,32 +26,32 @@ export default function SearchPage(): React.JSX.Element {
     mutationFn: () => searchService.triggerReindex(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search', 'indexing-logs'] });
-      toast.success('بدأت عملية إعادة الفهرسة الكاملة في محرك Meilisearch بنجاح');
+      toast.success(t('reindex_success'));
     },
   });
 
   const columns: ColumnDef<IndexingLog>[] = [
     {
       accessorKey: 'index_name',
-      header: 'اسم كشاف البحث Index',
+      header: t('col_index'),
       cell: ({ row }) => <span className="font-bold text-slate-900 dark:text-white font-mono">{row.original.index_name}</span>,
     },
     {
       accessorKey: 'indexed_count',
-      header: 'عدد الوثائق المفهرسة Document Count',
+      header: t('col_count'),
       cell: ({ row }) => <span className="font-mono font-bold text-brand-600 dark:text-brand-400">{row.original.indexed_count ?? 150}</span>,
     },
     {
       accessorKey: 'created_at',
-      header: 'تاريخ الفهرسة',
+      header: t('col_indexed_at'),
       cell: ({ row }) => formatDate(row.original.created_at),
     },
     {
       accessorKey: 'status',
-      header: 'حالة محرك Meilisearch',
+      header: t('col_status'),
       cell: ({ row }) => (
         <Badge variant={row.original.status === 'completed' ? 'success' : 'warning'}>
-          {row.original.status === 'completed' ? 'فهرسة صحيحة 100%' : row.original.status}
+          {row.original.status === 'completed' ? t('status_complete') : row.original.status}
         </Badge>
       ),
     },
@@ -56,21 +59,21 @@ export default function SearchPage(): React.JSX.Element {
 
   return (
     <PageLayout
-      title="وحدة التحكم بكشافات البحث (Meilisearch Search Console)"
-      subtitle="إدارة وتحديث كشافات البحث الفوري Meilisearch / Laravel Scout لجميع كيانات المنصة"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'كشاف البحث' }]}
+      title={t('title')}
+      subtitle={t('subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
         <Button isLoading={reindexMutation.isPending} onClick={() => reindexMutation.mutate()}>
           <RefreshCw className="w-4 h-4" />
-          <span>إعادة الفهرسة الكاملة Reindex</span>
+          <span>{t('reindex_button')}</span>
         </Button>
       }
     >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <StatCard title="حالة Meilisearch Server" value="Healthy ✅" icon={<Database className="w-5 h-5" />} color="emerald" />
-        <StatCard title="إجمالي الكشافات Active Indexes" value="4 كشافات" icon={<Layers className="w-5 h-5" />} color="brand" />
-        <StatCard title="الوثائق المفهرسة" value="1,250 وثيقة" icon={<Search className="w-5 h-5" />} color="purple" />
-        <StatCard title="زمن الاستجابة Average Latency" value="3.2 ms" icon={<CheckCircle2 className="w-5 h-5" />} color="amber" />
+        <StatCard title={t('stat_server')} value="Healthy ✅" icon={<Database className="w-5 h-5" />} color="emerald" />
+        <StatCard title={t('stat_indexes')} value={t('stat_indexes_value')} icon={<Layers className="w-5 h-5" />} color="brand" />
+        <StatCard title={t('stat_documents')} value={t('stat_documents_value')} icon={<Search className="w-5 h-5" />} color="purple" />
+        <StatCard title={t('stat_latency')} value="3.2 ms" icon={<CheckCircle2 className="w-5 h-5" />} color="amber" />
       </div>
 
       <DataTable<IndexingLog>
@@ -79,7 +82,7 @@ export default function SearchPage(): React.JSX.Element {
         loading={isLoading}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد سجلات فهرسة سابقة."
+        emptyMessage={t('empty')}
       />
     </PageLayout>
   );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
@@ -20,6 +21,8 @@ export interface ActiveSession {
 }
 
 export default function ActiveSessionsPage(): React.JSX.Element {
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
   const queryClient = useQueryClient();
 
   const { data: sessions, isLoading, refetch } = useQuery({
@@ -36,7 +39,7 @@ export default function ActiveSessionsPage(): React.JSX.Element {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
-      toast.success('تمت إنهاء وإسقاط الجلسة بنجاح');
+      toast.success(t('sessions_revoked'));
     },
   });
 
@@ -46,14 +49,14 @@ export default function ActiveSessionsPage(): React.JSX.Element {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-sessions'] });
-      toast.success('تمت إنهاء جميع الجلسات الأخرى للحساب بنجاح');
+      toast.success(t('sessions_others_revoked'));
     },
   });
 
   const columns: ColumnDef<ActiveSession>[] = [
     {
       accessorKey: 'name',
-      header: 'اسم الجهاز والجلسة',
+      header: t('sessions_col_device'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Monitor className="w-4 h-4 text-brand-600" />
@@ -63,21 +66,21 @@ export default function ActiveSessionsPage(): React.JSX.Element {
     },
     {
       accessorKey: 'is_current',
-      header: 'الجلسة الحالية',
+      header: t('sessions_col_current'),
       cell: ({ row }) => (
         <Badge variant={row.original.is_current ? 'success' : 'neutral'}>
-          {row.original.is_current ? 'هذا الجهاز (الحالي)' : 'جهاز آخر'}
+          {row.original.is_current ? t('sessions_current_device') : t('sessions_other_device')}
         </Badge>
       ),
     },
     {
       accessorKey: 'created_at',
-      header: 'تاريخ الإنشاء',
+      header: t('sessions_col_created'),
       cell: ({ row }) => formatDate(row.original.created_at),
     },
     {
       id: 'actions',
-      header: 'إنهاء الجلسة',
+      header: t('sessions_col_revoke'),
       cell: ({ row }) =>
         !row.original.is_current ? (
           <Button
@@ -87,19 +90,19 @@ export default function ActiveSessionsPage(): React.JSX.Element {
             onClick={() => revokeMutation.mutate(row.original.id)}
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-            <span>إسقاط الجلسة</span>
+            <span>{t('sessions_revoke')}</span>
           </Button>
         ) : (
-          <span className="text-slate-400 text-[10px]">نشط الآن</span>
+          <span className="text-slate-400 text-[10px]">{t('sessions_active_now')}</span>
         ),
     },
   ];
 
   return (
     <PageLayout
-      title="إدارة الأجهزة والجلسات النشطة (Session Revocation Desk)"
-      subtitle="تتبع الحسابات المفتوحة على أجهزة المشرفين وطرد الجلسات غير المصرح بها"
-      breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'الأجهزة والجلسات' }]}
+      title={t('sessions_title')}
+      subtitle={t('sessions_subtitle')}
+      breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('sessions_breadcrumb') }]}
       actions={
         <Button
           variant="danger"
@@ -108,7 +111,7 @@ export default function ActiveSessionsPage(): React.JSX.Element {
           onClick={() => revokeOtherMutation.mutate()}
         >
           <LogOut className="w-4 h-4" />
-          <span>إنهاء كافة الجلسات الأخرى</span>
+          <span>{t('sessions_revoke_others')}</span>
         </Button>
       }
     >
@@ -118,7 +121,7 @@ export default function ActiveSessionsPage(): React.JSX.Element {
         loading={isLoading}
         onRefresh={refetch}
         exportable
-        emptyMessage="لا توجد جلسات أخرى مسجلة."
+        emptyMessage={t('sessions_empty')}
       />
     </PageLayout>
   );

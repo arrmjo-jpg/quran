@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/ui/dialog/Dialog';
 import Button from '@/ui/Button';
 import { Input } from '@/ui/input/Input';
@@ -13,6 +14,8 @@ export interface TotpMfaModalProps {
 }
 
 export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.Element | null {
+  const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation('common');
   const [step, setStep] = useState<'setup' | 'recovery'>('setup');
   const [secret, setSecret] = useState('');
   const [qrUrl, setQrUrl] = useState('');
@@ -27,7 +30,7 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
       setSecret(data.data.secret);
       setQrUrl(data.data.qr_code_url);
     } catch {
-      toast.error('فشل جلب مفتاح التوثيق الثنائي.');
+      toast.error(t('mfa_setup_secret_failed'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +38,7 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
 
   const handleVerify = async () => {
     if (code.length !== 6) {
-      toast.error('رمز التوثيق يتكون من 6 أرقام');
+      toast.error(t('mfa_setup_code_length'));
       return;
     }
 
@@ -47,40 +50,40 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
       });
       setRecoveryCodes(data.data.recovery_codes);
       setStep('recovery');
-      toast.success('تم تفعيل التوثيق الثنائي (Google Authenticator) بنجاح!');
+      toast.success(t('mfa_setup_success'));
     } catch {
-      toast.error('رمز التوثيق 6-أرقام غير صحيح. حاول مجدداً.');
+      toast.error(t('mfa_setup_code_invalid'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title="إعداد التوثيق الثنائي (TOTP MFA)">
-      <div className="space-y-4 text-xs text-right">
+    <Dialog isOpen={isOpen} onClose={onClose} title={t('mfa_setup_title')}>
+      <div className="space-y-4 text-xs text-start">
         {step === 'setup' && (
           <>
             {!secret ? (
               <div className="text-center py-6 space-y-4">
                 <ShieldCheck className="w-12 h-12 text-brand-600 mx-auto" />
                 <p className="text-slate-600 dark:text-slate-300">
-                  تفعيل التوثيق الثنائي لحماية حساب الإدارة عبر تطبيقات مثل Google Authenticator أو Authy.
+                  {t('mfa_setup_intro')}
                 </p>
                 <Button isLoading={loading} onClick={handleStartSetup} className="mx-auto">
-                  بدء إعداد TOTP MFA
+                  {t('mfa_setup_start')}
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 text-center space-y-2">
-                  <p className="font-semibold text-slate-900 dark:text-white">مسح رمز الـ QR عبر تطبيق Authenticator:</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{t('mfa_setup_scan')}</p>
                   <p className="font-mono text-xs text-brand-600 dark:text-brand-400 font-bold bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 select-all">
                     {secret}
                   </p>
                 </div>
 
                 <Input
-                  label="أدخل رمز الـ 6 أرقام المولّد من التطبيق"
+                  label={t('mfa_setup_code_label')}
                   placeholder="123456"
                   maxLength={6}
                   value={code}
@@ -88,8 +91,8 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
                 />
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="secondary" onClick={onClose}>إلغاء</Button>
-                  <Button isLoading={loading} onClick={handleVerify}>تأكيد وتفعيل MFA</Button>
+                  <Button variant="secondary" onClick={onClose}>{tc('cancel')}</Button>
+                  <Button isLoading={loading} onClick={handleVerify}>{t('mfa_setup_confirm')}</Button>
                 </div>
               </div>
             )}
@@ -99,9 +102,9 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
         {step === 'recovery' && (
           <div className="space-y-4">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-xl text-emerald-900 dark:text-emerald-200">
-              <span className="font-bold block mb-1">تم التفعيل بنجاح! احفظ رموز الاسترجاع الثمانية (Recovery Codes):</span>
+              <span className="font-bold block mb-1">{t('mfa_recovery_heading')}</span>
               <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
-                في حال فقدان جهازك، يمكنك استخدام أي من هذه الرموز الثمانية لمرة واحدة فقط للدخول.
+                {t('mfa_recovery_hint')}
               </p>
             </div>
 
@@ -112,7 +115,7 @@ export function TotpMfaModal({ isOpen, onClose }: TotpMfaModalProps): React.JSX.
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={onClose}>إغلاق وحفظ</Button>
+              <Button onClick={onClose}>{t('mfa_recovery_close')}</Button>
             </div>
           </div>
         )}
