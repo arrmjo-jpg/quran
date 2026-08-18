@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
+use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 
 uses(RefreshDatabase::class)->group('core', 'feature', 'identity', 'permissions');
@@ -139,4 +141,63 @@ test('no persisted permission is missing from the catalogue', function (): void 
     expect($orphans)->toBeEmpty(
         'Permissions exist in the database but not in the catalogue: '.implode(', ', $orphans)
     );
+});
+
+/*
+|--------------------------------------------------------------------------
+| Operational actions that must stay separately grantable
+|--------------------------------------------------------------------------
+|
+| These four were added when the admin routes were mapped onto the
+| catalogue for the enforcement epic and thirteen routes turned out to
+| have no permission to check. Six of them had no home at all; these are
+| the ones that became new entries rather than a rebinding.
+|
+| Named here individually rather than left to the resource maps above,
+| because the reason each exists is a decision that a future reader could
+| otherwise undo by "tidying" them into a coarser verb.
+*/
+
+test('starting and stopping a broadcast are separate from creating one', function (): void {
+    // Creating a streaming room provisions RTMP keys. Starting one puts a
+    // signal on air and stopping one takes it off, potentially mid-round.
+    // Folding these into streaming.create would give whoever sets up a
+    // room the ability to cut a live broadcast — the same conflation the
+    // `manage` verb was removed to prevent.
+    expect(PermissionCatalog::has('streaming.start'))->toBeTrue();
+    expect(PermissionCatalog::has('streaming.stop'))->toBeTrue();
+    expect(PermissionCatalog::has('streaming.create'))->toBeTrue();
+});
+
+test('videos can be reprocessed, as media already could', function (): void {
+    // media.reprocess existed and videos.reprocess did not, so the same
+    // operation was grantable for one asset type and not the other.
+    expect(PermissionCatalog::has('videos.reprocess'))->toBeTrue();
+    expect(PermissionCatalog::has('media.reprocess'))->toBeTrue();
+});
+
+test('the rule picker catalogues are readable and read-only', function (): void {
+    // participation types, tajweed levels and judge score systems are
+    // seeded reference data with no write endpoint, so the resource has
+    // exactly one verb.
+    expect(PermissionCatalog::has('lookups.view'))->toBeTrue();
+
+    $lookupPermissions = array_values(array_filter(
+        PermissionCatalog::all(),
+        static fn (string $p): bool => str_starts_with($p, 'lookups.')
+    ));
+
+    expect($lookupPermissions)->toBe(['lookups.view']);
+});
+
+test('competition_manager can run a broadcast and read the rule catalogues', function (): void {
+    // The role that runs the competition needs both, and the ADR-015 §7.3
+    // separation still holds: it gains no identity capability from them.
+    (new PermissionsSeeder)->run();
+    app(RolesSeeder::class)->run();
+
+    $held = app(RoleRepositoryContract::class)->findByName('competition_manager')->getPermissionNames();
+
+    expect($held)->toContain('streaming.start', 'streaming.stop', 'videos.reprocess', 'lookups.view');
+    expect($held)->not->toContain('users.view', 'roles.view', 'audit.view', 'settings.view');
 });

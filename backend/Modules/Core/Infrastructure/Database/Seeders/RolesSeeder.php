@@ -113,8 +113,12 @@ final class RolesSeeder extends Seeder
      */
     private function seededRoleDefinitions(): array
     {
+        // lookups.view belongs here because season_rules does: the
+        // participation type, tajweed level and judge score system
+        // pickers are what a rules screen is made of, and granting the
+        // screen without its catalogues would leave it unusable.
         $competitionManager = PermissionCatalog::forResources([
-            'seasons', 'season_rules', 'stages', 'countries',
+            'seasons', 'season_rules', 'stages', 'countries', 'lookups',
             'applications', 'judges', 'judge_assignments', 'appeals',
             'media', 'videos', 'streaming', 'notifications', 'reports',
         ]);

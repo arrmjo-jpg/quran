@@ -77,6 +77,10 @@ final class PermissionCatalog
         'start',
         'save_draft',
         'submit',
+        // Live streaming control. 'start' is shared with the scoring
+        // workflow above — the verb set is global, and a verb meaning
+        // "begin this thing" reads correctly for both.
+        'stop',
         // Appeal decisions
         'accept',
         'reject',
@@ -136,6 +140,11 @@ final class PermissionCatalog
 
         // ── Reference data ──────────────────────────────────────────
         'countries' => ['view', 'create', 'activate', 'deactivate'],
+        // Read-only catalogues behind the season and stage rule pickers
+        // (participation types, tajweed levels, judge score systems).
+        // Read-only by design: they are seeded reference data with no
+        // write endpoint, so one view permission covers the resource.
+        'lookups' => ['view'],
 
         // ── People ──────────────────────────────────────────────────
         // contestants.update: NO ENDPOINT YET (granted to data_entry in
@@ -158,8 +167,17 @@ final class PermissionCatalog
 
         // ── Media ───────────────────────────────────────────────────
         'media' => ['view', 'create', 'update', 'delete', 'reprocess'],
-        'videos' => ['view', 'delete'],
-        'streaming' => ['view', 'create', 'delete'],
+        // videos.reprocess re-runs the FFmpeg HLS pipeline for one video.
+        // It was missing while media.reprocess existed, so the identical
+        // operation was grantable for one asset type and not the other.
+        'videos' => ['view', 'delete', 'reprocess'],
+        // streaming.start / streaming.stop are separate from create on
+        // purpose. Creating a room provisions RTMP keys; starting one puts
+        // a signal on air and stopping one takes it off, mid-competition.
+        // Folding them into create would hand whoever can set up a room
+        // the ability to cut a live broadcast — precisely the conflation
+        // the `manage` verb was removed to prevent (ADR-015 §4.4).
+        'streaming' => ['view', 'create', 'start', 'stop', 'delete'],
 
         // ── Content ─────────────────────────────────────────────────
         'content' => ['view', 'create', 'delete', 'publish'],
