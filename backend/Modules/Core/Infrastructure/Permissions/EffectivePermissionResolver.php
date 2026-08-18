@@ -144,6 +144,42 @@ final class EffectivePermissionResolver
     }
 
     /**
+     * Role names for many users at once, keyed by user id.
+     *
+     * Exists so a paginated list is one query rather than one per row.
+     * roleNamesFor() is the single-account version and stays, because the
+     * login path genuinely has one account and passing it a list would read
+     * worse than it reads now.
+     *
+     * Users holding no roles are absent from the result rather than present
+     * with an empty array — the caller has the full id list already, and
+     * inventing rows here would mean this method decided what "no roles"
+     * looks like on behalf of every caller.
+     *
+     * @param  array<int, string>  $userIds
+     * @return array<string, array<int, string>>
+     */
+    public function roleNamesForMany(array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('role_user')
+            ->join('roles', 'roles.id', '=', 'role_user.role_id')
+            ->whereIn('role_user.user_id', $userIds)
+            ->orderBy('roles.name')
+            ->get(['role_user.user_id', 'roles.name']);
+
+        $byUser = [];
+        foreach ($rows as $row) {
+            $byUser[$row->user_id][] = $row->name;
+        }
+
+        return $byUser;
+    }
+
+    /**
      * @return array<int, string>
      */
     private function resolve(UserId $userId): array

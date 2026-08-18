@@ -81,11 +81,13 @@ final class PermissionCatalog
         // workflow above — the verb set is global, and a verb meaning
         // "begin this thing" reads correctly for both.
         'stop',
-        // Identity. Editing what a role can DO is separated from editing
-        // what it is called: renaming is cosmetic, granting is the
-        // escalation surface PE-2 guards, and one permission covering both
-        // would let whoever may tidy a label also hand out capability.
+        // Identity. Editing what a role or an account can DO is separated
+        // from editing what it is called: renaming is cosmetic, while
+        // granting is the escalation surface PE-1/PE-2 guard. One
+        // permission covering both would let whoever may tidy a label also
+        // hand out capability.
         'grant_permissions',
+        'assign_roles',
         // Appeal decisions
         'accept',
         'reject',
@@ -114,7 +116,7 @@ final class PermissionCatalog
     private const CATALOG = [
         // ── Identity ────────────────────────────────────────────────
         // NO ENDPOINT YET — built across the Identity & Access epics.
-        'users' => ['view', 'create', 'update', 'delete', 'restore'],
+        'users' => ['view', 'create', 'update', 'assign_roles', 'activate', 'deactivate', 'delete', 'restore'],
         'roles' => ['view', 'create', 'update', 'grant_permissions', 'delete'],
         'permissions' => ['view'],
 

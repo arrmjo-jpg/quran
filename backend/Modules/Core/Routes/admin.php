@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Presentation\HTTP\Controllers\PermissionController;
 use Modules\Core\Presentation\HTTP\Controllers\RoleController;
+use Modules\Core\Presentation\HTTP\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,3 +50,34 @@ Route::patch('roles/{id}/permissions', [RoleController::class, 'syncPermissions'
 Route::delete('roles/{id}', [RoleController::class, 'destroy'])
     ->name('admin.roles.destroy')
     ->middleware('can:roles.delete');
+
+/*
+| Accounts. No create route: ADR-003 provisions administrators by hand and
+| contestants arrive through public registration, so an admin-facing "add
+| user" would be a third way in that neither document describes.
+*/
+
+Route::get('users', [UserController::class, 'index'])
+    ->name('admin.users.index')
+    ->middleware('can:users.view');
+
+Route::get('users/{id}', [UserController::class, 'show'])
+    ->name('admin.users.show')
+    ->middleware('can:users.view');
+
+// Not users.update. Handing an account a role is the escalation surface PE-1
+// guards; editing its name is not.
+Route::patch('users/{id}/roles', [UserController::class, 'syncRoles'])
+    ->name('admin.users.roles.sync')
+    ->middleware('can:users.assign_roles');
+
+// Separated from each other, not only from users.update: granting access back
+// and cutting it off are different decisions, and the one that can strand the
+// platform is the one worth granting deliberately.
+Route::patch('users/{id}/activate', [UserController::class, 'activate'])
+    ->name('admin.users.activate')
+    ->middleware('can:users.activate');
+
+Route::patch('users/{id}/deactivate', [UserController::class, 'deactivate'])
+    ->name('admin.users.deactivate')
+    ->middleware('can:users.deactivate');

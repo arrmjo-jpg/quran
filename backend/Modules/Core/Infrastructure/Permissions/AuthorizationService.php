@@ -133,4 +133,18 @@ final class AuthorizationService
     {
         return (bool) $user->is_active && $user->deleted_at === null;
     }
+    /**
+     * Role names for a page of accounts, keyed by user id.
+     *
+     * Like rolesOf(), this does NOT empty for deactivated accounts: the
+     * roles are still held and a list that hid them would be describing
+     * authorization rather than membership.
+     *
+     * @param  array<int, string>  $userIds
+     * @return array<string, array<int, string>>
+     */
+    public function rolesOfMany(array $userIds): array
+    {
+        return $this->permissions->roleNamesForMany($userIds);
+    }
 }

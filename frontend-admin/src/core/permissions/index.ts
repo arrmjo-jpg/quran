@@ -18,6 +18,9 @@ export const PERMISSIONS = [
   'users.view',
   'users.create',
   'users.update',
+  'users.assign_roles',
+  'users.activate',
+  'users.deactivate',
   'users.delete',
   'users.restore',
   // roles
