@@ -268,3 +268,4 @@ ADR-001 (System Architecture)
 | IRG-001 | **System Integration Readiness Gate** | 8 Pillar cross-module integration gate — 67 tests / 1,334 assertions — 100% passing | ✅ Cleared |
 | 17   | **OpenAPI 3.1 Specification Export**   | Auto-generated OpenAPI 3.1 (`api.json`) via Scramble (`scramble:export`) | ✅ Generated |
 | 17 | **Production Readiness** | ADR-007 (Backup & Disaster Recovery) | ⏳ Before go-live |
+| 16   | **Organisational Structure & Admin Identity** | Circles, Centres, admin profiles, Activity Log, and the 13-epic order after Identity | ✅ Accepted 2026-08-18 — Q2/Q7 decided; Q1, Q3–Q6 deferred to their epics |
