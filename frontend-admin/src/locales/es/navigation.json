@@ -33,5 +33,6 @@
   "command_reports": "Centro de informes y exportación",
   "command_audit_logs": "Explorador de registros de auditoría",
   "command_about": "Diagnóstico e información del sistema",
-  "roles": "Roles y permisos"
+  "roles": "Roles y permisos",
+  "users": "Usuarios"
 }

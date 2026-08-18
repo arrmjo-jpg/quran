@@ -18,6 +18,7 @@ import {
   Search,
   BookOpen,
   ShieldCheck,
+  UserCog,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils';
@@ -54,6 +55,7 @@ const navItems: NavItem[] = [
   { path: '/reports',       labelKey: 'reports',       icon: FileText },
   { path: '/notifications', labelKey: 'notifications', icon: Bell },
   { path: '/countries',     labelKey: 'countries',     icon: Globe },
+  { path: '/users',         labelKey: 'users',         icon: UserCog,     permission: 'users.view' },
   { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck, permission: 'roles.view' },
   { path: '/search',        labelKey: 'search',        icon: Search },
 ];

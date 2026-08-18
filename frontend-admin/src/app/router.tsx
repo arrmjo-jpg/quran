@@ -10,6 +10,7 @@ const DashboardPage    = lazy(() => import('@/features/dashboard/pages/Dashboard
 const SeasonsPage      = lazy(() => import('@/features/seasons/pages/SeasonsPage'));
 const CountriesPage    = lazy(() => import('@/features/countries/pages/CountriesPage'));
 const RolesPage        = lazy(() => import('@/features/roles/pages/RolesPage'));
+const UsersPage        = lazy(() => import('@/features/users/pages/UsersPage'));
 const ContestantsPage  = lazy(() => import('@/features/contestants/pages/ContestantsPage'));
 const JudgesPage       = lazy(() => import('@/features/judges/pages/JudgesPage'));
 const ApplicationsPage = lazy(() => import('@/features/applications/pages/ApplicationsPage'));
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
           { path: 'seasons',              element: <Suspense fallback={<Loading />}><SeasonsPage /></Suspense> },
           { path: 'countries',            element: <Suspense fallback={<Loading />}><CountriesPage /></Suspense> },
           { path: 'roles',                element: <Suspense fallback={<Loading />}><RolesPage /></Suspense> },
+          { path: 'users',                element: <Suspense fallback={<Loading />}><UsersPage /></Suspense> },
           { path: 'contestants',          element: <Suspense fallback={<Loading />}><ContestantsPage /></Suspense> },
           { path: 'judges',               element: <Suspense fallback={<Loading />}><JudgesPage /></Suspense> },
           { path: 'applications',         element: <Suspense fallback={<Loading />}><ApplicationsPage /></Suspense> },

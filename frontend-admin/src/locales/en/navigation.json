@@ -33,5 +33,6 @@
   "command_reports": "Reports and exports centre",
   "command_audit_logs": "Audit log explorer",
   "command_about": "System diagnostics and info",
-  "roles": "Roles & Permissions"
+  "roles": "Roles & Permissions",
+  "users": "Users"
 }
