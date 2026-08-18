@@ -40,14 +40,14 @@ const ADMIN_ONLY_SEASON_FIELDS = [
 
 function exposureAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'exposure-admin-'.Str::random(8).'@quran.test',
         'name' => 'Exposure Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 /** A season carrying a value in every admin-only field, so nothing leaks by being null. */

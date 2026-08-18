@@ -103,14 +103,14 @@ function seedFullyConfiguredSeason(): string
  */
 function seedTestUser(): string
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'season-test-'.Str::random(8).'@quran.test',
         'name' => 'Season Test Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ])->id;
+    ]))->id;
 }
 
 test('OpenSeasonRegistrationUseCase freezes a fully configured season, persists version 1, and dispatches events', function (): void {

@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Symfony\Component\Uid\Uuid;
 use Tests\TestCase;
 
 final class DeviceTrustTest extends TestCase
@@ -20,14 +21,14 @@ final class DeviceTrustTest extends TestCase
         parent::setUp();
         Cache::flush();
 
-        $this->adminUser = UserModel::query()->create([
-            'id' => '00000000-0000-0000-0000-000000000077',
+        $this->adminUser = withSuperAdmin(UserModel::query()->create([
+            'id' => (string) Uuid::v7(),
             'email' => 'trust-admin@quran.test',
             'name' => 'Trust Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     public function test_user_can_trust_current_device(): void

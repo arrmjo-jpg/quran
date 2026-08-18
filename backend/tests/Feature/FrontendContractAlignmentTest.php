@@ -63,14 +63,14 @@ function fc_configureSeasonRules(string $seasonId): void
 
 function fc_admin(string $email = 'fc-admin@quran.test'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Contract Admin User',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('PRG-003 Screen 1: Login & Profile Contract — POST /api/v1/admin/auth/login and GET /api/v1/admin/auth/me', function (): void {
@@ -169,14 +169,14 @@ test('PRG-003 Screen 4: Countries Screen — GET /api/v1/countries and POST /api
 
 test('PRG-003 Screen 6: Judges Screen — GET & POST /api/v1/admin/judges', function (): void {
     $admin = fc_admin();
-    $judgeUser = UserModel::query()->create([
+    $judgeUser = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'judge-screen@quran.test',
         'name' => 'Judge Screen Name',
-        'type' => 'judge',
+        'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     $this->actingAs($admin)
         ->postJson('/api/v1/admin/judges', [

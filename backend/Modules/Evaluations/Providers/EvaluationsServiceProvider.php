@@ -55,8 +55,15 @@ final class EvaluationsServiceProvider extends ServiceProvider
                 ->group(__DIR__.'/../Routes/admin.php');
         }
 
+        // The judge surface carries the 'admin' middleware because judges
+        // authenticate on the admin surface (ADR-015 §1: users.type is
+        // the door, roles decide what happens inside). It was previously
+        // registered with 'api' alone, and its own route file adds only
+        // auth:sanctum — so any authenticated account, contestants
+        // included, could reach the scoring endpoints. Nothing about
+        // being a judge was ever checked.
         if (file_exists(__DIR__.'/../Routes/judge.php')) {
-            Route::middleware(['api'])
+            Route::middleware(['api', 'auth:sanctum', 'admin'])
                 ->prefix('api/v1')
                 ->group(__DIR__.'/../Routes/judge.php');
         }

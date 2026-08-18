@@ -17,14 +17,14 @@ final class JudgesTest extends TestCase
 
     private function admin(): UserModel
     {
-        return $this->sharedAdmin ??= UserModel::query()->create([
+        return $this->sharedAdmin ??= withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => 'judges-admin@quran.test',
             'name' => 'Judges Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     private function judgeUser(string $email = 'judge-candidate@quran.test'): UserModel
@@ -33,7 +33,7 @@ final class JudgesTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => $email,
             'name' => 'Judge Candidate',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

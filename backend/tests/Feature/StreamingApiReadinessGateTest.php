@@ -13,14 +13,14 @@ uses(RefreshDatabase::class)->group('streaming', 'phase_16_11');
 
 function stream_user(string $email, string $type = 'admin'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Stream Admin',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function stream_season(): SeasonModel

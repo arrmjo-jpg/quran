@@ -24,14 +24,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'lookups');
 
 function lookupAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'lookup-admin-'.Str::random(8).'@quran.test',
         'name' => 'Lookup Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('participation types lists active rows in display order with translations', function (): void {

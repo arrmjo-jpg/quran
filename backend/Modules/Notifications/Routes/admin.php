@@ -14,7 +14,7 @@ use Modules\Notifications\Presentation\HTTP\Controllers\AdminNotificationControl
 */
 
 Route::prefix('notifications')->group(function (): void {
-    Route::get('/', [AdminNotificationController::class, 'index'])->name('admin.notifications.index');
-    Route::get('/{id}', [AdminNotificationController::class, 'show'])->name('admin.notifications.show');
-    Route::post('/{id}/retry', [AdminNotificationController::class, 'retry'])->name('admin.notifications.retry');
+    Route::get('/', [AdminNotificationController::class, 'index'])->name('admin.notifications.index')->middleware('can:notifications.view');
+    Route::get('/{id}', [AdminNotificationController::class, 'show'])->name('admin.notifications.show')->middleware('can:notifications.view');
+    Route::post('/{id}/retry', [AdminNotificationController::class, 'retry'])->name('admin.notifications.retry')->middleware('can:notifications.retry');
 });

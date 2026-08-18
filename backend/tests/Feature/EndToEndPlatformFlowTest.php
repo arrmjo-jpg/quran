@@ -32,14 +32,14 @@ test('E2E Full Journey — Register -> Profile -> Upload -> App -> 5 Judges -> C
         'is_active' => true,
     ]);
 
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'e2e-admin@quran.test',
         'name' => 'Super Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     // ── 1. REGISTER CONTESTANT ───────────────────────────────────────────────
     $regResponse = $this->postJson('/api/v1/auth/register', [
@@ -131,14 +131,14 @@ test('E2E Full Journey — Register -> Profile -> Upload -> App -> 5 Judges -> C
     $judgeModels = [];
 
     for ($i = 1; $i <= 5; $i++) {
-        $jUser = UserModel::query()->create([
+        $jUser = withSuperAdmin(UserModel::query()->create([
             'id' => fake()->uuid(),
             'email' => "judge{$i}@quran.test",
             'name' => "Judge {$i}",
-            'type' => 'judge',
+            'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
 
         $jModel = JudgeModel::query()->create([
             'id' => fake()->uuid(),

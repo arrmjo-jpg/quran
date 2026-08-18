@@ -25,14 +25,14 @@ uses(RefreshDatabase::class)->group('competition', 'feature', 'open-registration
 
 function openRegAdmin(): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => (string) Str::uuid(),
         'email' => 'open-reg-admin-'.Str::random(8).'@quran.test',
         'name' => 'Open Reg Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 /** @return array{participation_type: string, tajweed_level: string, country: string, score_system: string} */

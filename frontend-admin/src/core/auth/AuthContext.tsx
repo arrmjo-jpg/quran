@@ -6,7 +6,18 @@ export interface AuthUser {
   id:    string;
   name:  string;
   email: string;
+  /**
+   * What this account IS. For display only — a badge, a profile line, a
+   * column in the users screen. Never the basis of a show/hide decision:
+   * a role name says nothing about what the server will actually permit,
+   * and checking one here is how the panel drifts away from the API.
+   */
   roles: string[];
+  /**
+   * What this account MAY DO, resolved by the server from those roles.
+   * This is the only thing a UI decision may consult.
+   */
+  permissions: string[];
   type:  string;
 }
 

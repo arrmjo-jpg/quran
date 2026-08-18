@@ -31,16 +31,16 @@ beforeEach(function (): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Create a UserModel directly (no factory). */
-function eval_user(string $email, string $type = 'user'): UserModel
+function eval_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Eval Test User',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 /** Create a JudgeModel for a user. */
@@ -152,8 +152,8 @@ function eval_application(string $contestantId): string
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('Evaluations 16.7.1 — Judge Blindness: judge cannot access another judge\'s evaluation (403)', function (): void {
-    $user1 = eval_user('judge1@eval.test');
-    $user2 = eval_user('judge2@eval.test');
+    $user1 = eval_user('judge1@eval.test', 'admin');
+    $user2 = eval_user('judge2@eval.test', 'admin');
     $judge1 = eval_judge($user1->id);
     $judge2 = eval_judge($user2->id);
 
@@ -169,8 +169,8 @@ test('Evaluations 16.7.1 — Judge Blindness: judge cannot access another judge\
 });
 
 test('Evaluations 16.7.2 — Judge Blindness: judge can only see own evaluations in list', function (): void {
-    $user1 = eval_user('judge1-list@eval.test');
-    $user2 = eval_user('judge2-list@eval.test');
+    $user1 = eval_user('judge1-list@eval.test', 'admin');
+    $user2 = eval_user('judge2-list@eval.test', 'admin');
     $judge1 = eval_judge($user1->id);
     $judge2 = eval_judge($user2->id);
 
@@ -189,7 +189,7 @@ test('Evaluations 16.7.2 — Judge Blindness: judge can only see own evaluations
 });
 
 test('Evaluations 16.7.3 — Double submission blocked: judge cannot submit locked evaluation', function (): void {
-    $user = eval_user('judge-double@eval.test');
+    $user = eval_user('judge-double@eval.test', 'admin');
     $judge = eval_judge($user->id);
     $appId = fake()->uuid();
 
@@ -208,7 +208,7 @@ test('Evaluations 16.7.3 — Double submission blocked: judge cannot submit lock
 });
 
 test('Evaluations 16.7.4 — Judge can start evaluation (draft→in_progress)', function (): void {
-    $user = eval_user('judge-start@eval.test');
+    $user = eval_user('judge-start@eval.test', 'admin');
     $judge = eval_judge($user->id);
     $appId = fake()->uuid();
 
@@ -222,7 +222,7 @@ test('Evaluations 16.7.4 — Judge can start evaluation (draft→in_progress)', 
 });
 
 test('Evaluations 16.7.5 — Judge cannot start already-started evaluation (409)', function (): void {
-    $user = eval_user('judge-restart@eval.test');
+    $user = eval_user('judge-restart@eval.test', 'admin');
     $judge = eval_judge($user->id);
     $appId = fake()->uuid();
 

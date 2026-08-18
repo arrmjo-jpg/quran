@@ -11,14 +11,14 @@ uses(RefreshDatabase::class)->group('reports', 'phase_16_14');
 
 function reports_user(string $email, string $type = 'admin'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Reports Admin',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('Reports 16.14.1 — Admin can view executive summary metrics', function (): void {

@@ -30,14 +30,14 @@ final class SeasonsTest extends TestCase
         // Memoized per test instance — callers invoke this repeatedly
         // (e.g. once per createSeason() call) and must get back the same
         // admin user, not a fresh one with a colliding unique email.
-        return $this->sharedAdmin ??= UserModel::query()->create([
+        return $this->sharedAdmin ??= withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => 'seasons-admin@quran.test',
             'name' => 'Seasons Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     private function createSeason(string $slug, int $year): string
@@ -236,7 +236,7 @@ final class SeasonsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'not-admin@quran.test',
             'name' => 'Not Admin',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

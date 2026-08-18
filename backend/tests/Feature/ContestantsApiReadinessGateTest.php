@@ -19,7 +19,7 @@ test('Contestants API Readiness Gate: complete contestant profile creation, comp
         'id' => fake()->uuid(),
         'email' => 'contestant@example.com',
         'name' => 'Kareem Al-Mansoor',
-        'type' => 'user',
+        'type' => 'contestant',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
     ]);

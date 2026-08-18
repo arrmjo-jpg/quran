@@ -29,14 +29,14 @@ final class ApplicationsTest extends TestCase
 
     private function admin(): UserModel
     {
-        return $this->sharedAdmin ??= UserModel::query()->create([
+        return $this->sharedAdmin ??= withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => 'applications-admin@quran.test',
             'name' => 'Applications Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     /** @return array{contestant: UserModel, season_id: string, stage_id: string, media_id: string} */
@@ -46,7 +46,7 @@ final class ApplicationsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'app-contestant@quran.test',
             'name' => 'App Contestant',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);

@@ -1,7 +1,6 @@
 {
   "brand_name": "Competiciones del Corán",
   "brand_subtitle": "Consola Central de Administración",
-
   "dashboard": "Panel de control",
   "seasons": "Temporadas",
   "contestants": "Concursantes",
@@ -17,14 +16,11 @@
   "notifications": "Notificaciones",
   "countries": "Países aprobados",
   "search": "Búsqueda e indexación",
-
   "quick_search": "Búsqueda rápida",
   "toggle_theme": "Cambiar tema",
   "logout": "Cerrar sesión",
-
   "command_placeholder": "Escriba el nombre de una página o módulo para ir allí (Ctrl + K)...",
   "command_no_results": "No se encontró ninguna opción coincidente.",
-
   "command_dashboard": "Panel de control principal",
   "command_seasons": "Temporadas y periodos de inscripción",
   "command_contestants": "Concursantes y perfiles 360°",
@@ -36,5 +32,7 @@
   "command_streaming": "Sala de transmisión en directo RTMP",
   "command_reports": "Centro de informes y exportación",
   "command_audit_logs": "Explorador de registros de auditoría",
-  "command_about": "Diagnóstico e información del sistema"
+  "command_about": "Diagnóstico e información del sistema",
+  "roles": "Roles y permisos",
+  "users": "Usuarios"
 }

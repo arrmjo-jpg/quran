@@ -20,16 +20,16 @@ beforeEach(function (): void {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function video_user(string $email, string $type = 'user'): UserModel
+function video_user(string $email, string $type = 'contestant'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Video Test',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 function video_media_asset(string $uploaderId, string $mimeType = 'video/mp4'): MediaAssetModel

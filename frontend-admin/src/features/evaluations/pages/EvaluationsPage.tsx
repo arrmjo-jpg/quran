@@ -100,15 +100,15 @@ export default function EvaluationsPage(): React.JSX.Element {
       subtitle={t('subtitle')}
       breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
-        <PermissionWrapper role="admin">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={stageId}
-              onChange={(e) => setStageId(e.target.value)}
-              placeholder={t('stage_id_placeholder')}
-              className="w-56 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={stageId}
+            onChange={(e) => setStageId(e.target.value)}
+            placeholder={t('stage_id_placeholder')}
+            className="w-56 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <PermissionWrapper permission="stages.calculate_results">
             <Button
               variant="outline"
               size="sm"
@@ -119,6 +119,8 @@ export default function EvaluationsPage(): React.JSX.Element {
               <Calculator className="w-4 h-4 text-brand-600" />
               <span>{t('action_calculate')}</span>
             </Button>
+          </PermissionWrapper>
+          <PermissionWrapper permission="stages.publish_results">
             <Button
               variant="primary"
               size="sm"
@@ -129,6 +131,8 @@ export default function EvaluationsPage(): React.JSX.Element {
               <CheckCircle2 className="w-4 h-4" />
               <span>{t('action_publish')}</span>
             </Button>
+          </PermissionWrapper>
+          <PermissionWrapper permission="stages.reopen_results">
             <Button
               variant="danger"
               size="sm"
@@ -138,8 +142,8 @@ export default function EvaluationsPage(): React.JSX.Element {
               <RotateCcw className="w-4 h-4" />
               <span>{t('action_reopen')}</span>
             </Button>
-          </div>
-        </PermissionWrapper>
+          </PermissionWrapper>
+        </div>
       }
     >
       {/* Metrics Row */}

@@ -12,14 +12,14 @@ uses(RefreshDatabase::class)->group('sponsors', 'phase_16_13');
 
 function sponsor_user(string $email, string $type = 'admin'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Sponsor Admin',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('Sponsors 16.13.1 — Admin can list sponsors with pagination', function (): void {

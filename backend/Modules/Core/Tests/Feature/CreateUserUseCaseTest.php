@@ -8,6 +8,7 @@ use Modules\Core\Application\UseCases\CreateUserUseCase;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 
 uses(RefreshDatabase::class)->group('core', 'feature', 'usecases');
@@ -23,7 +24,7 @@ test('create user use case persists user in database', function (): void {
         id: $id,
         email: $email,
         name: 'New Platform User',
-        type: 'user',
+        type: UserType::contestant(),
         passwordHash: $password
     );
 
@@ -33,7 +34,7 @@ test('create user use case persists user in database', function (): void {
         'id' => $id->value,
         'email' => 'newuser@example.com',
         'name' => 'New Platform User',
-        'type' => 'user',
+        'type' => 'contestant',
         'is_active' => 1,
     ]);
 });

@@ -12,14 +12,14 @@ uses(RefreshDatabase::class)->group('content', 'phase_16_12');
 
 function content_user(string $email, string $type = 'admin'): UserModel
 {
-    return UserModel::query()->create([
+    return withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => $email,
         'name' => 'Content Admin',
         'type' => $type,
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 }
 
 test('Content 16.12.1 — Admin can list announcements with pagination', function (): void {

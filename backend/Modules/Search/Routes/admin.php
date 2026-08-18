@@ -14,6 +14,6 @@ use Modules\Search\Presentation\HTTP\Controllers\AdminSearchController;
 */
 
 Route::prefix('search')->group(function (): void {
-    Route::post('reindex', [AdminSearchController::class, 'reindex'])->name('admin.search.reindex');
-    Route::get('indexing-logs', [AdminSearchController::class, 'indexingLogs'])->name('admin.search.indexing_logs');
+    Route::post('reindex', [AdminSearchController::class, 'reindex'])->name('admin.search.reindex')->middleware('can:search.reindex');
+    Route::get('indexing-logs', [AdminSearchController::class, 'indexingLogs'])->name('admin.search.indexing_logs')->middleware('can:search.view');
 });

@@ -90,14 +90,14 @@ test('PRG-002 Pillar 2.7 — Unauthenticated requests to Judge Evaluations retur
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('PRG-002 Pillar 3.1 — Standard successful JSON responses contain success & data keys', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'prg002-admin@test.test',
         'name' => 'PRG Admin',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     $this->actingAs($admin)
         ->getJson('/api/v1/admin/media')
@@ -107,14 +107,14 @@ test('PRG-002 Pillar 3.1 — Standard successful JSON responses contain success 
 });
 
 test('PRG-002 Pillar 3.2 — Error responses adhere to ADR-014 structure { success: false, error: { code, message } }', function (): void {
-    $admin = UserModel::query()->create([
+    $admin = withSuperAdmin(UserModel::query()->create([
         'id' => fake()->uuid(),
         'email' => 'prg002-error@test.test',
         'name' => 'PRG Admin Error',
         'type' => 'admin',
         'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
         'is_active' => true,
-    ]);
+    ]));
 
     // Request non-existent video reprocessing to trigger 404/409 error
     $this->actingAs($admin)

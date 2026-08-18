@@ -180,84 +180,106 @@ export default function SeasonsPage(): React.JSX.Element {
         const season = row.original;
 
         return (
-          <PermissionWrapper role="admin">
-            <div className="flex flex-wrap items-center gap-2">
-              {canEdit(season) && (
-                <Button size="sm" variant="outline" onClick={() => openEdit(season)}>
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span>{tc('edit')}</span>
-                </Button>
-              )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Two independent questions per button, and both must pass:
+                can* asks whether the season's state permits the action
+                (SeasonStateMachine), PermissionWrapper asks whether this
+                operator may perform it. Neither implies the other. */}
+              <PermissionWrapper permission="seasons.update">
+                {canEdit(season) && (
+                  <Button size="sm" variant="outline" onClick={() => openEdit(season)}>
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span>{tc('edit')}</span>
+                  </Button>
+                )}
+              </PermissionWrapper>
 
-              {canEdit(season) && (
-                <Button size="sm" variant="outline" onClick={() => setRulesTarget(season)}>
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>{t('action_rules')}</span>
-                </Button>
-              )}
+              <PermissionWrapper permission="season_rules.update">
+                {canEdit(season) && (
+                  <Button size="sm" variant="outline" onClick={() => setRulesTarget(season)}>
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span>{t('action_rules')}</span>
+                  </Button>
+                )}
+              </PermissionWrapper>
 
               {/* Available on frozen seasons too — the dialog is read-only
                   there, and being unable to look at the stages of a running
                   season would be worse than showing them. */}
-              <Button size="sm" variant="outline" onClick={() => setStagesTarget(season)}>
-                <ListOrdered className="w-3.5 h-3.5" />
-                <span>{t('action_stages')}</span>
-              </Button>
-
-              <Button size="sm" variant="outline" onClick={() => setStageRulesTarget(season)}>
-                <Scale className="w-3.5 h-3.5" />
-                <span>{t('action_stage_rules')}</span>
-              </Button>
-
-              {canOpenRegistration(season) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isLoading={isBusy(openRegistration, season.id)}
-                  onClick={() => openRegistration.mutate(season.id)}
-                >
-                  {t('open_reg')}
+              <PermissionWrapper permission="stages.view">
+                <Button size="sm" variant="outline" onClick={() => setStagesTarget(season)}>
+                  <ListOrdered className="w-3.5 h-3.5" />
+                  <span>{t('action_stages')}</span>
                 </Button>
-              )}
+              </PermissionWrapper>
 
-              {canCloseRegistration(season) && (
-                <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'close', season })}>
-                  {t('close_reg')}
+              <PermissionWrapper permission="season_rules.view">
+                <Button size="sm" variant="outline" onClick={() => setStageRulesTarget(season)}>
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>{t('action_stage_rules')}</span>
                 </Button>
-              )}
+              </PermissionWrapper>
 
-              {canReopenRegistration(season) && (
-                <Button size="sm" variant="outline" onClick={() => setReopenTarget(season)}>
-                  <CalendarPlus className="w-3.5 h-3.5" />
-                  <span>{t('action_reopen')}</span>
-                </Button>
-              )}
+              <PermissionWrapper permission="seasons.open_registration">
+                {canOpenRegistration(season) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    isLoading={isBusy(openRegistration, season.id)}
+                    onClick={() => openRegistration.mutate(season.id)}
+                  >
+                    {t('open_reg')}
+                  </Button>
+                )}
+              </PermissionWrapper>
 
-              {canArchive(season) && (
-                <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'archive', season })}>
-                  {t('action_archive')}
-                </Button>
-              )}
+              <PermissionWrapper permission="seasons.close_registration">
+                {canCloseRegistration(season) && (
+                  <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'close', season })}>
+                    {t('close_reg')}
+                  </Button>
+                )}
+              </PermissionWrapper>
 
-              {canRestore(season) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  isLoading={isBusy(restoreSeason, season.id)}
-                  onClick={() => setRestoreTarget(season)}
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{t('action_restore')}</span>
-                </Button>
-              )}
+              <PermissionWrapper permission="seasons.reopen_registration">
+                {canReopenRegistration(season) && (
+                  <Button size="sm" variant="outline" onClick={() => setReopenTarget(season)}>
+                    <CalendarPlus className="w-3.5 h-3.5" />
+                    <span>{t('action_reopen')}</span>
+                  </Button>
+                )}
+              </PermissionWrapper>
 
-              {canCancel(season) && (
-                <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'cancel', season })}>
-                  {t('action_cancel')}
-                </Button>
-              )}
-            </div>
-          </PermissionWrapper>
+              <PermissionWrapper permission="seasons.archive">
+                {canArchive(season) && (
+                  <Button size="sm" variant="secondary" onClick={() => setPending({ kind: 'archive', season })}>
+                    {t('action_archive')}
+                  </Button>
+                )}
+              </PermissionWrapper>
+
+              <PermissionWrapper permission="seasons.restore">
+                {canRestore(season) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    isLoading={isBusy(restoreSeason, season.id)}
+                    onClick={() => setRestoreTarget(season)}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{t('action_restore')}</span>
+                  </Button>
+                )}
+              </PermissionWrapper>
+
+              <PermissionWrapper permission="seasons.cancel">
+                {canCancel(season) && (
+                  <Button size="sm" variant="danger" onClick={() => setPending({ kind: 'cancel', season })}>
+                    {t('action_cancel')}
+                  </Button>
+                )}
+              </PermissionWrapper>
+          </div>
         );
       },
     },
@@ -269,7 +291,7 @@ export default function SeasonsPage(): React.JSX.Element {
       subtitle={t('subtitle')}
       breadcrumbs={[{ label: tc('home'), href: '/' }, { label: t('title') }]}
       actions={
-        <PermissionWrapper role="admin">
+        <PermissionWrapper permission="seasons.create">
           <Button onClick={openCreate}>
             <Plus className="w-4 h-4" />
             <span>{t('create_button')}</span>

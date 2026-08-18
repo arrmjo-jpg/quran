@@ -7,7 +7,9 @@ namespace Modules\Core\Domain\Entities;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
+use Modules\Core\Domain\ValueObjects\RoleId;
 use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
 
 /**
  * User Aggregate Root
@@ -24,24 +26,38 @@ final class User
     /** @var array<int, object> */
     private array $domainEvents = [];
 
+    /** @var array<string, RoleId> keyed by id, so assignment is idempotent */
+    private array $roleIds = [];
+
+    /**
+     * @param  array<int, RoleId>  $roleIds  the roles this user holds. Ids
+     *                                       only: resolving them to
+     *                                       permissions is a separate
+     *                                       concern and a later epic.
+     */
     public function __construct(
         public readonly UserId $id,
         private Email $email,
         private string $name,
-        private string $type, // 'user' or 'admin'
+        private UserType $type,
         private ?PasswordHash $passwordHash = null,
         private Locale $preferredLocale = new Locale('ar'),
         private bool $isActive = true,
         private ?string $emailVerifiedAt = null,
         private ?string $lastLoginAt = null,
         private ?string $deletedAt = null,
-    ) {}
+        array $roleIds = [],
+    ) {
+        foreach ($roleIds as $roleId) {
+            $this->roleIds[$roleId->value] = $roleId;
+        }
+    }
 
     public static function create(
         UserId $id,
         Email $email,
         string $name,
-        string $type, // 'user' or 'admin'
+        UserType $type,
         PasswordHash $passwordHash,
         Locale $preferredLocale = new Locale('ar')
     ): self {
@@ -66,9 +82,14 @@ final class User
         return $this->name;
     }
 
-    public function getType(): string
+    public function getType(): UserType
     {
         return $this->type;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->type->isAdmin();
     }
 
     public function getPasswordHash(): ?PasswordHash
@@ -84,6 +105,65 @@ final class User
     public function isActive(): bool
     {
         return $this->isActive && $this->deletedAt === null;
+    }
+
+    /*
+    |--------------------------------------------------------------------
+    | Roles held — ADR-015 §3
+    |--------------------------------------------------------------------
+    | The aggregate holds role IDS and nothing more. It cannot answer
+    | "what may this user do": that needs every role's permission set
+    | resolved, which is a read model and a later epic. Keeping the
+    | question unanswerable here is deliberate — an aggregate that could
+    | half-answer it would invite callers to depend on the half.
+    |
+    | assignRole/revokeRole/syncRoles record no events. The delta needs
+    | role NAMES to be worth reading in an audit trail, and names live on
+    | Role, which this aggregate does not load. The use case resolves them
+    | and emits UserRolesChanged.
+    */
+
+    /** @return array<int, RoleId> */
+    public function getRoleIds(): array
+    {
+        return array_values($this->roleIds);
+    }
+
+    /** @return array<int, string> */
+    public function getRoleIdValues(): array
+    {
+        return array_keys($this->roleIds);
+    }
+
+    public function hasRole(RoleId $roleId): bool
+    {
+        return isset($this->roleIds[$roleId->value]);
+    }
+
+    public function assignRole(RoleId $roleId): void
+    {
+        $this->roleIds[$roleId->value] = $roleId;
+    }
+
+    public function revokeRole(RoleId $roleId): void
+    {
+        unset($this->roleIds[$roleId->value]);
+    }
+
+    /**
+     * Replace the whole set. Callers pass the intended final state for
+     * the same reason Role::syncPermissions() does: separate add/remove
+     * calls from two clients can interleave into a set neither intended.
+     *
+     * @param  array<int, RoleId>  $roleIds
+     */
+    public function syncRoles(array $roleIds): void
+    {
+        $this->roleIds = [];
+
+        foreach ($roleIds as $roleId) {
+            $this->roleIds[$roleId->value] = $roleId;
+        }
     }
 
     public function updateProfile(string $name, Locale $locale): void

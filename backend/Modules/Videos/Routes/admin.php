@@ -14,8 +14,8 @@ use Modules\Videos\Presentation\HTTP\Controllers\AdminVideoController;
 */
 
 Route::prefix('videos')->group(function (): void {
-    Route::get('/', [AdminVideoController::class, 'index'])->name('admin.videos.index');
-    Route::get('/{id}', [AdminVideoController::class, 'show'])->name('admin.videos.show');
-    Route::post('/{id}/reprocess', [AdminVideoController::class, 'reprocess'])->name('admin.videos.reprocess');
-    Route::delete('/{id}', [AdminVideoController::class, 'destroy'])->name('admin.videos.destroy');
+    Route::get('/', [AdminVideoController::class, 'index'])->name('admin.videos.index')->middleware('can:videos.view');
+    Route::get('/{id}', [AdminVideoController::class, 'show'])->name('admin.videos.show')->middleware('can:videos.view');
+    Route::post('/{id}/reprocess', [AdminVideoController::class, 'reprocess'])->name('admin.videos.reprocess')->middleware('can:videos.reprocess');
+    Route::delete('/{id}', [AdminVideoController::class, 'destroy'])->name('admin.videos.destroy')->middleware('can:videos.delete');
 });

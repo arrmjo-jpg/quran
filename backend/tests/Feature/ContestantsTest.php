@@ -26,14 +26,14 @@ final class ContestantsTest extends TestCase
 
     private function admin(): UserModel
     {
-        return $this->sharedAdmin ??= UserModel::query()->create([
+        return $this->sharedAdmin ??= withSuperAdmin(UserModel::query()->create([
             'id' => (string) Uuid::v4(),
             'email' => 'contestants-admin@quran.test',
             'name' => 'Contestants Admin',
             'type' => 'admin',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
-        ]);
+        ]));
     }
 
     private function countryId(): string
@@ -50,7 +50,7 @@ final class ContestantsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => strtolower(str_replace(' ', '.', $fullName)).'@example.com',
             'name' => $fullName,
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);
@@ -119,7 +119,7 @@ final class ContestantsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'blocked@quran.test',
             'name' => 'Blocked',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);
@@ -134,7 +134,7 @@ final class ContestantsTest extends TestCase
             'id' => (string) Uuid::v4(),
             'email' => 'no-season@quran.test',
             'name' => 'No Season',
-            'type' => 'user',
+            'type' => 'contestant',
             'password_hash' => password_hash('Pass123!', PASSWORD_BCRYPT),
             'is_active' => true,
         ]);
