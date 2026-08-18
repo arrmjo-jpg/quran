@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Judges\Domain\Entities;
 
+use Modules\Core\Domain\Concerns\HasDomainEvents;
+
 /**
  * Judge Aggregate Root
  *
@@ -11,8 +13,7 @@ namespace Modules\Judges\Domain\Entities;
  */
 final class Judge
 {
-    /** @var array<int, object> */
-    private array $domainEvents = [];
+    use HasDomainEvents;
 
     public function __construct(
         public readonly string $id,
@@ -70,19 +71,5 @@ final class Judge
     public function activate(): void
     {
         $this->isActive = true;
-    }
-
-    /** @return array<int, object> */
-    public function releaseEvents(): array
-    {
-        $events = $this->domainEvents;
-        $this->domainEvents = [];
-
-        return $events;
-    }
-
-    protected function recordEvent(object $event): void
-    {
-        $this->domainEvents[] = $event;
     }
 }

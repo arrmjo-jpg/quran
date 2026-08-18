@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Competition\Infrastructure\Database\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -18,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Collection<int, StageTranslationModel> $translations
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StageModel newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|StageModel newQuery()
@@ -59,4 +62,9 @@ final class StageModel extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
     ];
+
+    public function translations(): HasMany
+    {
+        return $this->hasMany(StageTranslationModel::class, 'stage_id', 'id');
+    }
 }

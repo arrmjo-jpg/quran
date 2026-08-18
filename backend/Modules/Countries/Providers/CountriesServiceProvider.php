@@ -10,8 +10,10 @@ namespace Modules\Countries\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Countries\Contracts\CountriesServiceContract;
 use Modules\Countries\Domain\Repositories\CountryRepositoryContract;
 use Modules\Countries\Infrastructure\Database\Repositories\CountryRepository;
+use Modules\Countries\Infrastructure\Services\CountriesService;
 
 final class CountriesServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,11 @@ final class CountriesServiceProvider extends ServiceProvider
         $this->app->singleton(
             CountryRepositoryContract::class,
             CountryRepository::class
+        );
+
+        $this->app->singleton(
+            CountriesServiceContract::class,
+            CountriesService::class
         );
     }
 

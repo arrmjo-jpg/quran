@@ -7,8 +7,7 @@ namespace Modules\Competition\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
-use Modules\Competition\Infrastructure\Database\Models\SeasonModel;
-use Modules\Competition\Presentation\HTTP\Resources\SeasonResource;
+use Modules\Competition\Presentation\HTTP\Resources\PublicSeasonResource;
 
 final class PublicSeasonController extends Controller
 {
@@ -18,11 +17,11 @@ final class PublicSeasonController extends Controller
 
     public function index(): JsonResponse
     {
-        $seasons = SeasonModel::query()->with('translations')->orderBy('year', 'desc')->get();
+        $seasons = $this->repository->findAll();
 
         return response()->json([
             'success' => true,
-            'data' => SeasonResource::collection($seasons),
+            'data' => PublicSeasonResource::collection($seasons),
         ]);
     }
 
@@ -42,7 +41,7 @@ final class PublicSeasonController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => new SeasonResource($season),
+            'data' => new PublicSeasonResource($season),
         ]);
     }
 
@@ -52,7 +51,7 @@ final class PublicSeasonController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => new SeasonResource($season),
+            'data' => new PublicSeasonResource($season),
         ]);
     }
 }

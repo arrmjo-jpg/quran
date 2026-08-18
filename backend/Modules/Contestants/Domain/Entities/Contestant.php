@@ -7,6 +7,7 @@ namespace Modules\Contestants\Domain\Entities;
 use Modules\Contestants\Domain\ValueObjects\BirthDate;
 use Modules\Contestants\Domain\ValueObjects\ContestantId;
 use Modules\Contestants\Domain\ValueObjects\Gender;
+use Modules\Core\Domain\Concerns\HasDomainEvents;
 
 /**
  * Contestant Aggregate Root
@@ -15,8 +16,7 @@ use Modules\Contestants\Domain\ValueObjects\Gender;
  */
 final class Contestant
 {
-    /** @var array<int, object> */
-    private array $domainEvents = [];
+    use HasDomainEvents;
 
     public function __construct(
         public readonly ContestantId $id,
@@ -90,19 +90,5 @@ final class Contestant
         $this->fullName = trim($fullName);
         $this->phoneNumber = trim($phoneNumber);
         $this->photoMediaId = $photoMediaId;
-    }
-
-    /** @return array<int, object> */
-    public function releaseEvents(): array
-    {
-        $events = $this->domainEvents;
-        $this->domainEvents = [];
-
-        return $events;
-    }
-
-    protected function recordEvent(object $event): void
-    {
-        $this->domainEvents[] = $event;
     }
 }

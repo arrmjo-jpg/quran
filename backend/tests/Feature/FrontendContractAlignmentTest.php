@@ -6,11 +6,60 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
+use Modules\Competition\Infrastructure\Database\Models\JudgeScoreSystemModel;
+use Modules\Competition\Infrastructure\Database\Models\ParticipationTypeModel;
 use Modules\Competition\Infrastructure\Database\Models\SeasonModel;
+use Modules\Competition\Infrastructure\Database\Models\StageModel;
+use Modules\Competition\Infrastructure\Database\Models\TajweedLevelModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Countries\Infrastructure\Database\Models\CountryModel;
 
 uses(RefreshDatabase::class)->group('frontend_contract', 'prg_003');
+
+/**
+ * OpenSeasonRegistrationUseCase requires a season's rules to be fully
+ * resolved before it may open registration. There is no admin API yet
+ * to set any of this (a known, separate gap — see Step 9's verification
+ * report), so this configures it directly through the domain/repository,
+ * same as SeasonsTest::configureSeasonRules().
+ */
+function fc_configureSeasonRules(string $seasonId): void
+{
+    $repository = app(SeasonRepositoryContract::class);
+    $season = $repository->findOrFail($seasonId);
+
+    $participationType = ParticipationTypeModel::query()->create(['id' => fake()->uuid(), 'code' => 'mixed-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+    $tajweedLevel = TajweedLevelModel::query()->create(['id' => fake()->uuid(), 'code' => 'advanced-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+    $country = CountryModel::query()->create(['id' => fake()->uuid(), 'iso_code' => Str::upper(Str::random(2)), 'iso3_code' => Str::upper(Str::random(3)), 'phone_code' => '+1', 'is_active' => true]);
+
+    $season->setAgeRange(10, 18);
+    $season->setParticipationType($participationType->id);
+    $season->setTajweedLevel($tajweedLevel->id);
+    $season->setTranslation(new SeasonTranslation('ar', 'موسم', 'موسم القرآن'));
+    $season->setTranslation(new SeasonTranslation('en', 'Season', 'Quran Season'));
+    $season->setTranslation(new SeasonTranslation('es', 'Temporada', 'Temporada del Corán'));
+    $repository->save($season);
+
+    DB::table('season_countries')->insert(['season_id' => $seasonId, 'country_id' => $country->id]);
+
+    $stage = StageModel::query()->create([
+        'id' => fake()->uuid(), 'season_id' => $seasonId, 'stage_number' => 1, 'type' => 'final',
+        'start_date' => now(), 'end_date' => now()->addDay(), 'status' => 'pending',
+    ]);
+
+    $scoreSystem = JudgeScoreSystemModel::query()->create(['id' => fake()->uuid(), 'code' => 'out_of_100-'.Str::random(6), 'max_score' => 100, 'display_order' => 1, 'is_active' => true]);
+
+    DB::table('season_stage_rules')->insert([
+        'id' => fake()->uuid(), 'season_id' => $seasonId, 'stage_id' => $stage->id,
+        'judge_score_system_id' => $scoreSystem->id, 'qualification_percentage' => 80,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+}
 
 function fc_admin(string $email = 'fc-admin@quran.test'): UserModel
 {
@@ -79,11 +128,12 @@ test('PRG-003 Screen 3: Seasons Screen — GET /api/v1/seasons and POST /api/v1/
         'year' => 2026,
         'registration_start' => now()->subDays(5),
         'registration_end' => now()->addDays(20),
-        'start_date' => now(),
+        'start_date' => now()->addDays(21),
         'end_date' => now()->addMonths(2),
         'status' => 'draft',
         'is_active' => true,
     ]);
+    fc_configureSeasonRules($season->id);
 
     $this->actingAs($admin)
         ->getJson('/api/v1/seasons')
@@ -209,7 +259,7 @@ test('PRG-003 Screen 12: Streaming Screen — GET & POST /api/v1/admin/streams',
         'year' => 2026,
         'registration_start' => now()->subDays(5),
         'registration_end' => now()->addDays(20),
-        'start_date' => now(),
+        'start_date' => now()->addDays(21),
         'end_date' => now()->addMonths(2),
         'status' => 'active',
         'is_active' => true,

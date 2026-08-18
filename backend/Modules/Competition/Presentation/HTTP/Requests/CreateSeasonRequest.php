@@ -25,6 +25,10 @@ final class CreateSeasonRequest extends FormRequest
             'end_date' => ['required', 'date', 'after:start_date'],
             'title_ar' => ['required', 'string', 'max:255'],
             'title_en' => ['required', 'string', 'max:255'],
+            'title_es' => ['required', 'string', 'max:255'],
+            'public_name_ar' => ['required', 'string', 'max:255'],
+            'public_name_en' => ['required', 'string', 'max:255'],
+            'public_name_es' => ['required', 'string', 'max:255'],
         ];
     }
 }

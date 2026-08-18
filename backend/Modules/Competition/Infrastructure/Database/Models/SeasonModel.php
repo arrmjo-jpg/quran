@@ -7,10 +7,13 @@ namespace Modules\Competition\Infrastructure\Database\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
+ * A season is a permanent historical record — never soft-deleted, only
+ * archived (status='archived' + archived_at/archived_by_user_id/
+ * archive_reason). See the Season Architecture v2 design spec.
+ *
  * @property string $id
  * @property string $slug
  * @property int $year
@@ -20,7 +23,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon $end_date
  * @property string $status
  * @property bool $is_active
- * @property Carbon|null $deleted_at
+ * @property int|null $min_age
+ * @property int|null $max_age
+ * @property string|null $participation_type_id
+ * @property string|null $tajweed_level_id
+ * @property Carbon|null $frozen_at
+ * @property Carbon|null $archived_at
+ * @property string|null $archived_by_user_id
+ * @property string|null $archive_reason
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, SeasonTranslationModel> $translations
@@ -28,10 +38,8 @@ use Illuminate\Support\Carbon;
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereEndDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereIsActive($value)
@@ -42,15 +50,11 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel whereYear($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|SeasonModel withoutTrashed()
  *
  * @mixin \Eloquent
  */
 final class SeasonModel extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'seasons';
 
     public $incrementing = false;
@@ -67,6 +71,14 @@ final class SeasonModel extends Model
         'end_date',
         'status',
         'is_active',
+        'min_age',
+        'max_age',
+        'participation_type_id',
+        'tajweed_level_id',
+        'frozen_at',
+        'archived_at',
+        'archived_by_user_id',
+        'archive_reason',
     ];
 
     protected $casts = [
@@ -75,6 +87,10 @@ final class SeasonModel extends Model
         'registration_end' => 'datetime',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'min_age' => 'integer',
+        'max_age' => 'integer',
+        'frozen_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function translations(): HasMany

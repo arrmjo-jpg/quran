@@ -5,9 +5,58 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\Competition\Domain\Repositories\SeasonRepositoryContract;
+use Modules\Competition\Domain\ValueObjects\SeasonTranslation;
+use Modules\Competition\Infrastructure\Database\Models\JudgeScoreSystemModel;
+use Modules\Competition\Infrastructure\Database\Models\ParticipationTypeModel;
+use Modules\Competition\Infrastructure\Database\Models\StageModel;
+use Modules\Competition\Infrastructure\Database\Models\TajweedLevelModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Countries\Infrastructure\Database\Models\CountryModel;
 
 uses(RefreshDatabase::class)->group('competition_gate', 'api');
+
+/**
+ * OpenSeasonRegistrationUseCase requires a season's rules to be fully
+ * resolved before it may open registration. There is no admin API yet
+ * to set any of this (a known, separate gap — see Step 9's verification
+ * report), so this configures it directly through the domain/repository,
+ * same as SeasonsTest::configureSeasonRules().
+ */
+function cargt_configureSeasonRules(string $seasonId): void
+{
+    $repository = app(SeasonRepositoryContract::class);
+    $season = $repository->findOrFail($seasonId);
+
+    $participationType = ParticipationTypeModel::query()->create(['id' => fake()->uuid(), 'code' => 'mixed-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+    $tajweedLevel = TajweedLevelModel::query()->create(['id' => fake()->uuid(), 'code' => 'advanced-'.Str::random(6), 'display_order' => 1, 'is_active' => true]);
+    $country = CountryModel::query()->create(['id' => fake()->uuid(), 'iso_code' => Str::upper(Str::random(2)), 'iso3_code' => Str::upper(Str::random(3)), 'phone_code' => '+1', 'is_active' => true]);
+
+    $season->setAgeRange(10, 18);
+    $season->setParticipationType($participationType->id);
+    $season->setTajweedLevel($tajweedLevel->id);
+    $season->setTranslation(new SeasonTranslation('ar', 'موسم', 'موسم القرآن'));
+    $season->setTranslation(new SeasonTranslation('en', 'Season', 'Quran Season'));
+    $season->setTranslation(new SeasonTranslation('es', 'Temporada', 'Temporada del Corán'));
+    $repository->save($season);
+
+    DB::table('season_countries')->insert(['season_id' => $seasonId, 'country_id' => $country->id]);
+
+    $stage = StageModel::query()->create([
+        'id' => fake()->uuid(), 'season_id' => $seasonId, 'stage_number' => 1, 'type' => 'final',
+        'start_date' => now(), 'end_date' => now()->addDay(), 'status' => 'pending',
+    ]);
+
+    $scoreSystem = JudgeScoreSystemModel::query()->create(['id' => fake()->uuid(), 'code' => 'out_of_100-'.Str::random(6), 'max_score' => 100, 'display_order' => 1, 'is_active' => true]);
+
+    DB::table('season_stage_rules')->insert([
+        'id' => fake()->uuid(), 'season_id' => $seasonId, 'stage_id' => $stage->id,
+        'judge_score_system_id' => $scoreSystem->id, 'qualification_percentage' => 80,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+}
 
 test('Competition API Readiness Gate: complete season lifecycle state machine and dry-run simulation endpoints', function (): void {
     $admin = UserModel::query()->create([
@@ -29,6 +78,10 @@ test('Competition API Readiness Gate: complete season lifecycle state machine an
         'end_date' => '2026-09-30 23:59:59',
         'title_ar' => 'موسم عام 2026',
         'title_en' => 'Season 2026',
+        'title_es' => 'Temporada 2026',
+        'public_name_ar' => 'موسم القرآن 2026',
+        'public_name_en' => 'Quran Season 2026',
+        'public_name_es' => 'Temporada del Corán 2026',
     ]);
 
     $createResponse->assertStatus(201)
@@ -36,6 +89,7 @@ test('Competition API Readiness Gate: complete season lifecycle state machine an
         ->assertJsonPath('data.status', 'draft');
 
     $seasonId = $createResponse->json('data.id');
+    cargt_configureSeasonRules($seasonId);
 
     // 2. Open Registration
     $openResponse = $this->actingAs($admin)->postJson("/api/v1/admin/seasons/{$seasonId}/open-registration");
