@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Presentation\HTTP\Controllers\AuthController;
+use Modules\Core\Presentation\HTTP\Controllers\InvitationController;
 use Modules\Core\Presentation\HTTP\Controllers\HealthCheckController;
 use Modules\Core\Presentation\HTTP\Controllers\PublicSettingsController;
 
@@ -13,6 +14,14 @@ Route::prefix('auth')->group(function (): void {
     Route::post('phone/send-otp', [AuthController::class, 'sendPhoneOtp'])->name('auth.phone.send_otp');
     Route::post('phone/verify-otp', [AuthController::class, 'verifyPhoneOtp'])->name('auth.phone.verify_otp');
 });
+
+/*
+ * Public by necessity: the invitee has no account to sign into yet, and the
+ * token is the only credential. Throttled like a login for the same reason.
+ */
+Route::post('invitations/accept', [InvitationController::class, 'accept'])
+    ->middleware('throttle:invitation-accept')
+    ->name('invitations.accept');
 
 Route::prefix('admin/auth')->group(function (): void {
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('admin.auth.login');
