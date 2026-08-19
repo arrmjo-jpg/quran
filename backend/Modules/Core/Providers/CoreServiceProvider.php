@@ -25,6 +25,8 @@ final class CoreServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__.'/../Config/core.php', 'core');
+
         $this->app->singleton(
             UserRepositoryContract::class,
             UserRepository::class

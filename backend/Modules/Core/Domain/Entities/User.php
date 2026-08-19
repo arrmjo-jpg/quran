@@ -53,6 +53,39 @@ final class User
         }
     }
 
+    /**
+     * An account created by an administrator and not yet claimed — ADR-016 D14.
+     *
+     * A second named constructor rather than nullable parameters on create(),
+     * because the two births are genuinely different and naming them keeps
+     * either from drifting. create() is public registration: the person is
+     * present, chooses a password, and the account is live immediately.
+     * invite() is provisioning: nobody has chosen a password yet, so there is
+     * none, and the account cannot be used until its invitee claims it.
+     *
+     * password_hash IS NULL is what makes this account "pending" rather than
+     * "deactivated" — both are is_active = false, and the difference is
+     * whether a password was ever set. Derived rather than stored, so it
+     * cannot disagree with the column it describes.
+     */
+    public static function invite(
+        UserId $id,
+        Email $email,
+        string $name,
+        UserType $type,
+        Locale $preferredLocale = new Locale('ar')
+    ): self {
+        return new self(
+            id: $id,
+            email: $email,
+            name: $name,
+            type: $type,
+            passwordHash: null,
+            preferredLocale: $preferredLocale,
+            isActive: false,
+        );
+    }
+
     public static function create(
         UserId $id,
         Email $email,

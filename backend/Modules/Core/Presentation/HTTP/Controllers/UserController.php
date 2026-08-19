@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Core\Application\UseCases\ActivateUserUseCase;
+use Modules\Core\Application\UseCases\CreateAdminUserUseCase;
 use Modules\Core\Application\UseCases\DeactivateUserUseCase;
 use Modules\Core\Application\UseCases\SyncUserRolesUseCase;
 use Modules\Core\Domain\Exceptions\LastSystemRoleHolderException;
@@ -16,6 +17,7 @@ use Modules\Core\Domain\Exceptions\SelfDeactivationException;
 use Modules\Core\Domain\Exceptions\SelfRoleChangeException;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
+use Modules\Core\Presentation\HTTP\Requests\CreateAdminUserRequest;
 use Modules\Core\Presentation\HTTP\Requests\ListUsersRequest;
 use Modules\Core\Presentation\HTTP\Requests\SyncUserRolesRequest;
 use Modules\Core\Presentation\HTTP\Resources\AdminUserResource;
@@ -122,6 +124,31 @@ final class UserController extends Controller
         ]);
     }
 
+    /**
+     * Creates a pending account and invites its owner.
+     *
+     * The response carries the account and nothing else. No token, no link, no
+     * password — ADR-016 D14 means the administrator who created this account
+     * must not be able to claim it, and returning the link here would hand
+     * them exactly that ability.
+     */
+    public function store(CreateAdminUserRequest $request, CreateAdminUserUseCase $createUser): JsonResponse
+    {
+        try {
+            $user = $createUser->execute(
+                email: $request->validated('email'),
+                name: $request->validated('name'),
+                roleIds: $request->validated('roles', []),
+                byUserId: (string) $request->user()->id,
+                locale: $request->validated('locale', 'ar'),
+            );
+        } catch (PrivilegeEscalationException $e) {
+            return $this->refusal('PRIVILEGE_ESCALATION', $e->getMessage(), 403);
+        }
+
+        return $this->fresh((string) $user->id, __('Invitation sent.'), 201);
+    }
+
     public function syncRoles(
         SyncUserRolesRequest $request,
         string $id,
@@ -160,7 +187,7 @@ final class UserController extends Controller
         return $this->fresh($id, __('User deactivated.'));
     }
 
-    private function fresh(string $id, string $message): JsonResponse
+    private function fresh(string $id, string $message, int $status = 200): JsonResponse
     {
         $user = UserModel::withTrashed()->findOrFail($id);
         $user->setAttribute('role_names', $this->authorization->rolesOf($user));
@@ -169,7 +196,7 @@ final class UserController extends Controller
             'success' => true,
             'message' => $message,
             'data' => new AdminUserResource($user),
-        ]);
+        ], $status);
     }
 
     private function refusal(string $code, string $message, int $status): JsonResponse

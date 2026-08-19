@@ -61,6 +61,13 @@ Route::get('users', [UserController::class, 'index'])
     ->name('admin.users.index')
     ->middleware('can:users.view');
 
+// ADR-016 Q7 supersedes ADR-015's decision that this endpoint would not exist.
+// It is safe because of its shape: the administrator chooses the roles, the
+// invitee chooses the password, and no response ever carries the token.
+Route::post('users', [UserController::class, 'store'])
+    ->name('admin.users.store')
+    ->middleware('can:users.create');
+
 Route::get('users/{id}', [UserController::class, 'show'])
     ->name('admin.users.show')
     ->middleware('can:users.view');
