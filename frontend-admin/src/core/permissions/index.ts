@@ -61,6 +61,11 @@ export const PERMISSIONS = [
   'countries.deactivate',
   // lookups
   'lookups.view',
+  // centers
+  'centers.view',
+  'centers.create',
+  'centers.update',
+  'centers.delete',
   // contestants
   'contestants.view',
   'contestants.update',

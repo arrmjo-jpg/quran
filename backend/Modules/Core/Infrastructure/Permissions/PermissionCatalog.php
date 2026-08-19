@@ -153,6 +153,14 @@ final class PermissionCatalog
         // write endpoint, so one view permission covers the resource.
         'lookups' => ['view'],
 
+        // ── Organisation ────────────────────────────────────────────
+        // Centres, circles and the memberships that link contestants to
+        // them. Separate from contestants.* because managing where people
+        // study is not managing the people: a data-entry operator who may
+        // correct a contestant's phone number has no business relocating a
+        // centre, and the reverse is just as true.
+        'centers' => ['view', 'create', 'update', 'delete'],
+
         // ── People ──────────────────────────────────────────────────
         // contestants.update: NO ENDPOINT YET (granted to data_entry in
         // the ADR-015 §7.3 matrix).
