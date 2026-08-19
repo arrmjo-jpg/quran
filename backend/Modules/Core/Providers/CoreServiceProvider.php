@@ -17,6 +17,8 @@ use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Repositories\RoleRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
+use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
+use Modules\Core\Infrastructure\Database\Repositories\InvitationRepository;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 
 final class CoreServiceProvider extends ServiceProvider
@@ -31,6 +33,11 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             RoleRepositoryContract::class,
             RoleRepository::class
+        );
+
+        $this->app->singleton(
+            InvitationRepositoryContract::class,
+            InvitationRepository::class
         );
     }
 
