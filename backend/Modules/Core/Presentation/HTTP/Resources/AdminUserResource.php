@@ -42,6 +42,26 @@ final class AdminUserResource extends JsonResource
             'type' => $user->type,
             'is_active' => (bool) $user->is_active,
             'is_deleted' => $user->deleted_at !== null,
+
+            // One derived state rather than three booleans the client has to
+            // combine correctly. "Pending activation" and "deactivated" are
+            // both is_active = false, and a screen that got the combination
+            // wrong would tell an administrator an invited colleague had been
+            // disabled.
+            //
+            // Precedence is deliberate: deleted outranks everything, because
+            // it is the most consequential thing true about the account, and a
+            // deleted-but-pending row is deleted first.
+            'status' => match (true) {
+                $user->deleted_at !== null => 'deleted',
+                $user->password_hash === null => 'pending_activation',
+                ! $user->is_active => 'deactivated',
+                default => 'active',
+            },
+
+            // The edit form needs it, and it is the account's own setting
+            // rather than anything sensitive.
+            'preferred_locale' => $user->preferred_locale,
             'mfa_enabled' => (bool) $user->mfa_enabled,
             'roles' => $user->getAttribute('role_names') ?? [],
             'created_at' => $user->created_at?->toIso8601String(),

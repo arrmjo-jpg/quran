@@ -353,3 +353,77 @@ test('the repository default never loads a deleted account', function (): void {
     expect($users->findWithTrashed($id))->not->toBeNull();
     expect($users->findWithTrashed($id)->isDeleted())->toBeTrue();
 });
+
+/*
+|--------------------------------------------------------------------------
+| The state a screen reads
+|--------------------------------------------------------------------------
+*/
+
+test('every account state is reported as one derived status', function (): void {
+    // Three booleans a client has to combine is three chances to combine them
+    // wrongly — and getting it wrong tells an administrator that an invited
+    // colleague was disabled.
+    $admin = userLifecycleAdmin();
+
+    $pending = UserModel::query()->create([
+        'id' => (string) Str::uuid(),
+        'email' => 'not-yet@quran.test',
+        'name' => 'Not Yet',
+        'type' => UserType::ADMIN,
+        'password_hash' => null,
+        'is_active' => false,
+    ]);
+    $deactivated = userLifecycleAccount('off@quran.test', active: false);
+    $active = userLifecycleAccount('on@quran.test');
+    $deleted = userLifecycleAccount('gone@quran.test');
+
+    $this->actingAs($admin)->deleteJson("/api/v1/admin/users/{$deleted->id}")->assertOk();
+
+    $rows = collect($this->actingAs($admin)->getJson('/api/v1/admin/users?with_deleted=1')->json('data'))
+        ->keyBy('email');
+
+    expect($rows['not-yet@quran.test']['status'])->toBe('pending_activation');
+    expect($rows['off@quran.test']['status'])->toBe('deactivated');
+    expect($rows['on@quran.test']['status'])->toBe('active');
+    expect($rows['gone@quran.test']['status'])->toBe('deleted');
+});
+
+test('an invited account stops being pending once it is claimed', function (): void {
+    $admin = userLifecycleAdmin();
+
+    Illuminate\Support\Facades\Mail::fake();
+    $this->actingAs($admin)->postJson('/api/v1/admin/users', [
+        'email' => 'claiming@quran.test',
+        'name' => 'Claiming Person',
+    ])->assertCreated();
+
+    $created = UserModel::query()->where('email', 'claiming@quran.test')->first();
+
+    $before = collect($this->actingAs($admin)->getJson('/api/v1/admin/users')->json('data'))
+        ->firstWhere('email', 'claiming@quran.test');
+    expect($before['status'])->toBe('pending_activation');
+
+    $token = null;
+    Illuminate\Support\Facades\Mail::assertSent(
+        Modules\Core\Infrastructure\Mail\InvitationMail::class,
+        function ($mail) use (&$token): bool {
+            parse_str((string) parse_url($mail->acceptUrl, PHP_URL_QUERY), $q);
+            $token = $q['token'];
+
+            return true;
+        }
+    );
+
+    $this->postJson('/api/v1/invitations/accept', [
+        'token' => $token,
+        'password' => 'TheyChose123!',
+        'password_confirmation' => 'TheyChose123!',
+    ])->assertOk();
+
+    $after = collect($this->actingAs($admin)->getJson('/api/v1/admin/users')->json('data'))
+        ->firstWhere('email', 'claiming@quran.test');
+
+    expect($after['status'])->toBe('active');
+    expect($created->fresh()->password_hash)->not->toBeNull();
+});

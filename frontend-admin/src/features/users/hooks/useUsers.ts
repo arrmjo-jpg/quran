@@ -5,7 +5,12 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { extractErrorMessage } from '@/core/api/errors';
 import { userService } from '../api/user.service';
-import type { SyncUserRolesPayload, UserListFilters } from '../types';
+import type {
+  CreateUserPayload,
+  SyncUserRolesPayload,
+  UpdateUserPayload,
+  UserListFilters,
+} from '../types';
 
 export function useUsers(filters: UserListFilters) {
   return useQuery({
@@ -75,5 +80,71 @@ export function useDeactivateUser() {
     // across accounts. The message names the reason, so it is surfaced rather
     // than second-guessed here.
     onError: (err) => toast.error(extractErrorMessage(err, t('deactivate_error'))),
+  });
+}
+
+/**
+ * Creating an account is an invitation, not a password handout. Nothing in the
+ * response can be used to claim the account — the link goes to the invitee.
+ */
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('users');
+
+  return useMutation({
+    mutationFn: (payload: CreateUserPayload) => userService.createUser(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      toast.success(t('create_success'));
+    },
+    onError: (err) => toast.error(extractErrorMessage(err, t('create_error'))),
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('users');
+
+  return useMutation({
+    mutationFn: (payload: UpdateUserPayload) => userService.updateUser(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      toast.success(t('update_success'));
+    },
+    onError: (err) => toast.error(extractErrorMessage(err, t('update_error'))),
+  });
+}
+
+/**
+ * Soft delete. The server refuses two cases this screen cannot know about —
+ * the last active holder of a system role (409), and deleting yourself (403,
+ * though that one the screen does know and disables in advance). Both arrive
+ * as a message that names the reason.
+ */
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('users');
+
+  return useMutation({
+    mutationFn: (id: string) => userService.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      toast.success(t('delete_success'));
+    },
+    onError: (err) => toast.error(extractErrorMessage(err, t('delete_error'))),
+  });
+}
+
+export function useRestoreUser() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('users');
+
+  return useMutation({
+    mutationFn: (id: string) => userService.restoreUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all() });
+      toast.success(t('restore_success'));
+    },
+    onError: (err) => toast.error(extractErrorMessage(err, t('restore_error'))),
   });
 }
