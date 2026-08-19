@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Organization\Domain\Repositories\CenterRepositoryContract;
 use Modules\Organization\Domain\Repositories\CircleRepositoryContract;
+use Modules\Organization\Domain\Repositories\ContestantMembershipRepositoryContract;
 use Modules\Organization\Infrastructure\Database\Repositories\CenterRepository;
 use Modules\Organization\Infrastructure\Database\Repositories\CircleRepository;
+use Modules\Organization\Infrastructure\Database\Repositories\ContestantMembershipRepository;
 
 final class OrganizationServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,11 @@ final class OrganizationServiceProvider extends ServiceProvider
         $this->app->singleton(
             CircleRepositoryContract::class,
             CircleRepository::class
+        );
+
+        $this->app->singleton(
+            ContestantMembershipRepositoryContract::class,
+            ContestantMembershipRepository::class
         );
 
         //

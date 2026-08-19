@@ -111,7 +111,15 @@ final class CircleController extends Controller
 
     public function destroy(string $id, DeleteCircleUseCase $deleteCircle): JsonResponse
     {
-        $deleteCircle->execute($id);
+        try {
+            $deleteCircle->execute($id);
+        } catch (DomainException $e) {
+            // 409 rather than 422, matching CenterController: the request is
+            // well formed and the circle is real. What refuses it is the state
+            // of the world — contestants are still enrolled — which is a
+            // conflict, not a bad field.
+            return $this->refusal('CIRCLE_HAS_MEMBERS', $e->getMessage(), 409);
+        }
 
         return response()->json([
             'success' => true,

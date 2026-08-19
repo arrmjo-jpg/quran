@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Organization\Presentation\HTTP\Controllers\CenterController;
 use Modules\Organization\Presentation\HTTP\Controllers\CircleController;
+use Modules\Organization\Presentation\HTTP\Controllers\MembershipController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,3 +58,30 @@ Route::patch('circles/{id}', [CircleController::class, 'update'])
 Route::delete('circles/{id}', [CircleController::class, 'destroy'])
     ->name('admin.circles.destroy')
     ->middleware('can:circles.delete');
+
+Route::get('memberships', [MembershipController::class, 'index'])
+    ->name('admin.memberships.index')
+    ->middleware('can:memberships.view');
+
+Route::get('memberships/{id}', [MembershipController::class, 'show'])
+    ->name('admin.memberships.show')
+    ->middleware('can:memberships.view');
+
+Route::post('memberships', [MembershipController::class, 'store'])
+    ->name('admin.memberships.store')
+    ->middleware('can:memberships.create');
+
+// Ending is a POST to a named action rather than a DELETE on the resource,
+// because nothing is removed: the row stays and acquires `left_at`. A DELETE
+// would tell every reader of this file the opposite of what Q4 decided.
+Route::post('memberships/{id}/end', [MembershipController::class, 'end'])
+    ->name('admin.memberships.end')
+    ->middleware('can:memberships.end');
+
+// Its own permission, not memberships.create plus memberships.end. A transfer
+// is a single act with different consequences from either half, and an
+// operator trusted to enrol a newcomer is not automatically trusted to move
+// someone out of another supervisor's circle.
+Route::post('memberships/transfer', [MembershipController::class, 'transfer'])
+    ->name('admin.memberships.transfer')
+    ->middleware('can:memberships.transfer');

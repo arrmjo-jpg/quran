@@ -88,6 +88,15 @@ final class PermissionCatalog
         // hand out capability.
         'grant_permissions',
         'assign_roles',
+        // Membership lifecycle (ADR-015 §4.4, amended 2026-08-20). 'end'
+        // rather than 'delete' or 'cancel': ADR-016 Q4 made membership
+        // historical, so a membership finishes by acquiring left_at and the
+        // row stays. 'transfer' rather than create+end: moving a contestant
+        // out of another supervisor's circle is a different trust from
+        // enrolling a newcomer, and the two cannot be granted apart if the
+        // act is expressed as both.
+        'end',
+        'transfer',
         // Appeal decisions
         'accept',
         'reject',
@@ -161,6 +170,12 @@ final class PermissionCatalog
         // centre, and the reverse is just as true.
         'centers' => ['view', 'create', 'update', 'delete'],
         'circles' => ['view', 'create', 'update', 'delete'],
+        // memberships.end rather than .delete: ending a membership
+        // removes nothing (Q4 made it historical), and .transfer is
+        // separate from create+end because moving someone out of
+        // another supervisor's circle is not implied by being trusted
+        // to enrol a newcomer.
+        'memberships' => ['view', 'create', 'end', 'transfer'],
 
         // ── People ──────────────────────────────────────────────────
         // contestants.update: NO ENDPOINT YET (granted to data_entry in
