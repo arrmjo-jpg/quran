@@ -140,6 +140,17 @@ final class User
         return $this->isActive && $this->deletedAt === null;
     }
 
+    /**
+     * Deleted and deactivated are different states, and both make isActive()
+     * false. Asking them apart matters for restore: bringing an account back
+     * from deletion does not decide whether it may act, which is what
+     * activation answers.
+     */
+    public function isDeleted(): bool
+    {
+        return $this->deletedAt !== null;
+    }
+
     /*
     |--------------------------------------------------------------------
     | Roles held — ADR-015 §3

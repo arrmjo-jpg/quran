@@ -28,7 +28,30 @@ interface UserRepositoryContract
      */
     public function save(User $user): void;
 
+    /**
+     * Soft delete. Users are never destroyed (ADR-016 D5), so this sets
+     * deleted_at and nothing more — the row, its roles and its history stay.
+     */
     public function delete(UserId $id): void;
+
+    /**
+     * Undo a soft delete.
+     *
+     * Restoring returns the account exactly as it was, roles included: the
+     * pivot rows were never touched, so nothing has to be reconstructed and
+     * nothing can be reconstructed wrongly.
+     */
+    public function restore(UserId $id): void;
+
+    /**
+     * Find including soft-deleted rows.
+     *
+     * Separate from find() rather than a flag on it, so that every caller
+     * that wants a deleted account has said so. The default must stay "not
+     * deleted": an authorization path that silently loaded a deleted account
+     * would be answering questions about someone who is gone.
+     */
+    public function findWithTrashed(UserId $id): ?User;
 
     /**
      * How many accounts currently hold this role.

@@ -10,7 +10,10 @@ use Illuminate\Routing\Controller;
 use Modules\Core\Application\UseCases\ActivateUserUseCase;
 use Modules\Core\Application\UseCases\CreateAdminUserUseCase;
 use Modules\Core\Application\UseCases\DeactivateUserUseCase;
+use Modules\Core\Application\UseCases\DeleteUserUseCase;
+use Modules\Core\Application\UseCases\RestoreUserUseCase;
 use Modules\Core\Application\UseCases\SyncUserRolesUseCase;
+use Modules\Core\Application\UseCases\UpdateUserProfileUseCase;
 use Modules\Core\Domain\Exceptions\LastSystemRoleHolderException;
 use Modules\Core\Domain\Exceptions\PrivilegeEscalationException;
 use Modules\Core\Domain\Exceptions\SelfDeactivationException;
@@ -20,6 +23,7 @@ use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 use Modules\Core\Presentation\HTTP\Requests\CreateAdminUserRequest;
 use Modules\Core\Presentation\HTTP\Requests\ListUsersRequest;
 use Modules\Core\Presentation\HTTP\Requests\SyncUserRolesRequest;
+use Modules\Core\Presentation\HTTP\Requests\UpdateUserRequest;
 use Modules\Core\Presentation\HTTP\Resources\AdminUserResource;
 
 /**
@@ -165,6 +169,41 @@ final class UserController extends Controller
         }
 
         return $this->fresh($id, __('User roles updated.'));
+    }
+
+    public function update(UpdateUserRequest $request, string $id, UpdateUserProfileUseCase $updateProfile): JsonResponse
+    {
+        $updateProfile->execute(
+            $id,
+            $request->validated('name'),
+            $request->validated('locale', 'ar'),
+            (string) $request->user()->id,
+        );
+
+        return $this->fresh($id, __('User updated.'));
+    }
+
+    public function destroy(Request $request, string $id, DeleteUserUseCase $deleteUser): JsonResponse
+    {
+        try {
+            $deleteUser->execute($id, (string) $request->user()->id);
+        } catch (SelfDeactivationException $e) {
+            return $this->refusal('SELF_DELETION', $e->getMessage(), 403);
+        } catch (LastSystemRoleHolderException $e) {
+            return $this->refusal('LAST_SYSTEM_ROLE_HOLDER', $e->getMessage(), 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('User deleted.'),
+        ]);
+    }
+
+    public function restore(Request $request, string $id, RestoreUserUseCase $restoreUser): JsonResponse
+    {
+        $restoreUser->execute($id, (string) $request->user()->id);
+
+        return $this->fresh($id, __('User restored.'));
     }
 
     public function activate(Request $request, string $id, ActivateUserUseCase $activate): JsonResponse

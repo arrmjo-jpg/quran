@@ -72,6 +72,22 @@ Route::get('users/{id}', [UserController::class, 'show'])
     ->name('admin.users.show')
     ->middleware('can:users.view');
 
+Route::patch('users/{id}', [UserController::class, 'update'])
+    ->name('admin.users.update')
+    ->middleware('can:users.update');
+
+// Soft delete only — ADR-016 D5, enforced by AccountDeletionTest. Restoring is
+// its own permission because deleting and undeleting are different decisions,
+// and the one that can strand the platform is the one worth granting
+// deliberately.
+Route::delete('users/{id}', [UserController::class, 'destroy'])
+    ->name('admin.users.destroy')
+    ->middleware('can:users.delete');
+
+Route::patch('users/{id}/restore', [UserController::class, 'restore'])
+    ->name('admin.users.restore')
+    ->middleware('can:users.restore');
+
 // Not users.update. Handing an account a role is the escalation surface PE-1
 // guards; editing its name is not.
 Route::patch('users/{id}/roles', [UserController::class, 'syncRoles'])
