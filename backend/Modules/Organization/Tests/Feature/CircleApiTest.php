@@ -372,6 +372,41 @@ test('deleting a circle records an event', function (): void {
     Event::assertDispatched(CircleDeleted::class);
 });
 
+test('a closed circle releases its name', function (): void {
+    // The unique index was declared on (center_id, name) with no reference to
+    // deleted_at, while every application lookup is scoped to live rows. The
+    // use case therefore reported the name free and the insert was refused by
+    // the database — a 500 on a legitimate action. Reproduced on SQLite and on
+    // MySQL before the fix migration was written.
+    $admin = circleAdmin();
+    $center = circleCenter(circleCountry());
+
+    $first = $this->actingAs($admin)->postJson('/api/v1/admin/circles', circlePayload($center))
+        ->assertCreated()->json('data.id');
+
+    $this->actingAs($admin)->deleteJson("/api/v1/admin/circles/{$first}")->assertOk();
+
+    $second = $this->actingAs($admin)->postJson('/api/v1/admin/circles', circlePayload($center))
+        ->assertCreated()->json('data.id');
+
+    expect($second)->not->toBe($first);
+    expect(CircleModel::withTrashed()->where('name', 'Morning Circle')->count())->toBe(2);
+});
+
+test('a live circle still blocks its name, and says so politely', function (): void {
+    // The other half of the same index: scoping uniqueness to live rows must
+    // not weaken it among them. This is the case the fix could plausibly have
+    // broken, which is why it sits next to the one it fixed.
+    $admin = circleAdmin();
+    $center = circleCenter(circleCountry());
+
+    $this->actingAs($admin)->postJson('/api/v1/admin/circles', circlePayload($center))->assertCreated();
+
+    $this->actingAs($admin)->postJson('/api/v1/admin/circles', circlePayload($center))
+        ->assertStatus(409)
+        ->assertJsonPath('error.code', 'CIRCLE_NAME_TAKEN');
+});
+
 /*
 |--------------------------------------------------------------------------
 | The guard Story 1 deferred to this story
