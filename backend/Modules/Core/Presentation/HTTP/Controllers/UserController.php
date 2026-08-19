@@ -8,16 +8,22 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Core\Application\UseCases\ActivateUserUseCase;
+use Modules\Core\Application\UseCases\CreateAdminUserUseCase;
 use Modules\Core\Application\UseCases\DeactivateUserUseCase;
+use Modules\Core\Application\UseCases\DeleteUserUseCase;
+use Modules\Core\Application\UseCases\RestoreUserUseCase;
 use Modules\Core\Application\UseCases\SyncUserRolesUseCase;
+use Modules\Core\Application\UseCases\UpdateUserProfileUseCase;
 use Modules\Core\Domain\Exceptions\LastSystemRoleHolderException;
 use Modules\Core\Domain\Exceptions\PrivilegeEscalationException;
 use Modules\Core\Domain\Exceptions\SelfDeactivationException;
 use Modules\Core\Domain\Exceptions\SelfRoleChangeException;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
+use Modules\Core\Presentation\HTTP\Requests\CreateAdminUserRequest;
 use Modules\Core\Presentation\HTTP\Requests\ListUsersRequest;
 use Modules\Core\Presentation\HTTP\Requests\SyncUserRolesRequest;
+use Modules\Core\Presentation\HTTP\Requests\UpdateUserRequest;
 use Modules\Core\Presentation\HTTP\Resources\AdminUserResource;
 
 /**
@@ -122,6 +128,31 @@ final class UserController extends Controller
         ]);
     }
 
+    /**
+     * Creates a pending account and invites its owner.
+     *
+     * The response carries the account and nothing else. No token, no link, no
+     * password — ADR-016 D14 means the administrator who created this account
+     * must not be able to claim it, and returning the link here would hand
+     * them exactly that ability.
+     */
+    public function store(CreateAdminUserRequest $request, CreateAdminUserUseCase $createUser): JsonResponse
+    {
+        try {
+            $user = $createUser->execute(
+                email: $request->validated('email'),
+                name: $request->validated('name'),
+                roleIds: $request->validated('roles', []),
+                byUserId: (string) $request->user()->id,
+                locale: $request->validated('locale', 'ar'),
+            );
+        } catch (PrivilegeEscalationException $e) {
+            return $this->refusal('PRIVILEGE_ESCALATION', $e->getMessage(), 403);
+        }
+
+        return $this->fresh((string) $user->id, __('Invitation sent.'), 201);
+    }
+
     public function syncRoles(
         SyncUserRolesRequest $request,
         string $id,
@@ -138,6 +169,41 @@ final class UserController extends Controller
         }
 
         return $this->fresh($id, __('User roles updated.'));
+    }
+
+    public function update(UpdateUserRequest $request, string $id, UpdateUserProfileUseCase $updateProfile): JsonResponse
+    {
+        $updateProfile->execute(
+            $id,
+            $request->validated('name'),
+            $request->validated('locale', 'ar'),
+            (string) $request->user()->id,
+        );
+
+        return $this->fresh($id, __('User updated.'));
+    }
+
+    public function destroy(Request $request, string $id, DeleteUserUseCase $deleteUser): JsonResponse
+    {
+        try {
+            $deleteUser->execute($id, (string) $request->user()->id);
+        } catch (SelfDeactivationException $e) {
+            return $this->refusal('SELF_DELETION', $e->getMessage(), 403);
+        } catch (LastSystemRoleHolderException $e) {
+            return $this->refusal('LAST_SYSTEM_ROLE_HOLDER', $e->getMessage(), 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('User deleted.'),
+        ]);
+    }
+
+    public function restore(Request $request, string $id, RestoreUserUseCase $restoreUser): JsonResponse
+    {
+        $restoreUser->execute($id, (string) $request->user()->id);
+
+        return $this->fresh($id, __('User restored.'));
     }
 
     public function activate(Request $request, string $id, ActivateUserUseCase $activate): JsonResponse
@@ -160,7 +226,7 @@ final class UserController extends Controller
         return $this->fresh($id, __('User deactivated.'));
     }
 
-    private function fresh(string $id, string $message): JsonResponse
+    private function fresh(string $id, string $message, int $status = 200): JsonResponse
     {
         $user = UserModel::withTrashed()->findOrFail($id);
         $user->setAttribute('role_names', $this->authorization->rolesOf($user));
@@ -169,7 +235,7 @@ final class UserController extends Controller
             'success' => true,
             'message' => $message,
             'data' => new AdminUserResource($user),
-        ]);
+        ], $status);
     }
 
     private function refusal(string $code, string $message, int $status): JsonResponse

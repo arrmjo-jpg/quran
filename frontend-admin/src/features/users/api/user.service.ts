@@ -3,7 +3,9 @@ import type { ApiSuccess } from '@/core/types';
 import type {
   AdminUser,
   AdminUserDetail,
+  CreateUserPayload,
   SyncUserRolesPayload,
+  UpdateUserPayload,
   UserListFilters,
   UserListResult,
 } from '../types';
@@ -26,6 +28,7 @@ export const userService = {
     if (filters.search) params.search = filters.search;
     if (filters.type) params.type = filters.type;
     if (filters.is_active !== undefined) params.is_active = filters.is_active;
+    if (filters.with_deleted) params.with_deleted = true;
 
     const { data } = await http.get<PaginatedUsers>('/admin/users', { params });
 
@@ -34,6 +37,33 @@ export const userService = {
 
   async getUser(id: string): Promise<AdminUserDetail> {
     const { data } = await http.get<ApiSuccess<AdminUserDetail>>(`/admin/users/${id}`);
+    return data.data;
+  },
+
+  /**
+   * Creates a pending account and sends its invitation.
+   *
+   * The response deliberately carries no token or link: the administrator
+   * creating the account must not be able to claim it (ADR-016 D14), so the
+   * invitation reaches the invitee's mailbox and nowhere else.
+   */
+  async createUser(payload: CreateUserPayload): Promise<AdminUser> {
+    const { data } = await http.post<ApiSuccess<AdminUser>>('/admin/users', payload);
+    return data.data;
+  },
+
+  async updateUser({ id, name, locale }: UpdateUserPayload): Promise<AdminUser> {
+    const { data } = await http.patch<ApiSuccess<AdminUser>>(`/admin/users/${id}`, { name, locale });
+    return data.data;
+  },
+
+  /** Soft delete. The account keeps its roles and can be restored. */
+  async deleteUser(id: string): Promise<void> {
+    await http.delete(`/admin/users/${id}`);
+  },
+
+  async restoreUser(id: string): Promise<AdminUser> {
+    const { data } = await http.patch<ApiSuccess<AdminUser>>(`/admin/users/${id}/restore`);
     return data.data;
   },
 

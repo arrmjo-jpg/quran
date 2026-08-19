@@ -61,9 +61,32 @@ Route::get('users', [UserController::class, 'index'])
     ->name('admin.users.index')
     ->middleware('can:users.view');
 
+// ADR-016 Q7 supersedes ADR-015's decision that this endpoint would not exist.
+// It is safe because of its shape: the administrator chooses the roles, the
+// invitee chooses the password, and no response ever carries the token.
+Route::post('users', [UserController::class, 'store'])
+    ->name('admin.users.store')
+    ->middleware('can:users.create');
+
 Route::get('users/{id}', [UserController::class, 'show'])
     ->name('admin.users.show')
     ->middleware('can:users.view');
+
+Route::patch('users/{id}', [UserController::class, 'update'])
+    ->name('admin.users.update')
+    ->middleware('can:users.update');
+
+// Soft delete only — ADR-016 D5, enforced by AccountDeletionTest. Restoring is
+// its own permission because deleting and undeleting are different decisions,
+// and the one that can strand the platform is the one worth granting
+// deliberately.
+Route::delete('users/{id}', [UserController::class, 'destroy'])
+    ->name('admin.users.destroy')
+    ->middleware('can:users.delete');
+
+Route::patch('users/{id}/restore', [UserController::class, 'restore'])
+    ->name('admin.users.restore')
+    ->middleware('can:users.restore');
 
 // Not users.update. Handing an account a role is the escalation surface PE-1
 // guards; editing its name is not.

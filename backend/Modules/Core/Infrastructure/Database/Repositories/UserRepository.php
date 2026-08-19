@@ -105,7 +105,22 @@ final class UserRepository implements UserRepositoryContract
 
     public function delete(UserId $id): void
     {
+        // Eloquent's delete() on a SoftDeletes model sets deleted_at. That it
+        // is soft is not incidental here — AccountDeletionTest refuses any
+        // path that would make it permanent.
         UserModel::query()->where('id', $id->value)->delete();
+    }
+
+    public function restore(UserId $id): void
+    {
+        UserModel::withTrashed()->where('id', $id->value)->restore();
+    }
+
+    public function findWithTrashed(UserId $id): ?User
+    {
+        $model = UserModel::withTrashed()->find($id->value);
+
+        return $model === null ? null : $this->toDomain($model);
     }
 
     private function toDomain(UserModel $model): User
