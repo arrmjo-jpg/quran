@@ -66,6 +66,11 @@ export const PERMISSIONS = [
   'centers.create',
   'centers.update',
   'centers.delete',
+  // circles
+  'circles.view',
+  'circles.create',
+  'circles.update',
+  'circles.delete',
   // contestants
   'contestants.view',
   'contestants.update',

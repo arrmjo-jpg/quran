@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Organization\Presentation\HTTP\Controllers\CenterController;
+use Modules\Organization\Presentation\HTTP\Controllers\CircleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,3 +37,23 @@ Route::patch('centers/{id}', [CenterController::class, 'update'])
 Route::delete('centers/{id}', [CenterController::class, 'destroy'])
     ->name('admin.centers.destroy')
     ->middleware('can:centers.delete');
+
+Route::get('circles', [CircleController::class, 'index'])
+    ->name('admin.circles.index')
+    ->middleware('can:circles.view');
+
+Route::get('circles/{id}', [CircleController::class, 'show'])
+    ->name('admin.circles.show')
+    ->middleware('can:circles.view');
+
+Route::post('circles', [CircleController::class, 'store'])
+    ->name('admin.circles.store')
+    ->middleware('can:circles.create');
+
+Route::patch('circles/{id}', [CircleController::class, 'update'])
+    ->name('admin.circles.update')
+    ->middleware('can:circles.update');
+
+Route::delete('circles/{id}', [CircleController::class, 'destroy'])
+    ->name('admin.circles.destroy')
+    ->middleware('can:circles.delete');

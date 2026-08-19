@@ -160,6 +160,7 @@ final class PermissionCatalog
         // correct a contestant's phone number has no business relocating a
         // centre, and the reverse is just as true.
         'centers' => ['view', 'create', 'update', 'delete'],
+        'circles' => ['view', 'create', 'update', 'delete'],
 
         // ── People ──────────────────────────────────────────────────
         // contestants.update: NO ENDPOINT YET (granted to data_entry in

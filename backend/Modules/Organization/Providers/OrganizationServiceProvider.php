@@ -9,9 +9,11 @@ declare(strict_types=1);
 namespace Modules\Organization\Providers;
 
 use Illuminate\Support\Facades\Route;
-use Modules\Organization\Domain\Repositories\CenterRepositoryContract;
-use Modules\Organization\Infrastructure\Database\Repositories\CenterRepository;
 use Illuminate\Support\ServiceProvider;
+use Modules\Organization\Domain\Repositories\CenterRepositoryContract;
+use Modules\Organization\Domain\Repositories\CircleRepositoryContract;
+use Modules\Organization\Infrastructure\Database\Repositories\CenterRepository;
+use Modules\Organization\Infrastructure\Database\Repositories\CircleRepository;
 
 final class OrganizationServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,11 @@ final class OrganizationServiceProvider extends ServiceProvider
         $this->app->singleton(
             CenterRepositoryContract::class,
             CenterRepository::class
+        );
+
+        $this->app->singleton(
+            CircleRepositoryContract::class,
+            CircleRepository::class
         );
 
         //
@@ -34,26 +41,26 @@ final class OrganizationServiceProvider extends ServiceProvider
 
     private function registerMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
     }
 
     private function registerRoutes(): void
     {
-        if (file_exists(__DIR__ . '/../Routes/api.php')) {
+        if (file_exists(__DIR__.'/../Routes/api.php')) {
             Route::middleware(['api'])
                 ->prefix('api/v1')
-                ->group(__DIR__ . '/../Routes/api.php');
+                ->group(__DIR__.'/../Routes/api.php');
         }
 
-        if (file_exists(__DIR__ . '/../Routes/admin.php')) {
+        if (file_exists(__DIR__.'/../Routes/admin.php')) {
             Route::middleware(['api', 'auth:sanctum'])
                 ->prefix('api/v1/admin')
-                ->group(__DIR__ . '/../Routes/admin.php');
+                ->group(__DIR__.'/../Routes/admin.php');
         }
     }
 
     private function registerTranslations(): void
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'organization');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'organization');
     }
 }

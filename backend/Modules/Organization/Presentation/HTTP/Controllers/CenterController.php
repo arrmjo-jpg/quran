@@ -113,7 +113,14 @@ final class CenterController extends Controller
 
     public function destroy(string $id, DeleteCenterUseCase $deleteCenter): JsonResponse
     {
-        $deleteCenter->execute($id);
+        try {
+            $deleteCenter->execute($id);
+        } catch (DomainException $e) {
+            // 409 rather than 422: the request is well formed and the centre
+            // is real. What refuses it is the state of the world — circles
+            // still hang off it — which is a conflict, not a bad field.
+            return $this->refusal('CENTER_HAS_CIRCLES', $e->getMessage(), 409);
+        }
 
         return response()->json([
             'success' => true,
