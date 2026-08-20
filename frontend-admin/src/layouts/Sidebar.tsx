@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   UserCog,
   Building2,
+  Users2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils';
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { path: '/notifications', labelKey: 'notifications', icon: Bell },
   { path: '/countries',     labelKey: 'countries',     icon: Globe },
   { path: '/centers',       labelKey: 'centers',       icon: Building2 },
+  { path: '/circles',       labelKey: 'circles',       icon: Users2 },
   { path: '/users',         labelKey: 'users',         icon: UserCog },
   { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck },
   { path: '/search',        labelKey: 'search',        icon: Search },

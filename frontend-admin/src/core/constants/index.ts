@@ -21,6 +21,10 @@ export const queryKeys = {
     all:  () => ['centers'] as const,
     list: (filters: unknown) => ['centers', 'list', filters] as const,
   },
+  circles: {
+    all:  () => ['circles'] as const,
+    list: (filters: unknown) => ['circles', 'list', filters] as const,
+  },
   roles: {
     all: () => ['roles'] as const,
   },

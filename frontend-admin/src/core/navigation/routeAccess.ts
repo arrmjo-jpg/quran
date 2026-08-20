@@ -43,6 +43,7 @@ export const ROUTE_PERMISSIONS: Readonly<Record<string, PermissionKey>> = {
   '/notifications': 'notifications.view',
   '/countries': 'countries.view',
   '/centers': 'centers.view',
+  '/circles': 'circles.view',
   '/users': 'users.view',
   '/roles': 'roles.view',
   '/search': 'search.view',

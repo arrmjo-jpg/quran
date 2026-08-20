@@ -1,0 +1,43 @@
+{
+  "title": "Circles",
+  "subtitle": "Study circles held at centres, and who supervises each one",
+  "create": "Add circle",
+  "empty": "No circles recorded yet.",
+
+  "column_name": "Circle",
+  "column_center": "Centre",
+  "column_supervisor": "Supervisor",
+
+  "supervisor_none": "Unassigned",
+  "supervisor_unresolved": "Unknown supervisor ({{id}}…)",
+
+  "form_title_create": "Add a circle",
+  "form_title_edit": "Edit circle",
+  "form_save": "Save circle",
+
+  "field_name": "Circle name",
+  "field_center": "Centre",
+  "field_center_placeholder": "Choose a centre",
+  "field_supervisor": "Supervisor",
+  "field_supervisor_none": "Unassigned",
+
+  "location_hint": "A circle carries no address of its own — its location is its centre's, so correcting the centre applies here automatically.",
+  "center_immutable_hint": "A circle cannot move to another centre. Its location is its centre's, so moving it would retroactively relocate everything that reads through it.",
+  "supervisor_hint": "A supervisor is a user account of type admin. Until Epic 14 this appointment grants no permission over contestants.",
+  "centers_truncated": "Showing the first 100 centres only. If the one you need is missing, use the Centres screen.",
+  "admins_truncated": "Showing the first 100 administrators only. If the person you need is missing, use the Users screen.",
+
+  "delete_title": "Close circle",
+  "delete_message": "“{{name}}” will be closed. It is not destroyed, and applications that froze its name keep it. A circle with contestants still enrolled cannot be closed.",
+
+  "create_success": "Circle added.",
+  "create_error": "Could not add the circle.",
+  "update_success": "Circle updated.",
+  "update_error": "Could not update the circle.",
+  "delete_success": "Circle closed.",
+  "delete_error": "Could not close the circle.",
+
+  "error_name_required": "A circle name is required.",
+  "error_name_long": "The circle name is too long (255 characters maximum).",
+  "error_center_required": "Please choose a centre."
+}
