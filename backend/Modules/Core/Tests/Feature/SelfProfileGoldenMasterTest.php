@@ -107,25 +107,35 @@ test('PATCH /me updates the preferred locale', function (): void {
         ->assertJsonPath('data.preferred_locale', 'en');
 });
 
-test('PINNED DEFECT: /me accepts fr, which the panel does not speak', function (): void {
-    // frontend-admin ships ar, en and es. `fr` has no translations anywhere,
-    // so an account can put itself into a language the interface cannot render.
-    $user = selfProfileUser();
+/*
+| The two tests below were pinned as DEFECTS when this file was written, and
+| the endpoint has since been corrected. They are kept, inverted, rather than
+| deleted: a rule that was once wrong in a specific way is worth a test that
+| names the way, or the same mismatch returns the next time someone edits the
+| list without checking what the interface ships.
+*/
 
-    $this->actingAs($user)->patchJson('/api/v1/me', ['preferred_locale' => 'fr'])->assertOk();
-
-    expect(UserModel::query()->find($user->id)->preferred_locale)->toBe('fr');
-});
-
-test('PINNED DEFECT: /me refuses es, which the panel does speak', function (): void {
-    // The mirror of the above, and the more damaging half. An administrator
-    // can be CREATED with es (CreateAdminUserRequest) and an admin can set
-    // another account to es (UpdateUserRequest), but that same person cannot
-    // choose it for themselves here.
+test('/me accepts es, which the panel speaks', function (): void {
+    // Was refused. An administrator could be created with es and an admin
+    // could set another account to es, but that person could not choose it
+    // for themselves — the endpoint disagreed with the two that write the
+    // same column.
     $user = selfProfileUser();
 
     $this->actingAs($user)->patchJson('/api/v1/me', ['preferred_locale' => 'es'])
+        ->assertOk()
+        ->assertJsonPath('data.preferred_locale', 'es');
+});
+
+test('/me refuses fr, which the panel does not speak', function (): void {
+    // Was accepted. `fr` has no translations anywhere in frontend-admin, so
+    // storing it put an account into a language the interface cannot render.
+    $user = selfProfileUser();
+
+    $this->actingAs($user)->patchJson('/api/v1/me', ['preferred_locale' => 'fr'])
         ->assertStatus(422);
+
+    expect(UserModel::query()->find($user->id)->preferred_locale)->toBe('ar');
 });
 
 test('PINNED: fields outside the two rules are dropped in silence', function (): void {
