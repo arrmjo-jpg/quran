@@ -6,6 +6,7 @@ namespace Modules\Applications\Domain\Entities;
 
 use Modules\Applications\Domain\Events\ApplicationCreated;
 use Modules\Applications\Domain\Events\ApplicationSubmitted;
+use Modules\Applications\Domain\ValueObjects\PlacementSnapshot;
 use Modules\Core\Domain\Concerns\HasDomainEvents;
 
 /**
@@ -29,6 +30,15 @@ final class Application
         private ?string $submittedAtIso = null,
         private ?string $deletedAt = null,
         private ?string $reuploadReason = null,
+        /**
+         * Where the contestant studied when they submitted — ADR-016 D8.
+         *
+         * Nullable because Q4 refused to trap rows written before this epic,
+         * not because a new submission may go without one: submit() requires
+         * it. An application with no placement is an old row, never a fresh
+         * one.
+         */
+        private ?PlacementSnapshot $placement = null,
     ) {}
 
     public static function create(
@@ -52,12 +62,23 @@ final class Application
         return $app;
     }
 
+    /**
+     * The placement is REQUIRED here, not optional as on the constructor.
+     *
+     * The constructor also rebuilds rows written before D8 existed, which have
+     * no placement and cannot be given one after the fact. A submission
+     * happening now always can — G3 has already established that the
+     * contestant holds an active membership, so there is always a circle and a
+     * centre to record. Requiring it here is what makes "old rows may lack a
+     * snapshot" a statement about history rather than a hole in the rule.
+     */
     public static function submit(
         string $id,
         string $contestantId,
         string $seasonId,
         string $stageId,
-        string $videoMediaId
+        string $videoMediaId,
+        PlacementSnapshot $placement
     ): self {
         $appNum = 'APP-'.strtoupper(substr(md5($id), 0, 8));
         $app = new self(
@@ -68,12 +89,24 @@ final class Application
             applicationNumber: $appNum,
             status: 'submitted',
             videoMediaId: $videoMediaId,
-            submittedAtIso: now()->toIso8601String()
+            submittedAtIso: now()->toIso8601String(),
+            placement: $placement
         );
 
         $app->recordEvent(new ApplicationSubmitted($id, $contestantId, $seasonId, $app->submittedAtIso));
 
         return $app;
+    }
+
+    /**
+     * The frozen placement, or null for an application submitted before D8.
+     *
+     * There is deliberately no setter. Refreshing a snapshot to match the live
+     * centre would erase exactly the history it was added to keep.
+     */
+    public function getPlacement(): ?PlacementSnapshot
+    {
+        return $this->placement;
     }
 
     public function getStatus(): string

@@ -435,13 +435,90 @@ test('a membership that has ended does not let a contestant apply — G3', funct
         ->assertJsonPath('error.code', 'MEMBERSHIP_REQUIRED');
 });
 
-test('PINNED: center_id and circle_id are not frozen onto the application', function (): void {
-    // D8 requires an application to freeze center_id, circle_id, center_name
-    // and circle_name at submission. The columns do not exist yet; Story 4
-    // adds them and the freeze together. Pinned as the "before" half of that
-    // change.
-    expect(Schema::hasColumn('applications', 'circle_id'))->toBeFalse()
-        ->and(Schema::hasColumn('applications', 'center_id'))->toBeFalse()
-        ->and(Schema::hasColumn('applications', 'circle_name'))->toBeFalse()
-        ->and(Schema::hasColumn('applications', 'center_name'))->toBeFalse();
+/*
+|--------------------------------------------------------------------------
+| D8 — the placement snapshot
+|--------------------------------------------------------------------------
+|
+| This section replaces the pin that asserted the four columns did NOT exist.
+| That pin was the "before" half of this change and said so; here is the after.
+*/
+
+test('the application carries all four placement columns', function (): void {
+    expect(Schema::hasColumn('applications', 'circle_id'))->toBeTrue()
+        ->and(Schema::hasColumn('applications', 'center_id'))->toBeTrue()
+        ->and(Schema::hasColumn('applications', 'circle_name'))->toBeTrue()
+        ->and(Schema::hasColumn('applications', 'center_name'))->toBeTrue();
+});
+
+test('submitting freezes the centre and circle onto the application — D8', function (): void {
+    $user = goldenContestantUser();
+    goldenContestant($user);
+    [$season, $stage] = goldenSeasonAndStage();
+
+    $id = $this->actingAs($user)->postJson('/api/v1/applications', [
+        'season_id' => $season,
+        'stage_id' => $stage,
+        'video_media_asset_id' => goldenMediaAsset(),
+    ])->assertCreated()->json('data.id');
+
+    $row = ApplicationModel::query()->findOrFail($id);
+
+    expect($row->center_id)->not->toBeNull()
+        ->and($row->circle_id)->not->toBeNull()
+        ->and($row->center_name)->toBe('Golden Centre')
+        ->and($row->circle_name)->toStartWith('Golden Circle ');
+});
+
+test('renaming the centre does not rewrite an application already submitted — D8', function (): void {
+    // The reason ids alone were judged insufficient. Because a circle reads
+    // its location through its centre (Q3), an application rendered from ids
+    // would start reporting a name that did not exist when it was submitted.
+    // This is the test that fails the moment anyone resolves the name live.
+    $user = goldenContestantUser();
+    goldenContestant($user);
+    [$season, $stage] = goldenSeasonAndStage();
+
+    $id = $this->actingAs($user)->postJson('/api/v1/applications', [
+        'season_id' => $season,
+        'stage_id' => $stage,
+        'video_media_asset_id' => goldenMediaAsset(),
+    ])->assertCreated()->json('data.id');
+
+    $before = ApplicationModel::query()->findOrFail($id);
+
+    DB::table('centers')->where('id', $before->center_id)->update(['name' => 'Renamed Centre']);
+    DB::table('circles')->where('id', $before->circle_id)->update(['name' => 'Renamed Circle']);
+
+    $after = ApplicationModel::query()->findOrFail($id);
+
+    expect($after->center_name)->toBe('Golden Centre')
+        ->and($after->circle_name)->toStartWith('Golden Circle ')
+        ->and($after->center_id)->toBe($before->center_id)
+        ->and($after->circle_id)->toBe($before->circle_id);
+});
+
+test('the API reports the frozen names, not the current ones — D8', function (): void {
+    // The freeze is only worth having if what gets rendered uses it. A
+    // resource that resolved center_id against the live table would pass every
+    // assertion above and still show the wrong name to every reader.
+    $user = goldenContestantUser();
+    goldenContestant($user);
+    [$season, $stage] = goldenSeasonAndStage();
+
+    $id = $this->actingAs($user)->postJson('/api/v1/applications', [
+        'season_id' => $season,
+        'stage_id' => $stage,
+        'video_media_asset_id' => goldenMediaAsset(),
+    ])->assertCreated()->json('data.id');
+
+    $row = ApplicationModel::query()->findOrFail($id);
+    DB::table('centers')->where('id', $row->center_id)->update(['name' => 'Renamed Centre']);
+
+    // my-applications is the contestant's own read surface; there is no
+    // GET /applications/{id} to use instead.
+    $this->actingAs($user)->getJson('/api/v1/applications/my-applications')
+        ->assertOk()
+        ->assertJsonPath('data.0.placement.center_name', 'Golden Centre')
+        ->assertJsonPath('data.0.placement.center_id', $row->center_id);
 });

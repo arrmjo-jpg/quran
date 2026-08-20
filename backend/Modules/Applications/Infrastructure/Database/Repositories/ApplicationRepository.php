@@ -6,6 +6,7 @@ namespace Modules\Applications\Infrastructure\Database\Repositories;
 
 use Modules\Applications\Domain\Entities\Application;
 use Modules\Applications\Domain\Repositories\ApplicationRepositoryContract;
+use Modules\Applications\Domain\ValueObjects\PlacementSnapshot;
 use Modules\Applications\Infrastructure\Database\Models\ApplicationModel;
 
 final class ApplicationRepository implements ApplicationRepositoryContract
@@ -55,6 +56,17 @@ final class ApplicationRepository implements ApplicationRepositoryContract
                 'application_number' => $application->applicationNumber,
                 'status' => $application->getStatus(),
                 'reupload_reason' => $application->getReuploadReason(),
+
+                // Written once, when the application is first saved, and never
+                // recomputed — see PlacementSnapshot. updateOrCreate would
+                // happily rewrite these on a later save, so the values come
+                // from the aggregate rather than from a fresh lookup: an
+                // application that is updated for any other reason must not
+                // quietly acquire today's centre name.
+                'center_id' => $application->getPlacement()?->centerId,
+                'circle_id' => $application->getPlacement()?->circleId,
+                'center_name' => $application->getPlacement()?->centerName,
+                'circle_name' => $application->getPlacement()?->circleName,
             ]
         );
     }
@@ -72,7 +84,13 @@ final class ApplicationRepository implements ApplicationRepositoryContract
             videoMediaId: $model->video_media_id,
             submittedAtIso: $model->submitted_at?->toIso8601String(),
             deletedAt: $model->deleted_at?->toIso8601String(),
-            reuploadReason: $model->reupload_reason
+            reuploadReason: $model->reupload_reason,
+            placement: PlacementSnapshot::fromNullable(
+                $model->center_id,
+                $model->circle_id,
+                $model->center_name,
+                $model->circle_name,
+            )
         );
     }
 }

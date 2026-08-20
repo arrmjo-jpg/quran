@@ -65,6 +65,12 @@ final class ApplicationModel extends Model
         'status',
         'reupload_reason',
         'submitted_at',
+
+        // The frozen placement — ADR-016 D8.
+        'center_id',
+        'circle_id',
+        'center_name',
+        'circle_name',
     ];
 
     protected $casts = [
