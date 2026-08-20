@@ -373,6 +373,14 @@ resource.action
 | `assign` | attach an actor to something (judges to panels, roles to users) |
 | `export` | produce a downloadable artefact |
 
+> **AMENDED 2026-08-20 — two verbs added for membership lifecycle: `end` and `transfer`.** Epic 2 Story 3 introduced `contestant_memberships`, and the architecture test refused both names before any of the code shipped — which is the verb set working as designed rather than an obstacle to route around.
+>
+> **`end`** was added rather than reusing an existing verb because every candidate asserts something ADR-016 Q4 decided is false. Q4 made membership *historical*: a membership finishes by acquiring `left_at`, and the row stays because applications freeze circle names (D8) against periods that must remain readable. `delete` would tell every reader the row is gone; `cancel` would say the membership should never have happened, which is a data-entry correction and a different act; `archive` and `deactivate` both say hidden or suspended. The distinction is not cosmetic — the route is a `POST .../end` rather than a `DELETE` for the same reason, and a verb contradicting that would be the one place the vocabulary lied about the schema.
+>
+> **`transfer`** was added rather than composing `create` + `end` because a transfer is a single act with its own trust boundary. An operator trusted to enrol a newcomer is not thereby trusted to move a contestant out of another supervisor's circle, and the two halves cannot be granted separately if the act is expressed as both. It also has a consequence neither half has: the pair is emitted as one `ContestantTransferred` event precisely because an ending followed by a beginning is indistinguishable from a departure and an unrelated later enrolment.
+>
+> Neither verb weakens §4.4's rule. Both are atomic, both name one thing, and neither is a composite in the sense the `manage` verb was removed for. `ALLOWED_VERBS` stands at **34**, and the catalogue at **97** across 27 resources.
+
 > **DECIDED 2026-08-17 — there is no `manage` verb.** An earlier draft admitted one as "reserved and discouraged"; the board removed it outright. The initial catalogue is **atomic only**: `users.view`, `users.create`, `users.update`, `users.delete`, `users.restore` — never `users.manage`. A coarse verb is a permission that cannot be reasoned about: it is unclear what it grants, it cannot be revoked partially, and it quietly becomes the default because it is easier to grant than to think. If a genuine need for a composite verb appears later it can be added by amending this ADR — but it does not exist on day one, when the temptation to reach for it is highest and the justification weakest.
 
 * **The group is `explode('.', $name)[0]`.** Nothing stores it (§1). Group display labels are i18n keys in the admin's `permissions` namespace.

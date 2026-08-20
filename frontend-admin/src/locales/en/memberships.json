@@ -1,0 +1,62 @@
+{
+  "title": "Memberships",
+  "subtitle": "Which circle each contestant belongs to — the full history, not just the present",
+  "enrol": "Enrol contestant",
+  "empty": "No memberships recorded yet.",
+
+  "column_contestant": "Contestant",
+  "column_circle": "Circle",
+  "column_period": "From → to",
+  "column_reason": "Reason",
+
+  "status_active": "Open",
+  "status_ended": "Ended",
+  "contestant_unresolved": "Unknown contestant ({{id}}…)",
+
+  "filter_circle": "Circle",
+  "filter_circle_all": "All circles",
+  "filter_status": "Status",
+  "filter_status_all": "All (full history)",
+
+  "enrol_title": "Enrol a contestant in a circle",
+  "enrol_save": "Enrol",
+  "field_contestant_search": "Search for a contestant",
+  "field_contestant_search_placeholder": "Name, phone or national id",
+  "field_contestant": "Contestant",
+  "field_contestant_placeholder": "Choose a contestant",
+  "field_circle": "Circle",
+  "field_circle_placeholder": "Choose a circle",
+  "field_joined_at": "Joined on",
+  "joined_at_hint": "Leave empty for today. It cannot be in the future.",
+  "one_open_membership_hint": "A contestant may belong to only one circle at a time. If they already belong somewhere, use Transfer rather than Enrol.",
+  "circles_truncated": "Showing the first 100 circles only. If the one you need is missing, use the Circles screen.",
+
+  "end_title": "End membership",
+  "end_save": "End membership",
+  "end_explanation": "The contestant's membership of “{{circle}}” will end. Nothing is deleted: the record keeps both dates so anyone reviewing later can read it.",
+  "field_reason": "Reason",
+  "field_reason_placeholder": "Why did this membership end?",
+  "field_left_at": "Ended on",
+  "left_at_hint": "Leave empty for today. It cannot be in the future.",
+
+  "transfer_title": "Transfer to another circle",
+  "transfer_save": "Transfer",
+  "transfer_explanation": "The contestant will move from “{{circle}}” to another circle. The current membership closes and the new one opens in a single operation, so they are never left in neither circle — or in both.",
+  "field_to_circle": "New circle",
+  "field_transfer_reason_placeholder": "Why is this contestant moving?",
+  "field_transfer_at": "Transfer date",
+  "transfer_at_hint": "Leave empty for today. It cannot be in the future.",
+
+  "start_success": "Contestant enrolled.",
+  "start_error": "Could not enrol the contestant.",
+  "end_success": "Membership ended.",
+  "end_error": "Could not end the membership.",
+  "transfer_success": "Contestant transferred.",
+  "transfer_error": "Could not transfer the contestant.",
+
+  "error_contestant_required": "Please choose a contestant.",
+  "error_circle_required": "Please choose a circle.",
+  "error_reason_required": "A reason is required.",
+  "error_reason_long": "The reason is too long (500 characters maximum).",
+  "error_date_future": "The date cannot be in the future."
+}

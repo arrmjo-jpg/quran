@@ -63,6 +63,9 @@ test('E2E Full Journey — Register -> Profile -> Upload -> App -> 5 Judges -> C
     $profileResponse->assertStatus(200)->assertJsonPath('success', true);
     $contestantId = $profileResponse->json('data.id');
 
+    // G3 (ADR-016 Q4): submission requires an active circle membership.
+    enrolInCircle($contestantId);
+
     // ── 3. UPLOAD MEDIA (VIDEO) ─────────────────────────────────────────────
     $videoFile = UploadedFile::fake()->create('recitation.mp4', 5000, 'video/mp4');
     $uploadResponse = $this->actingAs($contestantUser)->postJson('/api/v1/contestant/media/upload', [

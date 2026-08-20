@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **Accepted — 2026-08-18.** The two cross-epic questions (Q2 row-level security, Q7 user creation) are decided below. Q1 and Q3-Q6 are **deferred to the epic each belongs to** and carry a named blocking marker; they are epic-local, so they gate their own epic rather than this document. |
+| **Status** | **Accepted — 2026-08-18**, amended 2026-08-19. The two cross-epic questions are decided in place (Q2 row-level security, Q7 user creation). **Q3, Q4 and Q6 are now closed** by the epics that owned them. **Q1 and Q5 remain open** and gate Epics 5 and 3 respectively — each carries a named blocking marker. |
 | **Date** | 2026-08-18 |
 | **Supersedes** | **ADR-015's decision that no admin-facing user-creation endpoint exists** (see Q7). Effective on acceptance. ADR-003 is **not** superseded — it already provides for provisioning by a Super Administrator holding `users.create`, and forbids only admin self-registration, which stays forbidden. |
 | **Depends on** | ADR-015 (Identity & Access), ADR-003 (Authentication), ADR-002 (module boundaries), ADR-005 (database) |
@@ -108,11 +108,11 @@ reader the wrong lesson about how the decision was reached.
 | D2 | Social links live inside a JSON value object. | ⚠️ not recorded |
 | D3 | The Activity Log is separate from the Audit Log. | Supported by measurement above |
 | D4 | The admin profile is separate from the contestant profile. | Supported by measurement above |
-| D5 | Account deletion is soft delete only. | ⚠️ not recorded |
-| D6 | A Circle is an independent entity. | ⚠️ not recorded |
-| D7 | A Centre owns its location; a Circle inherits it. | ⚠️ not recorded |
-| D8 | An Application stores `circle_id` and `center_id` historically. | ⚠️ partially — "historically" implies a snapshot at submission time, so a later reorganisation cannot rewrite past results. The consequence is stated; the alternative considered is not. |
-| D9 | A Circle's supervisor is a User. | ⚠️ not recorded |
+| D5 | Account deletion is soft delete only. | **Closed 2026-08-19 via Q6.** Measured to be a restatement of existing behaviour — the only `forceDelete` in the codebase is a media asset destroyed with its file, and seven models already soft-delete. No retention policy enters any epic on this basis. Now enforced by `AccountDeletionTest`, which also refuses the quieter regression of removing the SoftDeletes trait |
+| D6 | A Circle is an independent entity. | **Recorded 2026-08-19.** It has its own lifecycle — CRUD, permissions, memberships, a supervisor — and will be consumed by Applications, Evaluations and the supervisor screens of Epic 14. A property of a contestant cannot be any of those, so circles and centres live in a module of their own rather than inside Contestants (ADR-002) |
+| D7 | A Centre owns its location; a Circle inherits it. | **Recorded 2026-08-19 — see Q3.** A Centre holds name, country, city, address and optional coordinates; a Circle reads through and stores none of it. One source of truth, with history preserved by Q4's freeze rather than by duplication |
+| D8 | An Application freezes `center_id`, `circle_id`, `center_name` and `circle_name`. | **Recorded 2026-08-19 — see Q4.** Ids alone were insufficient: with Q3's read-through location an id resolves to whatever the centre is called *now*, so a year-old application would show a name that did not exist when it was submitted. Names are frozen; address, city and coordinates are not, being no part of what an application means |
+| D9 | A Circle's supervisor is a User. | **Recorded 2026-08-19.** A supervisor is a person who signs in, so they are an account with a role — not a third kind of identity. This is ADR-015's rule that roles describe accounts, applied again: inventing a Supervisor entity would create a second identity model to keep in step with the first. Note Q2: the role may exist from Epic 2 and holds no contestant-view permission until Epic 14 |
 | D10 | No WhatsApp integration until a real provider exists. | Consistent with the board's standing rule against building what changes no behaviour |
 | D11 | Row-level security is deferred to Epic 14, and supervisors hold no contestant-view permission until then. | **Recorded — see Q2.** Minors' data; no undoable transitional exposure |
 | D12 | Device trust moves from Redis to the database. | ⚠️ not recorded. Affects Epic 6 |
@@ -126,18 +126,54 @@ reader the wrong lesson about how the decision was reached.
 Q2 and Q7 are decided and recorded in place. The remaining five are **epic-local and deferred**:
 each must be answered before its epic starts, not before this document is used.
 
-| Question | Blocks | Must be answered before |
+| Question | Blocks | Status |
 |---|---|---|
-| Q1 — reuse or replace `spatie/laravel-activitylog` | Activity Log | **Epic 5** |
-| Q3 — how a Circle inherits a Centre's location | Circles/Centres | **Epic 2** |
-| Q4 — an Application whose contestant has no circle | Applications ↔ Circles | **Epic 2** |
-| Q5 — which social platforms, validated how | Admin profiles | **Epic 3** |
-| Q6 — whether "soft delete only" is new or a restatement | User lifecycle | **Epic 1** |
+| Q1 — reuse or replace `spatie/laravel-activitylog` | Activity Log | open, before **Epic 5** |
+| Q3 — how a Circle inherits a Centre's location | Circles/Centres | **CLOSED 2026-08-19** — see below |
+| Q4 — an Application whose contestant has no circle | Applications ↔ Circles | **CLOSED 2026-08-19** — see below |
+| Q5 — which social platforms, validated how | Admin profiles | open, before **Epic 3** |
+| Q6 — whether "soft delete only" is new or a restatement | User lifecycle | **CLOSED 2026-08-19** — narrow reading plus an enforcing guard; see `AccountDeletionTest` |
 
 Deferring them is a decision, not an oversight: none changes more than one epic's design, so
 answering them at the point of implementation costs nothing, while answering them now would mean
 recording rationale the board has not supplied — the failure mode this document was written to
 avoid.
+
+### Q3 — CLOSED: a Circle reads its Centre's location and never copies it
+
+**A Centre owns its own data in full** — name, country, city, address, and optionally
+coordinates — and a Circle belongs to a Centre without duplicating any of it. Location is read
+through the foreign key, so there is one source of truth and a Centre that moves is corrected
+in one place.
+
+The obvious objection to read-through is that it rewrites history: a report that said "this
+circle was in Amman" starts saying Zarqa. That is answered elsewhere rather than by copying —
+see Q4's freeze — and the two decisions must be read together, because either alone is wrong.
+
+**What was NOT decided:** whether a Circle may carry its own address distinct from its Centre's.
+It may not, today. A Circle that meets somewhere other than its Centre has no way to say so, and
+if that turns out to be a real arrangement it is a schema change, not a workaround.
+
+### Q4 — CLOSED: membership is historical, applications freeze names, and the rule lives in the use case
+
+Three decisions that only make sense together:
+
+**Membership is a table, not a column.** `contestant_memberships` carries
+`contestant_id`, `circle_id`, `joined_at`, `left_at` and `reason`. A `contestants.circle_id`
+column would hold only the present and lose every transfer a contestant ever made — and D8 exists
+precisely because that history matters.
+
+**An application freezes `center_id`, `circle_id`, `center_name` and `circle_name`.** Ids alone
+were not enough: with read-through location, an id resolves to whatever the centre is called
+*now*, so a year-old application would display a name that did not exist when it was submitted.
+The names are frozen and the address, city and coordinates are not — those are not part of what
+an application means.
+
+**The columns are nullable; the use case refuses.** Option (c) of the three considered. The
+database permits null so historical rows and future migrations are not trapped, while
+`SubmitApplicationUseCase` refuses to create an application for a contestant with no active
+membership. A NOT NULL column would have made every past row a migration problem; a rule with no
+enforcement would have been decoration.
 
 ### Q1. Does the Activity Log reuse `spatie/laravel-activitylog`, or replace it?
 

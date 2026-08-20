@@ -1,0 +1,43 @@
+{
+  "title": "Círculos",
+  "subtitle": "Círculos de estudio celebrados en los centros, y quién supervisa cada uno",
+  "create": "Añadir círculo",
+  "empty": "Aún no hay círculos registrados.",
+
+  "column_name": "Círculo",
+  "column_center": "Centro",
+  "column_supervisor": "Supervisor",
+
+  "supervisor_none": "Sin asignar",
+  "supervisor_unresolved": "Supervisor desconocido ({{id}}…)",
+
+  "form_title_create": "Añadir un círculo",
+  "form_title_edit": "Editar círculo",
+  "form_save": "Guardar círculo",
+
+  "field_name": "Nombre del círculo",
+  "field_center": "Centro",
+  "field_center_placeholder": "Elige un centro",
+  "field_supervisor": "Supervisor",
+  "field_supervisor_none": "Sin asignar",
+
+  "location_hint": "Un círculo no tiene dirección propia: su ubicación es la de su centro, así que corregir el centro se aplica aquí automáticamente.",
+  "center_immutable_hint": "Un círculo no puede trasladarse a otro centro. Su ubicación es la de su centro, por lo que moverlo reubicaría retroactivamente todo lo que lee a través de él.",
+  "supervisor_hint": "Un supervisor es una cuenta de usuario de tipo administrador. Hasta el Epic 14 este nombramiento no otorga ningún permiso sobre los concursantes.",
+  "centers_truncated": "Mostrando solo los primeros 100 centros. Si falta el que buscas, usa la pantalla de Centros.",
+  "admins_truncated": "Mostrando solo los primeros 100 administradores. Si falta la persona que buscas, usa la pantalla de Usuarios.",
+
+  "delete_title": "Cerrar círculo",
+  "delete_message": "Se cerrará «{{name}}». No se destruye, y las solicitudes que congelaron su nombre lo conservan. Un círculo con concursantes aún inscritos no puede cerrarse.",
+
+  "create_success": "Círculo añadido.",
+  "create_error": "No se pudo añadir el círculo.",
+  "update_success": "Círculo actualizado.",
+  "update_error": "No se pudo actualizar el círculo.",
+  "delete_success": "Círculo cerrado.",
+  "delete_error": "No se pudo cerrar el círculo.",
+
+  "error_name_required": "El nombre del círculo es obligatorio.",
+  "error_name_long": "El nombre del círculo es demasiado largo (máximo 255 caracteres).",
+  "error_center_required": "Por favor, elige un centro."
+}

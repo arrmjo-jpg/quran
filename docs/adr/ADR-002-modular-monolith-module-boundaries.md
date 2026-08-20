@@ -794,6 +794,44 @@ All inter-module dependencies must be traceable to one of the following permitte
 
 Any form of cross-module coupling not expressible as one of these three forms is a boundary violation.
 
+#### Scope of the Rule: Production Code Only — AMENDED 2026-08-20
+
+**The dependency rules above govern production code. A module's `Tests/`
+directory is exempt.**
+
+The reason is not convenience. A feature test must arrange a world before it
+can assert anything about one: it creates a user, gives that user a role, and
+seeds the permission catalogue those roles draw on. Every one of those is
+owned by Core, and there is no contract that exposes them — nor should there
+be, because a contract exists to serve production callers and inventing one to
+satisfy a test would put a fixture concern into the platform's public surface.
+Holding `Tests/` to the rule would therefore make it a requirement no test
+could satisfy, and a rule that cannot be obeyed is not enforced but ignored.
+
+The exemption is narrow and stops at the directory boundary:
+
+- Production code — `Domain/`, `Application/`, `Infrastructure/`,
+  `Presentation/`, `Providers/`, `Database/` — remains fully bound by the
+  rules above. A violation there is a violation.
+- `Tests/` may import concrete classes from other modules for arrangement.
+  It may not be used as a route around the rule: production logic does not
+  become acceptable by being placed in a test helper.
+
+**What this exemption does NOT claim.** It was recorded while fixing the
+Organization module's architecture test, which had never actually run —
+`glob('Modules/X/**/*.php')` is not recursive in PHP, so every module's copy
+of that test enumerated about four files and never reached the layers the rule
+exists to police. Correcting Organization's copy made that one module honestly
+scanned. It did not make the platform clean: a corrected scan across all 21
+modules reports **59 production-code violations** that remain unaddressed, and
+`backend/stubs/platform/v1/architecture-test.stub` still emits the broken
+pattern, so every new module inherits the same blind spot.
+
+A green architecture suite therefore means "the modules whose tests have been
+corrected are clean", not "the platform is clean". Anyone reading a passing
+build as the latter is reading it wrongly, which is why the distinction is
+recorded here rather than left in a commit message.
+
 ### 12. Domain Events
 
 Domain events are the primary integration mechanism between modules. They allow modules to communicate business facts without creating direct dependencies.

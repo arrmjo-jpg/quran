@@ -1,0 +1,47 @@
+{
+  "title": "Centres",
+  "subtitle": "Where circles meet: address, city and an optional point on the map",
+  "create": "Add centre",
+  "empty": "No centres recorded yet.",
+
+  "column_name": "Centre",
+  "column_city": "City and address",
+  "column_coordinates": "Coordinates",
+  "no_coordinates": "Not set",
+
+  "form_title_create": "Add a centre",
+  "form_title_edit": "Edit centre",
+  "form_save": "Save centre",
+
+  "field_name": "Centre name",
+  "field_country": "Country",
+  "field_country_placeholder": "Choose a country",
+  "field_city": "City",
+  "field_address": "Address",
+  "field_latitude": "Latitude",
+  "field_longitude": "Longitude",
+
+  "country_immutable_hint": "A centre cannot move to another country — one that changed country would be a different centre. Close it and open another.",
+  "coordinates_hint": "Coordinates are optional, but latitude and longitude must be given together or left out together.",
+
+  "delete_title": "Close centre",
+  "delete_message": "“{{name}}” will be closed. It is not destroyed, and applications that froze its name keep it. A centre still holding circles cannot be closed.",
+
+  "create_success": "Centre added.",
+  "create_error": "Could not add the centre.",
+  "update_success": "Centre updated.",
+  "update_error": "Could not update the centre.",
+  "delete_success": "Centre closed.",
+  "delete_error": "Could not close the centre.",
+
+  "error_name_required": "A centre name is required.",
+  "error_name_long": "The centre name is too long (255 characters maximum).",
+  "error_country_required": "Please choose a country.",
+  "error_city_required": "A city is required.",
+  "error_city_long": "The city name is too long (255 characters maximum).",
+  "error_address_required": "An address is required.",
+  "error_address_long": "The address is too long (500 characters maximum).",
+  "error_latitude_range": "Latitude must be between -90 and 90.",
+  "error_longitude_range": "Longitude must be between -180 and 180.",
+  "error_coordinates_pair": "Give latitude and longitude together, or leave both empty."
+}

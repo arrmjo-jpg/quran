@@ -188,6 +188,9 @@ test('IRG-001 Pillar 1 — Contestant E2E: Register → Profile → Eligibility 
     ]);
     $profileResponse->assertStatus(200)->assertJsonPath('success', true);
 
+    // G3 (ADR-016 Q4): submission requires an active circle membership.
+    enrolInCircle($profileResponse->json('data.id'));
+
     // ── Setup Admin + Season + Stage ──────────────────────────────────────────
     // Must happen before the eligibility check below: eligibility is evaluated
     // against the active season's start date, so a season needs to be open.

@@ -1,0 +1,47 @@
+{
+  "title": "Centros",
+  "subtitle": "Donde se reúnen los círculos: dirección, ciudad y un punto opcional en el mapa",
+  "create": "Añadir centro",
+  "empty": "Aún no hay centros registrados.",
+
+  "column_name": "Centro",
+  "column_city": "Ciudad y dirección",
+  "column_coordinates": "Coordenadas",
+  "no_coordinates": "Sin definir",
+
+  "form_title_create": "Añadir un centro",
+  "form_title_edit": "Editar centro",
+  "form_save": "Guardar centro",
+
+  "field_name": "Nombre del centro",
+  "field_country": "País",
+  "field_country_placeholder": "Elige un país",
+  "field_city": "Ciudad",
+  "field_address": "Dirección",
+  "field_latitude": "Latitud",
+  "field_longitude": "Longitud",
+
+  "country_immutable_hint": "Un centro no puede trasladarse a otro país: uno que cambiara de país sería un centro distinto. Ciérralo y abre otro.",
+  "coordinates_hint": "Las coordenadas son opcionales, pero la latitud y la longitud deben indicarse juntas o dejarse ambas vacías.",
+
+  "delete_title": "Cerrar centro",
+  "delete_message": "Se cerrará «{{name}}». No se destruye, y las solicitudes que congelaron su nombre lo conservan. Un centro que aún alberga círculos no puede cerrarse.",
+
+  "create_success": "Centro añadido.",
+  "create_error": "No se pudo añadir el centro.",
+  "update_success": "Centro actualizado.",
+  "update_error": "No se pudo actualizar el centro.",
+  "delete_success": "Centro cerrado.",
+  "delete_error": "No se pudo cerrar el centro.",
+
+  "error_name_required": "El nombre del centro es obligatorio.",
+  "error_name_long": "El nombre del centro es demasiado largo (máximo 255 caracteres).",
+  "error_country_required": "Por favor, elige un país.",
+  "error_city_required": "La ciudad es obligatoria.",
+  "error_city_long": "El nombre de la ciudad es demasiado largo (máximo 255 caracteres).",
+  "error_address_required": "La dirección es obligatoria.",
+  "error_address_long": "La dirección es demasiado larga (máximo 500 caracteres).",
+  "error_latitude_range": "La latitud debe estar entre -90 y 90.",
+  "error_longitude_range": "La longitud debe estar entre -180 y 180.",
+  "error_coordinates_pair": "Indica latitud y longitud juntas, o deja ambas vacías."
+}

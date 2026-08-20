@@ -1,0 +1,62 @@
+{
+  "title": "العضويات",
+  "subtitle": "انتساب المتسابقين إلى الحلقات: سجلّ تاريخي كامل، لا الحالة الراهنة وحدها",
+  "enrol": "تسجيل متسابق",
+  "empty": "لا توجد عضويات مسجلة بعد.",
+
+  "column_contestant": "المتسابق",
+  "column_circle": "الحلقة",
+  "column_period": "من ← إلى",
+  "column_reason": "السبب",
+
+  "status_active": "قائمة",
+  "status_ended": "منتهية",
+  "contestant_unresolved": "متسابق غير معروف ({{id}}…)",
+
+  "filter_circle": "الحلقة",
+  "filter_circle_all": "كل الحلقات",
+  "filter_status": "الحالة",
+  "filter_status_all": "الكل (السجل الكامل)",
+
+  "enrol_title": "تسجيل متسابق في حلقة",
+  "enrol_save": "تسجيل",
+  "field_contestant_search": "ابحث عن متسابق",
+  "field_contestant_search_placeholder": "الاسم أو الهاتف أو الرقم الوطني",
+  "field_contestant": "المتسابق",
+  "field_contestant_placeholder": "اختر المتسابق",
+  "field_circle": "الحلقة",
+  "field_circle_placeholder": "اختر الحلقة",
+  "field_joined_at": "تاريخ الانتساب",
+  "joined_at_hint": "اتركه فارغًا ليكون تاريخ اليوم. لا يمكن أن يكون في المستقبل.",
+  "one_open_membership_hint": "لا يجوز أن ينتسب المتسابق إلى أكثر من حلقة في وقت واحد. إن كان منتسبًا بالفعل فاستخدم «النقل» بدل التسجيل.",
+  "circles_truncated": "المعروض أول 100 حلقة فقط. إن لم تجد الحلقة المطلوبة فاستخدم شاشة الحلقات.",
+
+  "end_title": "إنهاء العضوية",
+  "end_save": "إنهاء العضوية",
+  "end_explanation": "ستُنهى عضوية المتسابق في حلقة «{{circle}}». لا يُحذف شيء: يبقى السجل بتاريخيه ليقرأه من يراجع لاحقًا.",
+  "field_reason": "السبب",
+  "field_reason_placeholder": "لماذا انتهت هذه العضوية؟",
+  "field_left_at": "تاريخ الانتهاء",
+  "left_at_hint": "اتركه فارغًا ليكون تاريخ اليوم. لا يمكن أن يكون في المستقبل.",
+
+  "transfer_title": "نقل إلى حلقة أخرى",
+  "transfer_save": "تنفيذ النقل",
+  "transfer_explanation": "سيُنقل المتسابق من حلقة «{{circle}}» إلى حلقة أخرى. تُغلق العضوية الحالية وتُفتح الجديدة في عملية واحدة، فلا يبقى المتسابق بلا حلقة ولا في حلقتين.",
+  "field_to_circle": "الحلقة الجديدة",
+  "field_transfer_reason_placeholder": "لماذا يُنقل هذا المتسابق؟",
+  "field_transfer_at": "تاريخ النقل",
+  "transfer_at_hint": "اتركه فارغًا ليكون تاريخ اليوم. لا يمكن أن يكون في المستقبل.",
+
+  "start_success": "تم تسجيل المتسابق في الحلقة.",
+  "start_error": "تعذّر تسجيل المتسابق.",
+  "end_success": "تم إنهاء العضوية.",
+  "end_error": "تعذّر إنهاء العضوية.",
+  "transfer_success": "تم نقل المتسابق.",
+  "transfer_error": "تعذّر نقل المتسابق.",
+
+  "error_contestant_required": "يرجى اختيار المتسابق.",
+  "error_circle_required": "يرجى اختيار الحلقة.",
+  "error_reason_required": "السبب مطلوب.",
+  "error_reason_long": "السبب طويل جدًا (500 حرف كحد أقصى).",
+  "error_date_future": "لا يمكن أن يكون التاريخ في المستقبل."
+}

@@ -1,0 +1,47 @@
+{
+  "title": "المراكز",
+  "subtitle": "أماكن انعقاد الحلقات: العنوان والمدينة والموقع على الخريطة",
+  "create": "إضافة مركز",
+  "empty": "لا توجد مراكز مسجلة بعد.",
+
+  "column_name": "اسم المركز",
+  "column_city": "المدينة والعنوان",
+  "column_coordinates": "الإحداثيات",
+  "no_coordinates": "غير محددة",
+
+  "form_title_create": "إضافة مركز جديد",
+  "form_title_edit": "تعديل بيانات المركز",
+  "form_save": "حفظ المركز",
+
+  "field_name": "اسم المركز",
+  "field_country": "الدولة",
+  "field_country_placeholder": "اختر الدولة",
+  "field_city": "المدينة",
+  "field_address": "العنوان",
+  "field_latitude": "خط العرض",
+  "field_longitude": "خط الطول",
+
+  "country_immutable_hint": "لا يمكن نقل مركز إلى دولة أخرى؛ المركز الذي يغيّر دولته مركز آخر. أغلقه وافتح غيره.",
+  "coordinates_hint": "الإحداثيات اختيارية، لكن يجب إدخال خط العرض وخط الطول معًا أو تركهما معًا.",
+
+  "delete_title": "إغلاق المركز",
+  "delete_message": "سيُغلق مركز «{{name}}». لا يُحذف نهائيًا، والطلبات التي جمّدت اسمه تحتفظ به. ولا يمكن إغلاقه ما دام يحتضن حلقات.",
+
+  "create_success": "تمت إضافة المركز.",
+  "create_error": "تعذّرت إضافة المركز.",
+  "update_success": "تم تحديث بيانات المركز.",
+  "update_error": "تعذّر تحديث بيانات المركز.",
+  "delete_success": "تم إغلاق المركز.",
+  "delete_error": "تعذّر إغلاق المركز.",
+
+  "error_name_required": "اسم المركز مطلوب.",
+  "error_name_long": "اسم المركز طويل جدًا (255 حرفًا كحد أقصى).",
+  "error_country_required": "يرجى اختيار الدولة.",
+  "error_city_required": "المدينة مطلوبة.",
+  "error_city_long": "اسم المدينة طويل جدًا (255 حرفًا كحد أقصى).",
+  "error_address_required": "العنوان مطلوب.",
+  "error_address_long": "العنوان طويل جدًا (500 حرف كحد أقصى).",
+  "error_latitude_range": "خط العرض يجب أن يكون بين -90 و90.",
+  "error_longitude_range": "خط الطول يجب أن يكون بين -180 و180.",
+  "error_coordinates_pair": "أدخل خط العرض وخط الطول معًا، أو اتركهما معًا."
+}

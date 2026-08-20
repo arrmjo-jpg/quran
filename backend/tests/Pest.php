@@ -1,5 +1,15 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\Core\Domain\Repositories\RoleRepositoryContract;
+use Modules\Core\Domain\Repositories\UserRepositoryContract;
+use Modules\Core\Domain\ValueObjects\UserId;
+use Modules\Core\Domain\ValueObjects\UserType;
+use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
+use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;
+use Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver;
 use Tests\TestCase;
 
 /*
@@ -81,8 +91,8 @@ function something()
  */
 function grantSuperAdmin(string $userId): string
 {
-    $users = app(Modules\Core\Domain\Repositories\UserRepositoryContract::class);
-    $roles = app(Modules\Core\Domain\Repositories\RoleRepositoryContract::class);
+    $users = app(UserRepositoryContract::class);
+    $roles = app(RoleRepositoryContract::class);
 
     // Self-sufficient on purpose. Most test files never seeded roles —
     // they had no reason to before authorization existed — and requiring
@@ -92,16 +102,16 @@ function grantSuperAdmin(string $userId): string
     // only what is missing, and RolesSeeder re-synchronises system roles
     // while leaving the five editable ones untouched.
     if ($roles->findByName('super_admin') === null) {
-        (new Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder)->run();
-        app(Modules\Core\Infrastructure\Database\Seeders\RolesSeeder::class)->run();
+        (new PermissionsSeeder)->run();
+        app(RolesSeeder::class)->run();
     }
 
-    $actor = $users->findOrFail(new Modules\Core\Domain\ValueObjects\UserId($userId));
+    $actor = $users->findOrFail(new UserId($userId));
     $actor->syncRoles([$roles->findByName('super_admin')->id]);
     $users->save($actor);
 
-    app(Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver::class)
-        ->forget(new Modules\Core\Domain\ValueObjects\UserId($userId));
+    app(EffectivePermissionResolver::class)
+        ->forget(new UserId($userId));
 
     return $userId;
 }
@@ -128,7 +138,7 @@ function grantSuperAdmin(string $userId): string
  * Returns the model so it can be wrapped around a create() call without
  * restructuring the surrounding statement.
  */
-function withSuperAdmin(Modules\Core\Infrastructure\Database\Models\UserModel $user): Modules\Core\Infrastructure\Database\Models\UserModel
+function withSuperAdmin(UserModel $user): UserModel
 {
     // A no-op for anyone who is not an admin, which is what lets this
     // wrap the helpers that take their type as a parameter — several
@@ -136,7 +146,7 @@ function withSuperAdmin(Modules\Core\Infrastructure\Database\Models\UserModel $u
     // to admin. Deciding here rather than at each call site means a
     // contestant fixture can never be handed super_admin by a wrap that
     // looked right at the time.
-    if ($user->type !== Modules\Core\Domain\ValueObjects\UserType::ADMIN) {
+    if ($user->type !== UserType::ADMIN) {
         return $user;
     }
 
@@ -163,14 +173,80 @@ function withSuperAdmin(Modules\Core\Infrastructure\Database\Models\UserModel $u
  */
 function revokeAllRoles(string $userId): string
 {
-    $users = app(Modules\Core\Domain\Repositories\UserRepositoryContract::class);
+    $users = app(UserRepositoryContract::class);
 
-    $user = $users->findOrFail(new Modules\Core\Domain\ValueObjects\UserId($userId));
+    $user = $users->findOrFail(new UserId($userId));
     $user->syncRoles([]);
     $users->save($user);
 
-    app(Modules\Core\Infrastructure\Permissions\EffectivePermissionResolver::class)
-        ->forget(new Modules\Core\Domain\ValueObjects\UserId($userId));
+    app(EffectivePermissionResolver::class)
+        ->forget(new UserId($userId));
 
     return $userId;
+}
+
+/**
+ * Enrols a contestant in a freshly made circle, and returns the circle id.
+ *
+ * ADR-016 Q4 made an active membership a precondition for submitting an
+ * application (G3). Tests that submit therefore need their contestant to
+ * belong somewhere — this is the one line that makes them eligible, and it
+ * exists here rather than in four copies because four copies is how three of
+ * them end up subtly different.
+ *
+ * Raw inserts rather than Organization's models: the callers live in
+ * tests/Feature and several belong to other modules, and the ids are all they
+ * need.
+ */
+function enrolInCircle(string $contestantId): string
+{
+    $countryId = DB::table('countries')->value('id');
+
+    if ($countryId === null) {
+        $countryId = (string) Str::uuid();
+
+        DB::table('countries')->insert([
+            'id' => $countryId,
+            'iso_code' => 'JO',
+            'iso3_code' => 'JOR',
+            'phone_code' => '+962',
+            'flag_url' => 'https://example.test/flag.svg',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    $centerId = (string) Str::uuid();
+
+    DB::table('centers')->insert([
+        'id' => $centerId,
+        'name' => 'Test Centre '.Str::random(6),
+        'country_id' => (string) $countryId,
+        'city' => 'Amman',
+        'address' => '1 Test Street',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $circleId = (string) Str::uuid();
+
+    DB::table('circles')->insert([
+        'id' => $circleId,
+        'center_id' => $centerId,
+        'name' => 'Test Circle '.Str::random(6),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('contestant_memberships')->insert([
+        'id' => (string) Str::uuid(),
+        'contestant_id' => $contestantId,
+        'circle_id' => $circleId,
+        'joined_at' => now()->subMonths(6),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $circleId;
 }
