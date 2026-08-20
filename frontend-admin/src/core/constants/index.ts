@@ -17,6 +17,10 @@ export const queryKeys = {
   countries: {
     all: () => ['countries'] as const,
   },
+  centers: {
+    all:  () => ['centers'] as const,
+    list: (filters: unknown) => ['centers', 'list', filters] as const,
+  },
   roles: {
     all: () => ['roles'] as const,
   },
