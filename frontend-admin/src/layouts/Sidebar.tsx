@@ -21,6 +21,7 @@ import {
   UserCog,
   Building2,
   Users2,
+  UserPlus,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils';
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   { path: '/countries',     labelKey: 'countries',     icon: Globe },
   { path: '/centers',       labelKey: 'centers',       icon: Building2 },
   { path: '/circles',       labelKey: 'circles',       icon: Users2 },
+  { path: '/memberships',   labelKey: 'memberships',   icon: UserPlus },
   { path: '/users',         labelKey: 'users',         icon: UserCog },
   { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck },
   { path: '/search',        labelKey: 'search',        icon: Search },

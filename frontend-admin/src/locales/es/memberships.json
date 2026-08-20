@@ -1,0 +1,62 @@
+{
+  "title": "Membresías",
+  "subtitle": "A qué círculo pertenece cada concursante: el historial completo, no solo el presente",
+  "enrol": "Inscribir concursante",
+  "empty": "Aún no hay membresías registradas.",
+
+  "column_contestant": "Concursante",
+  "column_circle": "Círculo",
+  "column_period": "Desde → hasta",
+  "column_reason": "Motivo",
+
+  "status_active": "Abierta",
+  "status_ended": "Finalizada",
+  "contestant_unresolved": "Concursante desconocido ({{id}}…)",
+
+  "filter_circle": "Círculo",
+  "filter_circle_all": "Todos los círculos",
+  "filter_status": "Estado",
+  "filter_status_all": "Todas (historial completo)",
+
+  "enrol_title": "Inscribir a un concursante en un círculo",
+  "enrol_save": "Inscribir",
+  "field_contestant_search": "Buscar un concursante",
+  "field_contestant_search_placeholder": "Nombre, teléfono o documento",
+  "field_contestant": "Concursante",
+  "field_contestant_placeholder": "Elige un concursante",
+  "field_circle": "Círculo",
+  "field_circle_placeholder": "Elige un círculo",
+  "field_joined_at": "Fecha de ingreso",
+  "joined_at_hint": "Déjalo vacío para hoy. No puede estar en el futuro.",
+  "one_open_membership_hint": "Un concursante solo puede pertenecer a un círculo a la vez. Si ya pertenece a uno, usa Trasladar en lugar de Inscribir.",
+  "circles_truncated": "Mostrando solo los primeros 100 círculos. Si falta el que buscas, usa la pantalla de Círculos.",
+
+  "end_title": "Finalizar membresía",
+  "end_save": "Finalizar membresía",
+  "end_explanation": "Finalizará la membresía del concursante en «{{circle}}». No se elimina nada: el registro conserva ambas fechas para quien lo revise después.",
+  "field_reason": "Motivo",
+  "field_reason_placeholder": "¿Por qué finalizó esta membresía?",
+  "field_left_at": "Fecha de finalización",
+  "left_at_hint": "Déjalo vacío para hoy. No puede estar en el futuro.",
+
+  "transfer_title": "Trasladar a otro círculo",
+  "transfer_save": "Trasladar",
+  "transfer_explanation": "El concursante pasará de «{{circle}}» a otro círculo. La membresía actual se cierra y la nueva se abre en una sola operación, así que nunca queda sin círculo — ni en dos.",
+  "field_to_circle": "Nuevo círculo",
+  "field_transfer_reason_placeholder": "¿Por qué se traslada a este concursante?",
+  "field_transfer_at": "Fecha del traslado",
+  "transfer_at_hint": "Déjalo vacío para hoy. No puede estar en el futuro.",
+
+  "start_success": "Concursante inscrito.",
+  "start_error": "No se pudo inscribir al concursante.",
+  "end_success": "Membresía finalizada.",
+  "end_error": "No se pudo finalizar la membresía.",
+  "transfer_success": "Concursante trasladado.",
+  "transfer_error": "No se pudo trasladar al concursante.",
+
+  "error_contestant_required": "Por favor, elige un concursante.",
+  "error_circle_required": "Por favor, elige un círculo.",
+  "error_reason_required": "El motivo es obligatorio.",
+  "error_reason_long": "El motivo es demasiado largo (máximo 500 caracteres).",
+  "error_date_future": "La fecha no puede estar en el futuro."
+}

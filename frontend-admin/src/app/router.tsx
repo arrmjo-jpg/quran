@@ -12,6 +12,7 @@ const SeasonsPage      = lazy(() => import('@/features/seasons/pages/SeasonsPage
 const CountriesPage    = lazy(() => import('@/features/countries/pages/CountriesPage'));
 const CentersPage      = lazy(() => import('@/features/centers/pages/CentersPage'));
 const CirclesPage      = lazy(() => import('@/features/circles/pages/CirclesPage'));
+const MembershipsPage  = lazy(() => import('@/features/memberships/pages/MembershipsPage'));
 const RolesPage        = lazy(() => import('@/features/roles/pages/RolesPage'));
 const UsersPage        = lazy(() => import('@/features/users/pages/UsersPage'));
 const ContestantsPage  = lazy(() => import('@/features/contestants/pages/ContestantsPage'));
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
           page('countries', <CountriesPage />),
           page('centers', <CentersPage />),
           page('circles', <CirclesPage />),
+          page('memberships', <MembershipsPage />),
           page('roles', <RolesPage />),
           page('users', <UsersPage />),
           page('contestants', <ContestantsPage />),
