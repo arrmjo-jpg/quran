@@ -207,14 +207,24 @@ string, while a URL can be checked as a URL.
 | `tiktok` | `tiktok.com` |
 
 `x` accepts both hosts because the rename is still in progress and refusing `twitter.com` would
-reject links that work. That is a transitional allowance, and it has a consequence this ADR does
-not decide: a URL saved as `twitter.com/...` stays as it was typed unless something normalises it.
-Whether to normalise on write, and to which host, is an implementation decision for Story 2 — it is
-recorded here as open rather than left to be discovered.
+reject links that work.
 
-**Also left to implementation, deliberately unrecorded here:** whether an unset platform is an
-absent key or a null value in the JSON. The board did not settle it, and inventing an answer in
-this document is the failure mode the whole file was written to avoid.
+**No normalisation — DECIDED 2026-08-20.** A URL entered as `twitter.com/...` is stored exactly as
+entered. The value object validates; it does not rewrite what someone typed. Accepting
+`twitter.com` is a compatibility decision, not a data-migration one, and conflating the two would
+make every save a silent edit. If the platform later wants one host in storage, that is a migration
+or a one-off script that can be reviewed and reversed — not an invisible side effect of validation.
+
+**An unset platform has no key — DECIDED 2026-08-20.** The JSON carries the links that exist and
+nothing else; it is not a fixed-shape record with eight slots. So this:
+
+```json
+{ "website": "https://example.com", "linkedin": "https://linkedin.com/in/admin" }
+```
+
+and never `"facebook": null` alongside it. Three consequences, all wanted: less noise to read,
+comparison and validation that operate on what is present rather than on placeholders, and a ninth
+platform later that costs nothing — no backfill of nulls across every existing row.
 
 ### Q1. Does the Activity Log reuse `spatie/laravel-activitylog`, or replace it?
 
