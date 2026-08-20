@@ -6,8 +6,6 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\Attributes\Group;
-
 uses()->group('organization', 'architecture');
 
 /*
@@ -21,7 +19,7 @@ uses()->group('organization', 'architecture');
 */
 
 test('Organization domain layer has no framework dependencies', function (): void {
-    $files = glob(base_path("Modules/Organization/Domain/**/*.php")) ?: [];
+    $files = glob(base_path('Modules/Organization/Domain/**/*.php')) ?: [];
 
     foreach ($files as $file) {
         $content = file_get_contents($file);
@@ -99,11 +97,11 @@ test('Organization does not import concrete classes from other modules', functio
             continue;
         }
 
-        $relative = str_replace(base_path() . DIRECTORY_SEPARATOR, '', $file);
-        $offenders[] = str_replace('\\', '/', $relative) . ' imports concrete classes from: ' . implode(', ', $violations);
+        $relative = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file);
+        $offenders[] = str_replace('\\', '/', $relative).' imports concrete classes from: '.implode(', ', $violations);
     }
 
     expect($offenders)->toBeEmpty(
-        "Cross-module imports that bypass Contracts/:\n  " . implode("\n  ", $offenders)
+        "Cross-module imports that bypass Contracts/:\n  ".implode("\n  ", $offenders)
     );
 })->skip(fn () => organizationModuleFiles() === []);

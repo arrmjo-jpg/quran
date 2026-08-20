@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Applications\Application\UseCases;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Applications\Domain\Entities\Application;
 use Modules\Applications\Domain\Exceptions\ActiveMembershipRequiredException;
 use Modules\Applications\Domain\Exceptions\ContestantProfileRequiredException;
 use Modules\Applications\Domain\Exceptions\DuplicateApplicationException;
-use Illuminate\Support\Facades\DB;
 use Modules\Applications\Domain\Repositories\ApplicationRepositoryContract;
 use Modules\Applications\Domain\ValueObjects\PlacementSnapshot;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
