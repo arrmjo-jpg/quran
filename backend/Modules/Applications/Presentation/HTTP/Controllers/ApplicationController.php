@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Applications\Application\UseCases\SubmitApplicationUseCase;
+use Modules\Applications\Domain\Exceptions\ActiveMembershipRequiredException;
 use Modules\Applications\Domain\Exceptions\ContestantProfileRequiredException;
 use Modules\Applications\Domain\Exceptions\DuplicateApplicationException;
 use Modules\Applications\Domain\Repositories\ApplicationRepositoryContract;
@@ -41,6 +42,18 @@ final class ApplicationController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => ['code' => 'PROFILE_REQUIRED', 'message' => __('Create contestant profile first.')],
+            ], 422);
+        } catch (ActiveMembershipRequiredException) {
+            // 422 rather than 409, matching PROFILE_REQUIRED above: both say
+            // the applicant is not set up to apply, which is a fact about them
+            // and not a conflict with an existing application. The two
+            // refusals are the same shape and answer the same way.
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'MEMBERSHIP_REQUIRED',
+                    'message' => __('Join a circle before submitting an application.'),
+                ],
             ], 422);
         } catch (DuplicateApplicationException) {
             return response()->json([

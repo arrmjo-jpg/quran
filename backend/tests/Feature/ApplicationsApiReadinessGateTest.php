@@ -59,6 +59,9 @@ test('Applications API Readiness Gate: submission workflow, admin review queue, 
     );
     $contestantRepo->save($contestant);
 
+    // G3 (ADR-016 Q4): submission requires an active circle membership.
+    enrolInCircle($contestant->id->value);
+
     $seasonRepo = app(SeasonRepositoryContract::class);
     $season = Season::create(
         id: fake()->uuid(),

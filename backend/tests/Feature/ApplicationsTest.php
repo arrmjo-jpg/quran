@@ -67,6 +67,10 @@ final class ApplicationsTest extends TestCase
         );
         $contestantRepo->save($contestant);
 
+        // G3: an active circle membership is a precondition for submitting
+        // (ADR-016 Q4). Without it every submission here answers 422.
+        enrolInCircle($contestant->id->value);
+
         $seasonRepo = app(SeasonRepositoryContract::class);
         $season = Season::create(
             id: (string) Uuid::v7(),

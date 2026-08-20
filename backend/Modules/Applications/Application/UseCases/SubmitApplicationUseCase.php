@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Applications\Application\UseCases;
 
 use Modules\Applications\Domain\Entities\Application;
+use Modules\Applications\Domain\Exceptions\ActiveMembershipRequiredException;
 use Modules\Applications\Domain\Exceptions\ContestantProfileRequiredException;
 use Modules\Applications\Domain\Exceptions\DuplicateApplicationException;
 use Modules\Applications\Domain\Repositories\ApplicationRepositoryContract;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
+use Modules\Organization\Domain\Repositories\ContestantMembershipRepositoryContract;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -31,8 +33,13 @@ use Symfony\Component\Uid\Uuid;
  *      and this commit changes none.
  *   2. No persistence of submitted_at, which the repository drops.
  *   3. No handling of `notes`, which the request validates and discards.
- *   4. No membership check. That is G3, and it is the reason this class now
- *      exists.
+ *
+ * G3 — THE ACTIVE MEMBERSHIP RULE — NOW LIVES HERE, which is what this class
+ * was extracted for. It is checked before the duplicate lookup: whether a
+ * contestant may apply at all precedes whether they already have, and a
+ * contestant with neither a membership nor a prior application should be told
+ * the thing they can act on. The read goes through Organization's Domain
+ * contract, so this module stays unaware of how memberships are stored.
  *
  * NO TRANSACTION EITHER, for the same reason. One `updateOrCreate` cannot be
  * partially applied, so wrapping it would be unobservable today — but it stops
@@ -45,6 +52,7 @@ final class SubmitApplicationUseCase
     public function __construct(
         private ApplicationRepositoryContract $applications,
         private ContestantRepositoryContract $contestants,
+        private ContestantMembershipRepositoryContract $memberships,
     ) {}
 
     public function execute(
@@ -60,6 +68,10 @@ final class SubmitApplicationUseCase
         }
 
         $contestantId = (string) $contestant->id;
+
+        if ($this->memberships->findActiveForContestant($contestantId) === null) {
+            throw ActiveMembershipRequiredException::forContestant($contestantId);
+        }
 
         if ($this->applications->findByContestantSeasonStage($contestantId, $seasonId, $stageId)) {
             throw DuplicateApplicationException::for($contestantId, $seasonId, $stageId);

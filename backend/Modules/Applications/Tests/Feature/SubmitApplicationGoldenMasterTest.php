@@ -69,7 +69,63 @@ function goldenCountry(): string
     return $id;
 }
 
+/**
+ * A centre and a circle, inserted directly rather than through Organization's
+ * models: this file belongs to Applications and has no business importing
+ * concrete classes from another module. The ids are all it needs.
+ */
+function goldenCircle(): string
+{
+    $centerId = (string) Str::uuid();
+
+    DB::table('centers')->insert([
+        'id' => $centerId,
+        'name' => 'Golden Centre',
+        'country_id' => goldenCountry(),
+        'city' => 'Amman',
+        'address' => '1 Test Street',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $circleId = (string) Str::uuid();
+
+    DB::table('circles')->insert([
+        'id' => $circleId,
+        'center_id' => $centerId,
+        'name' => 'Golden Circle '.Str::random(6),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $circleId;
+}
+
+/**
+ * A contestant who may apply.
+ *
+ * G3 made an active membership a precondition for submission, so the shared
+ * fixture enrols them. Every test body below is unchanged by that rule — only
+ * the fixture grew, which is what adding a precondition means. The one test
+ * that needs an unenrolled contestant asks for one explicitly.
+ */
 function goldenContestant(UserModel $user): string
+{
+    $id = goldenContestantWithoutMembership($user);
+
+    DB::table('contestant_memberships')->insert([
+        'id' => (string) Str::uuid(),
+        'contestant_id' => $id,
+        'circle_id' => goldenCircle(),
+        'joined_at' => now()->subMonths(6),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
+}
+
+function goldenContestantWithoutMembership(UserModel $user): string
 {
     $id = (string) Str::uuid();
 
@@ -340,21 +396,43 @@ test('PINNED: no domain event reaches a listener', function (): void {
     Event::assertNotDispatched(ApplicationSubmitted::class);
 });
 
-test('PINNED: membership is not consulted, so a contestant in no circle may apply', function (): void {
-    // ADR-016 Q4 says SubmitApplicationUseCase refuses an application from a
-    // contestant with no active membership. Neither the use case nor the rule
-    // exists yet — this is G3, and Story 4 adds it. Pinned so the moment the
-    // rule arrives is a visible edit to this test rather than a silent
-    // tightening that breaks an existing caller.
+test('a contestant in no circle is refused — G3', function (): void {
+    // This test was pinned the other way round one commit ago: it asserted
+    // that an unenrolled contestant COULD apply, because ADR-016 Q4's rule had
+    // nowhere to live. The flip is the whole behavioural change of this commit,
+    // and it is deliberately the only assertion in this file that reverses.
     $user = goldenContestantUser();
-    goldenContestant($user);
+    goldenContestantWithoutMembership($user);
     [$season, $stage] = goldenSeasonAndStage();
 
     $this->actingAs($user)->postJson('/api/v1/applications', [
         'season_id' => $season,
         'stage_id' => $stage,
         'video_media_asset_id' => goldenMediaAsset(),
-    ])->assertCreated();
+    ])
+        ->assertStatus(422)
+        ->assertJsonPath('error.code', 'MEMBERSHIP_REQUIRED');
+});
+
+test('a membership that has ended does not let a contestant apply — G3', function (): void {
+    // `left_at IS NULL` is the definition of active everywhere else in the
+    // platform, and it has to mean the same thing here: a contestant who left
+    // their circle last term is not enrolled now.
+    $user = goldenContestantUser();
+    $contestant = goldenContestant($user);
+    [$season, $stage] = goldenSeasonAndStage();
+
+    DB::table('contestant_memberships')
+        ->where('contestant_id', $contestant)
+        ->update(['left_at' => now()->subDay(), 'reason' => 'Left the programme.']);
+
+    $this->actingAs($user)->postJson('/api/v1/applications', [
+        'season_id' => $season,
+        'stage_id' => $stage,
+        'video_media_asset_id' => goldenMediaAsset(),
+    ])
+        ->assertStatus(422)
+        ->assertJsonPath('error.code', 'MEMBERSHIP_REQUIRED');
 });
 
 test('PINNED: center_id and circle_id are not frozen onto the application', function (): void {
