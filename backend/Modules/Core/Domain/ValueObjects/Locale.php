@@ -9,11 +9,26 @@ use InvalidArgumentException;
 /**
  * Locale Value Object
  *
- * Enforces BCP-47 locale standards ('ar', 'en').
+ * The languages the platform actually ships, and the single place that says
+ * so. frontend-admin carries `locales/ar`, `locales/en` and `locales/es`, so
+ * those three are the set.
+ *
+ * IT READ `ar, en, fr` UNTIL 2026-08-20, and the mismatch was not cosmetic.
+ * CreateAdminUserRequest and UpdateUserRequest both write this column and both
+ * accept `es`, so validation passed and this constructor threw with nothing
+ * catching it: creating an administrator in Spanish, or setting an existing
+ * one to Spanish from the users screen, answered 500. In the other direction
+ * `fr` was reachable and has no translations anywhere, so an account could be
+ * stored in a language the interface cannot render.
+ *
+ * Verified before the change: no row in `users` carried `fr`, so nothing had
+ * to be migrated. RegisterUserRequest still accepts `fr` at the HTTP layer and
+ * is now the one surface that can hand this object a value it refuses — a 500
+ * waiting elsewhere, and its own change rather than one swept in here.
  */
 final readonly class Locale
 {
-    private const ALLOWED_LOCALES = ['ar', 'en', 'fr'];
+    private const ALLOWED_LOCALES = ['ar', 'en', 'es'];
 
     public function __construct(
         public string $value = 'ar',
