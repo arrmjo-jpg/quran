@@ -10,8 +10,10 @@ namespace Modules\Contestants\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Contestants\Contracts\ContestantsServiceContract;
 use Modules\Contestants\Domain\Repositories\ContestantRepositoryContract;
 use Modules\Contestants\Infrastructure\Database\Repositories\ContestantRepository;
+use Modules\Contestants\Infrastructure\Services\ContestantsService;
 
 final class ContestantsServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,14 @@ final class ContestantsServiceProvider extends ServiceProvider
         $this->app->singleton(
             ContestantRepositoryContract::class,
             ContestantRepository::class
+        );
+
+        // The module's boundary, per ADR-002. Core reads the contestant
+        // behind an account through this and never learns that
+        // ContestantModel exists.
+        $this->app->singleton(
+            ContestantsServiceContract::class,
+            ContestantsService::class
         );
     }
 

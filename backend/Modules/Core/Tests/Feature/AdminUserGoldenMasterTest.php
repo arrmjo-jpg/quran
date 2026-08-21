@@ -80,16 +80,19 @@ test('GM: the account detail requires users.view', function (): void {
         ->assertStatus(403);
 });
 
-test('GM: the account detail returns exactly these twelve keys', function (): void {
+test('GM [CHANGED IN STORY 3]: the account detail returns exactly these fourteen keys', function (): void {
     $subject = gmUser();
 
     $response = $this->actingAs(gmAs('super_admin'))
         ->getJson("/api/v1/admin/users/{$subject->id}")
         ->assertOk();
 
-    // AdminUserResource's eleven, plus `permissions` merged in by the
-    // controller. Recorded as a closed set: the point of this file is that
-    // adding a twelfth is visible here.
+    // BEFORE: twelve keys — AdminUserResource's eleven plus `permissions`.
+    // AFTER:  fourteen. Story 3 adds `contestant` (ADR-016 D22) and
+    //         `withheld` (D20's mechanism, applied in the other direction).
+    //
+    // Recorded as a closed set: the point of this file is that adding a
+    // fifteenth is visible here rather than silent.
     expect(array_keys($response->json('data')))->toEqualCanonicalizing([
         'id',
         'name',
@@ -103,6 +106,8 @@ test('GM: the account detail returns exactly these twelve keys', function (): vo
         'roles',
         'created_at',
         'permissions',
+        'contestant',
+        'withheld',
     ]);
 });
 
@@ -178,7 +183,7 @@ test('GM: a malformed id returns 404, not 422', function (): void {
         ->assertStatus(404);
 });
 
-test('GM: no contestant data crosses onto an account today', function (): void {
+test('GM [CHANGED IN STORY 3]: the contestant behind an account now crosses', function (): void {
     $account = gmUser(UserType::CONTESTANT);
 
     DB::table('countries')->insert([
@@ -204,9 +209,21 @@ test('GM: no contestant data crosses onto an account today', function (): void {
         ->getJson("/api/v1/admin/users/{$account->id}")
         ->assertOk();
 
-    // THIS IS THE ONE STORY 3 CHANGES. The account has a contestant, and the
-    // endpoint says nothing about it — the link exists in the database and
-    // in one direction of the API only.
-    expect($response->json('data'))->not->toHaveKey('contestant');
-    expect($response->getContent())->not->toContain('RECORDED CONTESTANT NAME');
+    // BEFORE: no `contestant` key at all. The account had one, and the
+    //         endpoint said nothing about it — the link existed in the
+    //         database and in one direction of the API only.
+    // AFTER:  the three fields D22 admits, and no more.
+    expect(array_keys($response->json('data.contestant')))
+        ->toEqualCanonicalizing(['id', 'full_name', 'is_deleted']);
+
+    expect($response->json('data.contestant.full_name'))->toBe('RECORDED CONTESTANT NAME');
+    expect($response->json('data.contestant.is_deleted'))->toBeFalse();
+
+    // The reader here holds contestants.view, so nothing is withheld.
+    expect($response->json('data.withheld'))->toBe([]);
+
+    // What D22 refused is still refused, and this is the assertion that
+    // says so: the national ID is in the row the test inserted and nowhere
+    // in the response.
+    expect($response->getContent())->not->toContain('9990000001');
 });
