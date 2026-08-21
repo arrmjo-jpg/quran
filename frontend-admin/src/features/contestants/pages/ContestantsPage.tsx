@@ -13,7 +13,7 @@ import Button from '@/ui/Button';
 import Spinner from '@/ui/Spinner';
 import { useAllCountries } from '@/features/seasons/hooks/useLookups';
 import {
-  useContestant360,
+  useContestantIdentity,
   useContestants,
   useDeleteContestant,
   useRestoreContestant,
@@ -56,12 +56,12 @@ export default function ContestantsPage(): React.JSX.Element {
   const restoreContestant = useRestoreContestant();
 
   /**
-   * The drawer reads the detail endpoint rather than the row it was opened
-   * from. The list resource carries no national_id — deliberately, so paging
-   * the table does not hand out every identity document the platform holds —
-   * so a drawer fed from a row would be a drawer missing half the record.
+   * The drawer reads Identity 360 rather than the row it was opened from.
+   * A row carries the contestant alone; the drawer's whole subject is what
+   * links to them — the account, the country, the circle history — and none
+   * of that is in the list response.
    */
-  const viewing = useContestant360(viewingId ?? '');
+  const viewing = useContestantIdentity(viewingId ?? '');
 
   const openCreate = (): void => {
     setEditing(null);
@@ -288,7 +288,7 @@ export default function ContestantsPage(): React.JSX.Element {
       </Dialog>
 
       <Contestant360Drawer
-        contestant={viewing.data ?? null}
+        identity={viewing.data ?? null}
         isOpen={viewingId !== null && viewing.data !== undefined}
         onClose={() => setViewingId(null)}
       />

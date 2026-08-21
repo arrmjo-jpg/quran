@@ -201,3 +201,35 @@ test('competition_manager can run a broadcast and read the rule catalogues', fun
     expect($held)->toContain('streaming.start', 'streaming.stop', 'videos.reprocess', 'lookups.view');
     expect($held)->not->toContain('users.view', 'roles.view', 'audit.view', 'settings.view');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Naming exactly one permission — Epic 4 Story 2
+|--------------------------------------------------------------------------
+|
+| Added because the catalogue could hand over every permission, a resource's
+| worth of them, or answer whether a string was one — but had no way to name
+| a single one. Code needing exactly one therefore wrote a literal, which
+| PermissionSourceOfTruthTest refuses.
+|
+| The refusals below are the point. A method that returned a plausible string
+| for a resource that no longer exists would be worse than the literal it
+| replaced: the reference would silently never match a granted permission,
+| and the check it guards would quietly answer "no" forever.
+*/
+
+test('name assembles a permission that the catalogue actually defines', function (): void {
+    expect(PermissionCatalog::name('memberships', 'view'))->toBe('memberships.view');
+    expect(PermissionCatalog::has(PermissionCatalog::name('contestants', 'restore')))->toBeTrue();
+});
+
+test('name refuses a resource the catalogue does not have', function (): void {
+    PermissionCatalog::name('supervisors', 'view');
+})->throws(InvalidArgumentException::class, 'Unknown permission resource: supervisors');
+
+test('name refuses a verb the resource does not have', function (): void {
+    // `lookups` is read-only reference data — it has view and nothing else,
+    // which makes it the honest case to prove the verb is checked and not
+    // merely concatenated.
+    PermissionCatalog::name('lookups', 'delete');
+})->throws(InvalidArgumentException::class, 'Resource lookups has no verb delete');

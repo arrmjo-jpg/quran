@@ -5,7 +5,7 @@ import type {
   ContestantListFilters,
   ContestantListItem,
   ContestantListResult,
-  ContestantProfile,
+  ContestantIdentity,
   CreateContestantPayload,
   UpdateContestantPayload,
 } from '../types';
@@ -63,12 +63,17 @@ export const contestantService = {
   },
 
   /**
-   * The 360 drawer's source. Reads the same detail endpoint — the extra
-   * branches it renders (applications, appeals) are Identity 360's to fill
-   * in Story 2 and are absent rather than faked.
+   * Identity 360 — one request, not four.
+   *
+   * Composed on the server (ADR-016 D19) because assembling it here would
+   * need contestants.view AND memberships.view AND users.view, and
+   * data_entry holds only the first: the drawer would break into partial
+   * 403s for the role that opens it most.
    */
-  async getContestant360(id: string): Promise<ContestantProfile> {
-    const { data } = await http.get<ApiSuccess<ContestantProfile>>(`/admin/contestants/${id}`);
+  async getContestantIdentity(id: string): Promise<ContestantIdentity> {
+    const { data } = await http.get<ApiSuccess<ContestantIdentity>>(
+      `/admin/contestants/${id}/identity`
+    );
     return data.data;
   },
 };

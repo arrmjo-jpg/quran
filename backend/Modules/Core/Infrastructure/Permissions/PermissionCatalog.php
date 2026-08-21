@@ -298,6 +298,47 @@ final class PermissionCatalog
         return $names;
     }
 
+    /**
+     * One permission's name, assembled from the catalogue rather than
+     * written out.
+     *
+     * EXISTS BECAUSE THERE WAS NO WAY TO NAME A SINGLE PERMISSION. The
+     * catalogue could hand over all of them, a resource's worth of them, or
+     * answer whether a string was one — so any code needing exactly one wrote
+     * it as a literal, which PermissionSourceOfTruthTest rightly refuses:
+     * renaming a permission has to be a single-file change the suite catches
+     * everywhere it was referenced.
+     *
+     * `can:` middleware in a routes file escapes that by construction, since
+     * the name is embedded in a longer string. A runtime check — "may this
+     * reader see this branch?" — has no such cover, and Epic 4's Identity 360
+     * is the first place one was needed.
+     *
+     * Throws rather than returning a string that merely looks right: a
+     * resource or verb that has gone away is a reference that would silently
+     * never match any granted permission, which is the failure mode this
+     * whole class is written against.
+     */
+    public static function name(string $resource, string $verb): string
+    {
+        $grouped = self::grouped();
+
+        if (! isset($grouped[$resource])) {
+            throw new \InvalidArgumentException("Unknown permission resource: {$resource}");
+        }
+
+        $name = "{$resource}.{$verb}";
+
+        if (! in_array($name, $grouped[$resource], true)) {
+            throw new \InvalidArgumentException(
+                "Resource {$resource} has no verb {$verb}. It has: "
+                .implode(', ', $grouped[$resource])
+            );
+        }
+
+        return $name;
+    }
+
     public static function has(string $name): bool
     {
         return in_array($name, self::all(), true);

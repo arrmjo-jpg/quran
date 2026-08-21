@@ -1,150 +1,207 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Building2, EyeOff, Globe2, User, Users } from 'lucide-react';
 import { Dialog } from '@/ui/dialog/Dialog';
 import Badge from '@/ui/Badge';
-import { VideoPlayer } from '@/ui/media/VideoPlayer';
-import type { ContestantProfile } from '../types';
-import { User, FileText, Video, Award, TrendingUp, Scale, History } from 'lucide-react';
+import type { ContestantIdentity, IdentityMembership } from '../types';
 
 export interface Contestant360DrawerProps {
-  contestant: ContestantProfile | null;
-  isOpen:     boolean;
-  onClose:    () => void;
+  identity: ContestantIdentity | null;
+  isOpen:   boolean;
+  onClose:  () => void;
 }
 
-type TabType = 'profile' | 'application' | 'video' | 'evaluations' | 'results' | 'appeals' | 'timeline';
+/**
+ * Identity 360 — one contestant and everything that links to them
+ * (ADR-016 D16, D19, D20).
+ *
+ * FIVE TABS WERE DELETED HERE, and their absence is the point. This drawer
+ * used to render applications, a video player, evaluations, a result reading
+ * "Average score: 94.5 / 100 — qualified" and a two-entry timeline, none of
+ * which any endpoint has ever returned. They were hard-coded strings in a
+ * translation file.
+ *
+ * That was ignorable while everything around them was equally hollow. Beside
+ * a true account status and a true circle history it would not be: an
+ * operator with three accurate panels in front of them has every reason to
+ * believe the fourth. The tabs come back when there is an endpoint behind
+ * them (D21).
+ *
+ * What is left is a relationship view. It shows what identifies, explains or
+ * links — never what describes — which is why there is no national ID here
+ * and no profile branch at all.
+ */
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
+  active: 'success',
+  pending_activation: 'warning',
+  deactivated: 'danger',
+  deleted: 'neutral',
+};
 
-/** Labels are keys; the tab id doubles as the key suffix. */
-const TAB_IDS = [
-  { id: 'profile',     icon: User },
-  { id: 'application', icon: FileText },
-  { id: 'video',       icon: Video },
-  { id: 'evaluations', icon: Award },
-  { id: 'results',     icon: TrendingUp },
-  { id: 'appeals',     icon: Scale },
-  { id: 'timeline',    icon: History },
-] as const;
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof User;
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <section className="space-y-2">
+      <h4 className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+        <Icon className="w-3.5 h-3.5 text-brand-600" />
+        <span>{title}</span>
+      </h4>
+      {children}
+    </section>
+  );
+}
 
-export function Contestant360Drawer({ contestant, isOpen, onClose }: Contestant360DrawerProps): React.JSX.Element | null {
-  const { t } = useTranslation('contestants');
-  const [activeTab, setActiveTab] = useState<TabType>('profile');
+function Field({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element {
+  return (
+    <p className="text-slate-600 dark:text-slate-300">
+      {label}: <span className="text-slate-900 dark:text-white">{value}</span>
+    </p>
+  );
+}
 
-  if (!contestant) return null;
+function MembershipRow({
+  membership,
+  t,
+}: {
+  membership: IdentityMembership;
+  t: (key: string, options?: Record<string, unknown>) => string;
+}): React.JSX.Element {
+  const formatDate = (iso: string | null): string =>
+    iso === null ? '—' : new Date(iso).toLocaleDateString();
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title={t('drawer_title', { name: contestant.full_name })}>
-      <div className="space-y-4 text-xs text-start">
-        {/* Tabs Bar */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1 gap-1">
-          {TAB_IDS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
-                  isActive
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{t(`tab_${tab.id}`)}</span>
-              </button>
-            );
-          })}
-        </div>
+    <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold text-slate-900 dark:text-white">
+          {/* Null when the circle was deleted after this period ended. Saying
+              so beats an empty cell, which reads as a membership in nothing. */}
+          {membership.circle_name ?? t('circle_deleted')}
+        </span>
+        <Badge variant={membership.is_active ? 'success' : 'neutral'}>
+          {membership.is_active ? t('membership_active') : t('membership_ended')}
+        </Badge>
+      </div>
 
-        {/* Tab Content */}
-        <div className="min-h-[240px] pt-2">
-          {activeTab === 'profile' && (
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl space-y-3 border border-slate-100 dark:border-slate-800">
+      {membership.center_name !== null && (
+        <p className="flex items-center gap-1.5 text-slate-500">
+          <Building2 className="w-3 h-3" />
+          <span>
+            {membership.center_city === null
+              ? membership.center_name
+              : `${membership.center_name} — ${membership.center_city}`}
+          </span>
+        </p>
+      )}
+
+      <p className="text-slate-500">
+        {t('membership_period', {
+          from: formatDate(membership.joined_at),
+          to: membership.left_at === null ? t('membership_ongoing') : formatDate(membership.left_at),
+        })}
+      </p>
+
+      {membership.reason !== null && (
+        <p className="text-slate-500">{t('membership_reason', { reason: membership.reason })}</p>
+      )}
+    </div>
+  );
+}
+
+export function Contestant360Drawer({
+  identity,
+  isOpen,
+  onClose,
+}: Contestant360DrawerProps): React.JSX.Element | null {
+  const { t } = useTranslation('contestants');
+
+  if (identity === null) return null;
+
+  const { contestant, user, country, memberships, withheld } = identity;
+  const membershipsWithheld = withheld.includes('memberships');
+
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('drawer_title', { name: contestant.full_name })}
+      className="max-w-2xl"
+    >
+      <div className="space-y-5 text-xs text-start max-h-[70vh] overflow-y-auto">
+        <Section icon={User} title={t('section_contestant')}>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">
+                {contestant.full_name}
+              </span>
+              <Badge variant={contestant.profile_completeness.is_complete ? 'success' : 'warning'}>
+                {`${contestant.profile_completeness.completeness_percent}%`}
+              </Badge>
+            </div>
+            <Field label={t('field_date_of_birth')} value={contestant.date_of_birth} />
+            <Field label={t('field_gender')} value={t(`gender_${contestant.gender}`)} />
+            <Field label={t('field_phone')} value={contestant.phone_number} />
+          </div>
+        </Section>
+
+        <Section icon={User} title={t('section_account')}>
+          {user === null ? (
+            /* contestants.user_id is NOT NULL and RESTRICT, so this is a
+               broken link rather than an absent one — worth naming. */
+            <p className="text-rose-600 dark:text-rose-400">{t('account_missing')}</p>
+          ) : (
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-slate-900 dark:text-white">
-                  {contestant.full_name}
-                </span>
-                <Badge variant="info">{contestant.profile_completeness ? `${contestant.profile_completeness.completeness_percent}%` : '—'}</Badge>
+                <span className="font-semibold text-slate-900 dark:text-white">{user.name}</span>
+                <Badge variant={STATUS_VARIANT[user.status] ?? 'neutral'}>
+                  {t(`account_status_${user.status}`)}
+                </Badge>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
-                <p>{t('field_date_of_birth')}: <span className="font-mono text-slate-900 dark:text-white">{contestant.date_of_birth ?? '—'}</span></p>
-                <p>{t('field_phone')}: <span className="font-mono text-slate-900 dark:text-white">{contestant.phone_number ?? '—'}</span></p>
-                <p>{t('field_registered_at')}: <span className="font-mono">{contestant.created_at ?? '—'}</span></p>
-                <p>{t('field_account_status')}: <Badge variant="success">{t('account_verified')}</Badge></p>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'application' && (
-            <div className="space-y-3">
-              {contestant.applications?.map((app) => (
-                <div key={app.id} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-slate-900 dark:text-white">{t('application_number', { id: app.id })}</span>
-                    <Badge variant={app.status === 'ready_for_judging' ? 'success' : 'warning'}>{app.status}</Badge>
-                  </div>
-                  <p className="text-slate-500">{t('application_season_stage', { season: app.season_id, stage: app.stage_id })}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'video' && (
-            <div className="space-y-3">
-              {contestant.applications && contestant.applications[0]?.video_hls_url ? (
-                <>
-                  <h4 className="font-semibold text-slate-900 dark:text-white">{t('video_heading')}</h4>
-                  <VideoPlayer url={contestant.applications[0].video_hls_url} />
-                </>
-              ) : (
-                <p className="py-8 text-center text-slate-400">{t('video_empty')}</p>
+              <Field label={t('field_account_type')} value={t(`type_${user.type}`)} />
+              {/* Shown, not linked: the panel has no /users/{id} route, and a
+                  link that 404s is worse than an id somebody can search for. */}
+              <p className="font-mono text-[10px] text-slate-400 break-all">{user.id}</p>
+              {user.name !== contestant.full_name && (
+                <p className="text-amber-700 dark:text-amber-400">{t('name_divergence')}</p>
               )}
             </div>
           )}
+        </Section>
 
-          {activeTab === 'evaluations' && (
+        <Section icon={Globe2} title={t('section_country')}>
+          {country === null ? (
+            <p className="text-slate-400">{t('country_missing')}</p>
+          ) : (
+            <p className="text-slate-900 dark:text-white">
+              {country.name} <span className="font-mono text-slate-400">({country.iso2})</span>
+            </p>
+          )}
+        </Section>
+
+        <Section icon={Users} title={t('section_memberships')}>
+          {membershipsWithheld ? (
+            /* D20: not the same as "none", and the screen must not say the
+               one when the other is true. */
+            <p className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 text-slate-500">
+              <EyeOff className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('memberships_withheld')}</span>
+            </p>
+          ) : memberships.length === 0 ? (
+            <p className="text-slate-400">{t('memberships_empty')}</p>
+          ) : (
             <div className="space-y-2">
-              <h4 className="font-semibold text-slate-900 dark:text-white">{t('evaluations_heading')}</h4>
-              <p className="text-slate-500">{t('evaluations_note')}</p>
+              {memberships.map((membership) => (
+                <MembershipRow key={membership.id} membership={membership} t={t} />
+              ))}
             </div>
           )}
-
-          {activeTab === 'results' && (
-            <div className="space-y-2 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50">
-              <h4 className="font-bold text-emerald-900 dark:text-emerald-300">{t('results_heading')}</h4>
-              <p className="text-emerald-700 dark:text-emerald-400">{t('results_average')} <Badge variant="success">{t('results_qualified')}</Badge></p>
-            </div>
-          )}
-
-          {activeTab === 'appeals' && (
-            <div className="space-y-2">
-              {contestant.appeals?.map((appeal) => (
-                <div key={appeal.id} className="p-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-amber-900 dark:text-amber-300">{t('appeal_label')}</span>
-                    <Badge variant={appeal.status === 'accepted' ? 'success' : 'danger'}>{appeal.status}</Badge>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400">{appeal.reason}</p>
-                </div>
-              )) ?? <p className="py-8 text-center text-slate-400">{t('appeals_empty')}</p>}
-            </div>
-          )}
-
-          {activeTab === 'timeline' && (
-            <div className="space-y-3 relative pr-4 border-r-2 border-slate-200 dark:border-slate-800">
-              <div className="relative">
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-600 absolute -right-[21px] top-1" />
-                <p className="font-semibold text-slate-900 dark:text-white">{t('timeline_submitted')}</p>
-                <p className="text-slate-400 text-[10px]">{t('timeline_submitted_when')}</p>
-              </div>
-              <div className="relative">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 absolute -right-[21px] top-1" />
-                <p className="font-semibold text-slate-900 dark:text-white">{t('timeline_video_reviewed')}</p>
-                <p className="text-slate-400 text-[10px]">{t('timeline_video_reviewed_when')}</p>
-              </div>
-            </div>
-          )}
-        </div>
+        </Section>
       </div>
     </Dialog>
   );

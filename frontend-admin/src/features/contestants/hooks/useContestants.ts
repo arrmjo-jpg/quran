@@ -20,10 +20,19 @@ export function useContestants(filters: ContestantListFilters) {
   });
 }
 
-export function useContestant360(id: string) {
+/**
+ * Identity 360 for one contestant — ADR-016 D19.
+ *
+ * Its own query key rather than `detail`: the two endpoints answer different
+ * questions about the same person, and the detail cache carries a
+ * national_id this one deliberately does not. Sharing a key would let an
+ * identity response overwrite a detail one and quietly empty a field the
+ * form reads.
+ */
+export function useContestantIdentity(id: string) {
   return useQuery({
-    queryKey: queryKeys.contestants.detail(id),
-    queryFn: () => contestantService.getContestant360(id),
+    queryKey: queryKeys.contestants.identity(id),
+    queryFn: () => contestantService.getContestantIdentity(id),
     enabled: Boolean(id),
   });
 }

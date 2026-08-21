@@ -56,38 +56,33 @@
 
   "drawer_title": "Perfil 360° — {{name}}",
 
-  "tab_profile": "Perfil",
-  "tab_application": "Solicitud actual",
-  "tab_video": "Vídeo procesado",
-  "tab_evaluations": "Evaluaciones",
-  "tab_results": "Resultados y clasificación",
-  "tab_appeals": "Reclamaciones",
-  "tab_timeline": "Registro de actividad",
+  "section_contestant": "Concursante",
+  "section_account": "Cuenta",
+  "section_country": "País",
+  "section_memberships": "Historial de círculos",
 
   "field_date_of_birth": "Fecha de nacimiento",
   "field_phone": "Número de teléfono",
-  "field_registered_at": "Fecha de registro",
-  "field_account_status": "Estado de la cuenta",
-  "account_verified": "Activa y verificada",
+  "field_account_type": "Tipo de cuenta",
 
-  "application_number": "Solicitud: {{id}}",
-  "application_season_stage": "Temporada: {{season}} | Etapa: {{stage}}",
+  "type_admin": "Cuenta administrativa",
+  "type_contestant": "Cuenta de concursante",
 
-  "video_heading": "Vista previa del vídeo de recitación (flujo HLS)",
-  "video_empty": "Todavía no se ha subido ningún vídeo de recitación.",
+  "account_status_active": "Activa",
+  "account_status_pending_activation": "Pendiente de activación",
+  "account_status_deactivated": "Desactivada",
+  "account_status_deleted": "Eliminada",
 
-  "evaluations_heading": "Evaluaciones del comité de jueces",
-  "evaluations_note": "Puntuaciones de tajwid, memorización y calidad de voz aprobadas por los jueces.",
+  "account_missing": "La cuenta a la que está vinculado este concursante ya no existe.",
+  "country_missing": "El país al que está vinculado este concursante ya no existe.",
+  "name_divergence": "El nombre de la cuenta difiere del nombre del concursante.",
 
-  "results_heading": "Resultado final de la etapa",
-  "results_average": "Puntuación media: 94.5 / 100 —",
-  "results_qualified": "Clasificado para la siguiente etapa",
-
-  "appeal_label": "Reclamación",
-  "appeals_empty": "No se ha presentado ninguna reclamación.",
-
-  "timeline_submitted": "Solicitud enviada",
-  "timeline_submitted_when": "hace 2 días",
-  "timeline_video_reviewed": "Vídeo revisado y enviado a evaluación",
-  "timeline_video_reviewed_when": "hace 1 día"
+  "memberships_empty": "Este concursante nunca ha pertenecido a un círculo.",
+  "memberships_withheld": "Sus permisos no incluyen consultar el historial de círculos.",
+  "membership_active": "Actual",
+  "membership_ended": "Finalizado",
+  "membership_ongoing": "actualidad",
+  "membership_period": "Del {{from}} al {{to}}",
+  "membership_reason": "Motivo: {{reason}}",
+  "circle_deleted": "Círculo eliminado"
 }

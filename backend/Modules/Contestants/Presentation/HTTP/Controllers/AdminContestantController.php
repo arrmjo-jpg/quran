@@ -18,8 +18,13 @@ use Modules\Contestants\Domain\ValueObjects\ContestantId;
 use Modules\Contestants\Presentation\HTTP\Requests\CreateContestantRequest;
 use Modules\Contestants\Presentation\HTTP\Requests\ListContestantsRequest;
 use Modules\Contestants\Presentation\HTTP\Requests\UpdateContestantRequest;
+use Modules\Contestants\Presentation\HTTP\Resources\ContestantIdentityResource;
 use Modules\Contestants\Presentation\HTTP\Resources\ContestantListResource;
 use Modules\Contestants\Presentation\HTTP\Resources\ContestantPrivateResource;
+use Modules\Core\Contracts\CoreServiceContract;
+use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
+use Modules\Countries\Contracts\CountriesServiceContract;
+use Modules\Organization\Contracts\OrganizationServiceContract;
 
 /**
  * Contestant administration — Epic 4 Story 1 (ADR-016 D15, D17).
@@ -69,6 +74,60 @@ final class AdminContestantController extends Controller
         return response()->json([
             'success' => true,
             'data' => new ContestantPrivateResource($contestant),
+        ]);
+    }
+
+    /**
+     * Identity 360 — ADR-016 D19.
+     *
+     * Composed here rather than left to the client. Four calls from the
+     * drawer would need contestants.view AND memberships.view AND
+     * users.view, and data_entry holds only the first, so the screen would
+     * break into partial 403s for the role that uses it most.
+     *
+     * The memberships branch is other-module data with its own permission,
+     * and contestants.view does not imply memberships.view. So it is asked
+     * for explicitly and, when refused, named in `withheld` rather than
+     * returned empty — an empty array would tell the reader this person has
+     * never belonged to a circle (D20).
+     */
+    public function identity(
+        Request $request,
+        string $id,
+        CoreServiceContract $users,
+        CountriesServiceContract $countries,
+        OrganizationServiceContract $organization,
+    ): JsonResponse {
+        try {
+            $contestant = $this->repository->findOrFail(new ContestantId($id));
+        } catch (InvalidArgumentException) {
+            return $this->refusal('INVALID_CONTESTANT_ID', __('Invalid contestant id format.'), 422);
+        }
+
+        $resolvedUsers = $users->findResolvedByIds([$contestant->userId]);
+        $resolvedCountries = $countries->findResolvedByIds([$contestant->countryId]);
+
+        // Named through the catalogue rather than as a literal. A `can:`
+        // middleware string escapes PermissionSourceOfTruthTest by
+        // construction; a runtime check has no such cover, and a permission
+        // written by hand here would silently stop matching if it were ever
+        // renamed. PermissionCatalog::name() throws instead.
+        $mayReadMemberships = $request->user()?->can(
+            PermissionCatalog::name('memberships', 'view')
+        ) ?? false;
+
+        return response()->json([
+            'success' => true,
+            'data' => new ContestantIdentityResource(
+                contestant: $contestant,
+                user: $resolvedUsers[0] ?? null,
+                country: $resolvedCountries[0] ?? null,
+                memberships: $mayReadMemberships
+                    ? $organization->findMembershipsForContestant($contestant->id->value)
+                    : [],
+                withheld: $mayReadMemberships ? [] : ['memberships'],
+                locale: $this->requestedLocale($request),
+            ),
         ]);
     }
 
@@ -161,6 +220,35 @@ final class AdminContestantController extends Controller
             'message' => __('Contestant restored.'),
             'data' => new ContestantPrivateResource($contestant),
         ]);
+    }
+
+    /**
+     * The panel's language for this request.
+     *
+     * Read from the header rather than from app()->getLocale(), because
+     * nothing sets the application locale per request — there is no locale
+     * middleware, so the container's value is the config default and would
+     * never reflect what the operator is reading. CountryResource reaches for
+     * the same header for the same reason.
+     *
+     * Not reusing that one: it recognises only ar and en, so a Spanish panel
+     * silently receives Arabic country names. Not reusing Core's Locale value
+     * object either — it is another module's Domain class, and ADR-002 says
+     * a module reaches across only through Contracts. Three literals in a
+     * presentation method is the cheaper honesty, and the resource's fallback
+     * chain means an unrecognised value degrades to Arabic rather than blank.
+     */
+    private function requestedLocale(Request $request): string
+    {
+        $header = strtolower($request->header('Accept-Language', 'ar'));
+
+        foreach (['en', 'es'] as $locale) {
+            if (str_contains($header, $locale)) {
+                return $locale;
+            }
+        }
+
+        return 'ar';
     }
 
     private function refusal(string $code, string $message, int $status): JsonResponse

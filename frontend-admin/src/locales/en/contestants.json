@@ -56,38 +56,33 @@
 
   "drawer_title": "360° profile — {{name}}",
 
-  "tab_profile": "Profile",
-  "tab_application": "Current application",
-  "tab_video": "Processed video",
-  "tab_evaluations": "Evaluations",
-  "tab_results": "Results and qualification",
-  "tab_appeals": "Appeals",
-  "tab_timeline": "Activity log",
+  "section_contestant": "Contestant",
+  "section_account": "Account",
+  "section_country": "Country",
+  "section_memberships": "Circle history",
 
   "field_date_of_birth": "Date of birth",
   "field_phone": "Phone number",
-  "field_registered_at": "Registered on",
-  "field_account_status": "Account status",
-  "account_verified": "Active and verified",
+  "field_account_type": "Account type",
 
-  "application_number": "Application: {{id}}",
-  "application_season_stage": "Season: {{season}} | Stage: {{stage}}",
+  "type_admin": "Administrator account",
+  "type_contestant": "Contestant account",
 
-  "video_heading": "Recitation video preview (HLS stream)",
-  "video_empty": "No recitation video has been uploaded yet.",
+  "account_status_active": "Active",
+  "account_status_pending_activation": "Pending activation",
+  "account_status_deactivated": "Deactivated",
+  "account_status_deleted": "Deleted",
 
-  "evaluations_heading": "Judging panel evaluations",
-  "evaluations_note": "Tajweed, memorisation and voice scores as approved by the judges.",
+  "account_missing": "The account this contestant links to no longer exists.",
+  "country_missing": "The country this contestant links to no longer exists.",
+  "name_divergence": "The account name differs from the contestant's name.",
 
-  "results_heading": "Final stage result",
-  "results_average": "Average score: 94.5 / 100 —",
-  "results_qualified": "Qualified for the next stage",
-
-  "appeal_label": "Appeal",
-  "appeals_empty": "No appeals have been submitted.",
-
-  "timeline_submitted": "Application submitted",
-  "timeline_submitted_when": "2 days ago",
-  "timeline_video_reviewed": "Video reviewed and sent to judging",
-  "timeline_video_reviewed_when": "1 day ago"
+  "memberships_empty": "This contestant has never belonged to a circle.",
+  "memberships_withheld": "Your permissions do not include viewing circle history.",
+  "membership_active": "Current",
+  "membership_ended": "Ended",
+  "membership_ongoing": "present",
+  "membership_period": "{{from}} to {{to}}",
+  "membership_reason": "Reason: {{reason}}",
+  "circle_deleted": "Deleted circle"
 }

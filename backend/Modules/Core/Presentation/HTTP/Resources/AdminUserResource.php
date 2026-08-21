@@ -6,6 +6,7 @@ namespace Modules\Core\Presentation\HTTP\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Core\Domain\ValueObjects\UserStatus;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 
 /**
@@ -44,20 +45,15 @@ final class AdminUserResource extends JsonResource
             'is_deleted' => $user->deleted_at !== null,
 
             // One derived state rather than three booleans the client has to
-            // combine correctly. "Pending activation" and "deactivated" are
-            // both is_active = false, and a screen that got the combination
-            // wrong would tell an administrator an invited colleague had been
-            // disabled.
-            //
-            // Precedence is deliberate: deleted outranks everything, because
-            // it is the most consequential thing true about the account, and a
-            // deleted-but-pending row is deleted first.
-            'status' => match (true) {
-                $user->deleted_at !== null => 'deleted',
-                $user->password_hash === null => 'pending_activation',
-                ! $user->is_active => 'deactivated',
-                default => 'active',
-            },
+            // combine correctly. The rule — and its precedence — lives in
+            // UserStatus, because Epic 4's Identity 360 asks the same question
+            // from another module and two copies could disagree about whether
+            // somebody can sign in.
+            'status' => (string) UserStatus::derive(
+                isDeleted: $user->deleted_at !== null,
+                hasPassword: $user->password_hash !== null,
+                isActive: (bool) $user->is_active,
+            ),
 
             // The edit form needs it, and it is the account's own setting
             // rather than anything sensitive.

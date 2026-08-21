@@ -56,38 +56,33 @@
 
   "drawer_title": "الملف الشخصي 360° — {{name}}",
 
-  "tab_profile": "الملف الشخصي",
-  "tab_application": "الطلب الحالي",
-  "tab_video": "الفيديو المعالج",
-  "tab_evaluations": "التقييمات",
-  "tab_results": "النتائج والتأهل",
-  "tab_appeals": "الاعتراضات",
-  "tab_timeline": "سجل النشاطات",
+  "section_contestant": "بيانات المتسابق",
+  "section_account": "الحساب",
+  "section_country": "الدولة",
+  "section_memberships": "سجل الحلقات",
 
   "field_date_of_birth": "تاريخ الميلاد",
   "field_phone": "رقم الهاتف",
-  "field_registered_at": "تاريخ التسجيل",
-  "field_account_status": "حالة الحساب",
-  "account_verified": "نشط ومتحقق",
+  "field_account_type": "نوع الحساب",
 
-  "application_number": "طلب رقم: {{id}}",
-  "application_season_stage": "الموسم: {{season}} | المرحلة: {{stage}}",
+  "type_admin": "حساب إداري",
+  "type_contestant": "حساب متسابق",
 
-  "video_heading": "معاينة فيديو التلاوة (HLS Stream)",
-  "video_empty": "لا يوجد فيديو تلاوة مرفوع حالياً.",
+  "account_status_active": "نشط",
+  "account_status_pending_activation": "بانتظار التفعيل",
+  "account_status_deactivated": "معطّل",
+  "account_status_deleted": "محذوف",
 
-  "evaluations_heading": "تقييمات لجنة التحكيم",
-  "evaluations_note": "درجات التجويد والحفظ وحسن الصوت المعتمدة من الحكام.",
+  "account_missing": "الحساب المرتبط بهذا المتسابق غير موجود.",
+  "country_missing": "الدولة المرتبطة بهذا المتسابق غير موجودة.",
+  "name_divergence": "اسم الحساب يختلف عن اسم المتسابق.",
 
-  "results_heading": "النتيجة النهائية للمرحلة",
-  "results_average": "متوسط الدرجة: 94.5 / 100 —",
-  "results_qualified": "متأهل للمرحلة التالية",
-
-  "appeal_label": "اعتراض",
-  "appeals_empty": "لا توجد اعتراضات مقدمة.",
-
-  "timeline_submitted": "تم تقديم طلب الاشتراك",
-  "timeline_submitted_when": "منذ يومين",
-  "timeline_video_reviewed": "تم فحص الفيديو وتحويله للتحكيم",
-  "timeline_video_reviewed_when": "منذ يوم واحد"
+  "memberships_empty": "لم ينضم هذا المتسابق إلى أي حلقة.",
+  "memberships_withheld": "صلاحيتك لا تتيح الاطّلاع على سجل الحلقات.",
+  "membership_active": "حالية",
+  "membership_ended": "منتهية",
+  "membership_ongoing": "حتى الآن",
+  "membership_period": "من {{from}} إلى {{to}}",
+  "membership_reason": "السبب: {{reason}}",
+  "circle_deleted": "حلقة محذوفة"
 }

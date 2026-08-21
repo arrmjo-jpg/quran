@@ -39,27 +39,63 @@ export interface ContestantDetail extends ContestantListItem {
 }
 
 /**
- * Retained for the 360 drawer, which still renders applications and appeals
- * tabs the server does not populate. That gap belongs to Identity 360
- * (Epic 4 Story 2) and was deliberately not fabricated here — the fields
- * stay optional so the drawer compiles while they are absent.
+ * Identity 360 — Epic 4 Story 2 (ADR-016 D19).
+ *
+ * A relationship view, which is why `contestant` here is the LIST shape: it
+ * carries no `national_id`. An identity document describes a person and
+ * links nothing, so it stayed on GET /admin/contestants/{id} where a
+ * deliberate act reaches it. `ContestantIdentity` therefore cannot be used
+ * to render one, by construction rather than by discipline.
+ *
+ * The `ContestantProfile` type that used to live here declared optional
+ * `applications` and `appeals` arrays that no endpoint has ever filled. They
+ * are gone rather than left optional: an optional field that is always
+ * absent is an invitation to render a tab that will always be empty.
  */
-export interface ContestantProfile extends ContestantDetail {
-  created_at?: string;
-  applications?: {
-    id:             string;
-    season_id:      string;
-    stage_id:       string;
-    status:         string;
-    video_hls_url?: string;
-    total_score?:   number;
-  }[];
-  appeals?: {
-    id:              string;
-    reason:          string;
-    status:          string;
-    admin_response?: string;
-  }[];
+
+/** The four fields ADR-016 D18 admits from the account. There is no fifth. */
+export interface IdentityAccount {
+  id:     string;
+  name:   string;
+  status: 'active' | 'pending_activation' | 'deactivated' | 'deleted';
+  type:   'admin' | 'contestant';
+}
+
+export interface IdentityCountry {
+  id:   string;
+  iso2: string;
+  /** Already resolved to the requested language by the server. */
+  name: string;
+}
+
+export interface IdentityMembership {
+  id:          string;
+  circle_id:   string;
+  /** Null when the circle has since been deleted — the period still happened. */
+  circle_name: string | null;
+  center_id:   string | null;
+  center_name: string | null;
+  center_city: string | null;
+  joined_at:   string | null;
+  left_at:     string | null;
+  is_active:   boolean;
+  reason:      string | null;
+}
+
+/**
+ * `withheld` names each branch suppressed because the reader lacks the
+ * permission governing it (D20). Without it an empty `memberships` array
+ * would tell an operator this person has never belonged to a circle, when
+ * the truth is that they may not be told either way.
+ */
+export type IdentityBranch = 'memberships';
+
+export interface ContestantIdentity {
+  contestant:  ContestantListItem;
+  user:        IdentityAccount | null;
+  country:     IdentityCountry | null;
+  memberships: IdentityMembership[];
+  withheld:    IdentityBranch[];
 }
 
 export interface ContestantListFilters {

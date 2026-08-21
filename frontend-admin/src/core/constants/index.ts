@@ -48,6 +48,10 @@ export const queryKeys = {
     list:   (filters: unknown) => ['contestants', 'list', filters] as const,
     search: (q: string) => ['contestants', 'search', q] as const,
     detail: (id: string) => ['contestants', id] as const,
+    // Identity 360 is a different question about the same person and caches
+    // separately: the detail response carries a national_id this one does
+    // not, and one key for both would let either answer overwrite the other.
+    identity: (id: string) => ['contestants', id, 'identity'] as const,
   },
   judges: {
     all:    () => ['judges'] as const,

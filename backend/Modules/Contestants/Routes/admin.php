@@ -28,6 +28,14 @@ Route::get('contestants/{id}', [AdminContestantController::class, 'show'])
     ->name('admin.contestants.show')
     ->middleware('can:contestants.view');
 
+// Identity 360 (ADR-016 D19). Declared before contestants/{id} would not
+// matter — the segments differ — but it is grouped with the reads it belongs
+// to. contestants.view alone: the branches that need more say so themselves,
+// in `withheld`, rather than the whole route refusing.
+Route::get('contestants/{id}/identity', [AdminContestantController::class, 'identity'])
+    ->name('admin.contestants.identity')
+    ->middleware('can:contestants.view');
+
 Route::post('contestants', [AdminContestantController::class, 'store'])
     ->name('admin.contestants.store')
     ->middleware('can:contestants.create');
