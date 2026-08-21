@@ -2,7 +2,6 @@
   "title": "Concursantes",
   "subtitle": "Registre concursantes y mantenga sus datos al día; busque por nombre o número de teléfono",
   "empty": "Ningún concursante coincide con esa búsqueda.",
-
   "col_full_name": "Nombre completo",
   "col_gender": "Sexo",
   "col_date_of_birth": "Fecha de nacimiento",
@@ -11,40 +10,31 @@
   "col_actions": "Acciones",
   "view_full_profile": "Perfil completo",
   "badge_deleted": "Eliminado",
-
   "filter_all_countries": "País: todos",
   "filter_all_genders": "Sexo: todos",
   "show_deleted": "Mostrar eliminados",
-
   "action_create": "Registrar concursante",
   "action_create_submit": "Registrar",
   "action_restore": "Restaurar",
-
   "form_title_create": "Registrar un concursante",
   "form_title_edit": "Editar concursante",
-
   "field_account": "Cuenta",
   "account_placeholder": "Elija una cuenta",
   "account_search_placeholder": "Busque por nombre o correo electrónico",
   "account_hint": "La cuenta debe existir previamente: esta pantalla vincula al concursante con su cuenta, no crea cuentas.",
   "account_id_hint": "Sus permisos no incluyen consultar cuentas; introduzca el identificador de la cuenta (UUID) directamente.",
-
   "field_country": "País",
   "country_placeholder": "Elija un país",
   "country_immutable_hint": "El país no puede cambiarse después del registro.",
-
   "field_full_name": "Nombre completo",
   "field_gender": "Sexo",
   "gender_male": "Hombre",
   "gender_female": "Mujer",
-
   "field_national_id": "Documento nacional de identidad",
   "national_id_hint": "Opcional. Dato sensible: nunca se muestra en la lista de concursantes.",
   "national_id_edit_hint": "Déjelo en blanco para conservar el valor guardado; lo que escriba aquí lo sustituye.",
-
   "delete_title": "Eliminar concursante",
   "delete_message": "Se eliminará el registro de {{name}}. La eliminación se puede deshacer mediante la restauración y no se pierde ningún dato del concursante.",
-
   "create_success": "Concursante registrado.",
   "create_error": "No se ha podido registrar al concursante.",
   "update_success": "Concursante actualizado.",
@@ -53,30 +43,22 @@
   "delete_error": "No se ha podido eliminar al concursante.",
   "restore_success": "Concursante restaurado.",
   "restore_error": "No se ha podido restaurar al concursante.",
-
-  "drawer_title": "Perfil 360° — {{name}}",
-
   "section_contestant": "Concursante",
   "section_account": "Cuenta",
   "section_country": "País",
   "section_memberships": "Historial de círculos",
-
   "field_date_of_birth": "Fecha de nacimiento",
   "field_phone": "Número de teléfono",
   "field_account_type": "Tipo de cuenta",
-
   "type_admin": "Cuenta administrativa",
   "type_contestant": "Cuenta de concursante",
-
   "account_status_active": "Activa",
   "account_status_pending_activation": "Pendiente de activación",
   "account_status_deactivated": "Desactivada",
   "account_status_deleted": "Eliminada",
-
   "account_missing": "La cuenta a la que está vinculado este concursante ya no existe.",
   "country_missing": "El país al que está vinculado este concursante ya no existe.",
   "name_divergence": "El nombre de la cuenta difiere del nombre del concursante.",
-
   "memberships_empty": "Este concursante nunca ha pertenecido a un círculo.",
   "memberships_withheld": "Sus permisos no incluyen consultar el historial de círculos.",
   "membership_active": "Actual",
@@ -84,5 +66,8 @@
   "membership_ongoing": "actualidad",
   "membership_period": "Del {{from}} al {{to}}",
   "membership_reason": "Motivo: {{reason}}",
-  "circle_deleted": "Círculo eliminado"
+  "circle_deleted": "Círculo eliminado",
+  "identity_title": "Perfil 360°",
+  "identity_subtitle": "La cuenta, el país y el historial de círculos vinculados a este concursante",
+  "open_account": "Abrir la cuenta"
 }

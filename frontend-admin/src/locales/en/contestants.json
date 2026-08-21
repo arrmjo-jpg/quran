@@ -2,7 +2,6 @@
   "title": "Contestants",
   "subtitle": "Register contestants and keep their records current; search by name or phone number",
   "empty": "No contestant matches that search.",
-
   "col_full_name": "Full name",
   "col_gender": "Gender",
   "col_date_of_birth": "Date of birth",
@@ -11,40 +10,31 @@
   "col_actions": "Actions",
   "view_full_profile": "Full profile",
   "badge_deleted": "Deleted",
-
   "filter_all_countries": "Country: all",
   "filter_all_genders": "Gender: all",
   "show_deleted": "Show deleted",
-
   "action_create": "Register contestant",
   "action_create_submit": "Register",
   "action_restore": "Restore",
-
   "form_title_create": "Register a contestant",
   "form_title_edit": "Edit contestant",
-
   "field_account": "Account",
   "account_placeholder": "Choose an account",
   "account_search_placeholder": "Search by name or email",
   "account_hint": "The account must already exist — this screen links a contestant to their account, it does not create accounts.",
   "account_id_hint": "Your permissions do not include browsing accounts; enter the account id (UUID) directly.",
-
   "field_country": "Country",
   "country_placeholder": "Choose a country",
   "country_immutable_hint": "Country cannot be changed after registration.",
-
   "field_full_name": "Full name",
   "field_gender": "Gender",
   "gender_male": "Male",
   "gender_female": "Female",
-
   "field_national_id": "National ID",
   "national_id_hint": "Optional. Sensitive data — never shown in the contestants list.",
   "national_id_edit_hint": "Leave blank to keep the stored value; anything typed here replaces it.",
-
   "delete_title": "Delete contestant",
   "delete_message": "The record for {{name}} will be deleted. Deletion is reversible through restore, and nothing about the contestant is lost.",
-
   "create_success": "Contestant registered.",
   "create_error": "The contestant could not be registered.",
   "update_success": "Contestant updated.",
@@ -53,30 +43,22 @@
   "delete_error": "The contestant could not be deleted.",
   "restore_success": "Contestant restored.",
   "restore_error": "The contestant could not be restored.",
-
-  "drawer_title": "360° profile — {{name}}",
-
   "section_contestant": "Contestant",
   "section_account": "Account",
   "section_country": "Country",
   "section_memberships": "Circle history",
-
   "field_date_of_birth": "Date of birth",
   "field_phone": "Phone number",
   "field_account_type": "Account type",
-
   "type_admin": "Administrator account",
   "type_contestant": "Contestant account",
-
   "account_status_active": "Active",
   "account_status_pending_activation": "Pending activation",
   "account_status_deactivated": "Deactivated",
   "account_status_deleted": "Deleted",
-
   "account_missing": "The account this contestant links to no longer exists.",
   "country_missing": "The country this contestant links to no longer exists.",
   "name_divergence": "The account name differs from the contestant's name.",
-
   "memberships_empty": "This contestant has never belonged to a circle.",
   "memberships_withheld": "Your permissions do not include viewing circle history.",
   "membership_active": "Current",
@@ -84,5 +66,8 @@
   "membership_ongoing": "present",
   "membership_period": "{{from}} to {{to}}",
   "membership_reason": "Reason: {{reason}}",
-  "circle_deleted": "Deleted circle"
+  "circle_deleted": "Deleted circle",
+  "identity_title": "360° profile",
+  "identity_subtitle": "The account, country and circle history linked to this contestant",
+  "open_account": "Open the account"
 }

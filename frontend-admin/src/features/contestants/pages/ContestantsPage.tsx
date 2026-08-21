@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Eye, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { DataTable } from '@/ui/datatable/DataTable';
 import { ErrorState } from '@/ui/error-state/ErrorState';
-import { ConfirmDialog, Dialog } from '@/ui/dialog/Dialog';
+import { ConfirmDialog } from '@/ui/dialog/Dialog';
 import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
 import { Select } from '@/ui/input/Input';
 import Badge from '@/ui/Badge';
 import Button from '@/ui/Button';
-import Spinner from '@/ui/Spinner';
 import { useAllCountries } from '@/features/seasons/hooks/useLookups';
 import {
-  useContestantIdentity,
   useContestants,
   useDeleteContestant,
   useRestoreContestant,
 } from '../hooks/useContestants';
-import { Contestant360Drawer } from '../components/Contestant360Drawer';
 import { ContestantFormDialog } from '../components/ContestantFormDialog';
 import type { ContestantListItem } from '../types';
 
@@ -37,7 +35,6 @@ export default function ContestantsPage(): React.JSX.Element {
   const [gender, setGender] = useState<'' | 'male' | 'female'>('');
   const [showDeleted, setShowDeleted] = useState(false);
 
-  const [viewingId, setViewingId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editing, setEditing] = useState<ContestantListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ContestantListItem | null>(null);
@@ -54,14 +51,6 @@ export default function ContestantsPage(): React.JSX.Element {
   const countries = useAllCountries();
   const deleteContestant = useDeleteContestant();
   const restoreContestant = useRestoreContestant();
-
-  /**
-   * The drawer reads Identity 360 rather than the row it was opened from.
-   * A row carries the contestant alone; the drawer's whole subject is what
-   * links to them — the account, the country, the circle history — and none
-   * of that is in the list response.
-   */
-  const viewing = useContestantIdentity(viewingId ?? '');
 
   const openCreate = (): void => {
     setEditing(null);
@@ -153,10 +142,15 @@ export default function ContestantsPage(): React.JSX.Element {
 
         return (
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setViewingId(contestant.id)}>
-              <Eye className="w-4 h-4 text-brand-600" />
-              <span>{t('view_full_profile')}</span>
-            </Button>
+            {/* Navigates rather than opening a dialog (ADR-016 D23): the
+                relationship needs a URL to be linkable, and Identity 360 is
+                the far end of the account screen's link back. */}
+            <Link to={`/contestants/${contestant.id}`}>
+              <Button size="sm" variant="ghost">
+                <Eye className="w-4 h-4 text-brand-600" />
+                <span>{t('view_full_profile')}</span>
+              </Button>
+            </Link>
 
             <PermissionWrapper permission="contestants.update">
               <Button size="sm" variant="outline" onClick={() => openEdit(contestant)}>
@@ -265,32 +259,6 @@ export default function ContestantsPage(): React.JSX.Element {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         editing={editing}
-      />
-
-      {/*
-        The drawer renders nothing without a contestant, so the fetch it
-        depends on would otherwise be an invisible pause between clicking
-        the row and the panel appearing. These two cover that gap; neither
-        touches the drawer, whose contents belong to Identity 360.
-      */}
-      <Dialog
-        isOpen={viewingId !== null && viewing.data === undefined}
-        onClose={() => setViewingId(null)}
-        title={t('view_full_profile')}
-      >
-        {viewing.isError ? (
-          <ErrorState onRetry={() => void viewing.refetch()} />
-        ) : (
-          <div className="flex justify-center py-10">
-            <Spinner />
-          </div>
-        )}
-      </Dialog>
-
-      <Contestant360Drawer
-        identity={viewing.data ?? null}
-        isOpen={viewingId !== null && viewing.data !== undefined}
-        onClose={() => setViewingId(null)}
       />
 
       <ConfirmDialog

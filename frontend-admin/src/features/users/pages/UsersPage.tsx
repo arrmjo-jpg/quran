@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Clock, Pencil, Plus, RotateCcw, ShieldCheck, Trash2, XCircle } from 'lucide-react';
@@ -78,7 +79,15 @@ export default function UsersPage(): React.JSX.Element {
       header: t('column_name'),
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-semibold text-slate-900 dark:text-white">{row.original.name}</span>
+          {/* The account detail is where roles, effective permissions and
+              the contestant behind the account are readable (ADR-016 D22).
+              Until Story 3 built it there was nowhere for this to go. */}
+          <Link
+            to={`/users/${row.original.id}`}
+            className="font-semibold text-slate-900 dark:text-white hover:text-brand-600 hover:underline"
+          >
+            {row.original.name}
+          </Link>
           <span className="text-xs text-slate-500 font-mono">{row.original.email}</span>
         </div>
       ),

@@ -53,5 +53,21 @@
   "delete_success": "Cuenta eliminada",
   "delete_error": "No se pudo eliminar la cuenta",
   "restore_success": "Cuenta restaurada",
-  "restore_error": "No se pudo restaurar la cuenta"
+  "restore_error": "No se pudo restaurar la cuenta",
+  "detail_title": "Detalle de la cuenta",
+  "detail_subtitle": "La cuenta, sus roles y permisos efectivos, y el concursante vinculado a ella",
+  "section_account": "Cuenta",
+  "section_contestant": "Concursante vinculado",
+  "section_permissions": "Permisos efectivos",
+  "field_mfa": "Autenticación en dos pasos",
+  "mfa_on": "Activada",
+  "mfa_off": "No activada",
+  "contestant_none": "Esta cuenta no tiene registro de concursante.",
+  "contestant_withheld": "Sus permisos no incluyen saber si esta cuenta tiene un registro de concursante.",
+  "contestant_deleted": "Registro eliminado",
+  "name_divergence": "El nombre del concursante difiere del nombre de la cuenta.",
+  "open_identity": "Abrir el perfil 360°",
+  "no_permissions": "Esta cuenta no tiene ningún permiso.",
+  "permissions_count_one": "{{count}} permiso efectivo",
+  "permissions_count_other": "{{count}} permisos efectivos"
 }

@@ -2,7 +2,6 @@
   "title": "إدارة المتسابقين",
   "subtitle": "تسجيل المتسابقين وتحديث بياناتهم، مع البحث بالاسم أو رقم الهاتف",
   "empty": "لم يتم العثور على أي متسابق مطابق للبحث.",
-
   "col_full_name": "الاسم الكامل",
   "col_gender": "الجنس",
   "col_date_of_birth": "تاريخ الميلاد",
@@ -11,40 +10,31 @@
   "col_actions": "الإجراءات",
   "view_full_profile": "الملف الكامل",
   "badge_deleted": "محذوف",
-
   "filter_all_countries": "الدولة: الكل",
   "filter_all_genders": "الجنس: الكل",
   "show_deleted": "إظهار المحذوفين",
-
   "action_create": "تسجيل متسابق",
   "action_create_submit": "تسجيل",
   "action_restore": "استعادة",
-
   "form_title_create": "تسجيل متسابق جديد",
   "form_title_edit": "تعديل بيانات المتسابق",
-
   "field_account": "الحساب",
   "account_placeholder": "اختر حسابًا",
   "account_search_placeholder": "ابحث بالاسم أو البريد الإلكتروني",
   "account_hint": "يجب أن يكون الحساب موجودًا مسبقًا؛ هذه الشاشة تربط المتسابق بحسابه ولا تنشئ الحسابات.",
   "account_id_hint": "صلاحيتك لا تتيح استعراض الحسابات؛ أدخل معرّف الحساب (UUID) مباشرة.",
-
   "field_country": "الدولة",
   "country_placeholder": "اختر دولة",
   "country_immutable_hint": "لا يمكن تغيير الدولة بعد التسجيل.",
-
   "field_full_name": "الاسم الكامل",
   "field_gender": "الجنس",
   "gender_male": "ذكر",
   "gender_female": "أنثى",
-
   "field_national_id": "الرقم الوطني",
   "national_id_hint": "اختياري. بيانات حساسة لا تظهر في قائمة المتسابقين.",
   "national_id_edit_hint": "اتركه فارغًا للإبقاء على القيمة المحفوظة؛ ما تكتبه هنا يستبدلها.",
-
   "delete_title": "حذف متسابق",
   "delete_message": "سيتم حذف سجل {{name}}. الحذف قابل للتراجع عبر الاستعادة، ولا تُفقد بيانات المتسابق.",
-
   "create_success": "تم تسجيل المتسابق.",
   "create_error": "تعذّر تسجيل المتسابق.",
   "update_success": "تم تحديث بيانات المتسابق.",
@@ -53,30 +43,22 @@
   "delete_error": "تعذّر حذف المتسابق.",
   "restore_success": "تمت استعادة المتسابق.",
   "restore_error": "تعذّرت استعادة المتسابق.",
-
-  "drawer_title": "الملف الشخصي 360° — {{name}}",
-
   "section_contestant": "بيانات المتسابق",
   "section_account": "الحساب",
   "section_country": "الدولة",
   "section_memberships": "سجل الحلقات",
-
   "field_date_of_birth": "تاريخ الميلاد",
   "field_phone": "رقم الهاتف",
   "field_account_type": "نوع الحساب",
-
   "type_admin": "حساب إداري",
   "type_contestant": "حساب متسابق",
-
   "account_status_active": "نشط",
   "account_status_pending_activation": "بانتظار التفعيل",
   "account_status_deactivated": "معطّل",
   "account_status_deleted": "محذوف",
-
   "account_missing": "الحساب المرتبط بهذا المتسابق غير موجود.",
   "country_missing": "الدولة المرتبطة بهذا المتسابق غير موجودة.",
   "name_divergence": "اسم الحساب يختلف عن اسم المتسابق.",
-
   "memberships_empty": "لم ينضم هذا المتسابق إلى أي حلقة.",
   "memberships_withheld": "صلاحيتك لا تتيح الاطّلاع على سجل الحلقات.",
   "membership_active": "حالية",
@@ -84,5 +66,8 @@
   "membership_ongoing": "حتى الآن",
   "membership_period": "من {{from}} إلى {{to}}",
   "membership_reason": "السبب: {{reason}}",
-  "circle_deleted": "حلقة محذوفة"
+  "circle_deleted": "حلقة محذوفة",
+  "identity_title": "الملف الشخصي 360°",
+  "identity_subtitle": "الحساب والدولة وسجل الحلقات المرتبطة بهذا المتسابق",
+  "open_account": "فتح صفحة الحساب"
 }
