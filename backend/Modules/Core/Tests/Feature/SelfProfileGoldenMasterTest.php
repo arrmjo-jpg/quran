@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\Core\Domain\Events\UserProfileUpdated;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 
@@ -138,6 +140,37 @@ test('/me refuses fr, which the panel does not speak', function (): void {
     expect(UserModel::query()->find($user->id)->preferred_locale)->toBe('ar');
 });
 
+/*
+| PATCH is partial, and these two say what that means. Added before the
+| refactor and passing on the original code, so that pointing the endpoint at
+| UpdateUserProfileUseCase — whose signature wants both values — cannot quietly
+| reset the field the caller left out. The admin path has exactly that bug:
+| UserController::update passes `validated('locale', 'ar')`, so an
+| administrator sending only a name resets that account to Arabic.
+*/
+
+test('sending only a name leaves the locale alone', function (): void {
+    $user = selfProfileUser(['preferred_locale' => 'en']);
+
+    $this->actingAs($user)->patchJson('/api/v1/me', ['name' => 'Updated Name'])->assertOk();
+
+    $fresh = UserModel::query()->find($user->id);
+
+    expect($fresh->name)->toBe('Updated Name')
+        ->and($fresh->preferred_locale)->toBe('en');
+});
+
+test('sending only a locale leaves the name alone', function (): void {
+    $user = selfProfileUser();
+
+    $this->actingAs($user)->patchJson('/api/v1/me', ['preferred_locale' => 'en'])->assertOk();
+
+    $fresh = UserModel::query()->find($user->id);
+
+    expect($fresh->preferred_locale)->toBe('en')
+        ->and($fresh->name)->toBe('Original Name');
+});
+
 test('PINNED: fields outside the two rules are dropped in silence', function (): void {
     // `$user->update($request->validated())` means anything not named in the
     // rules never reaches the model — which is safe, but the caller is told
@@ -172,4 +205,42 @@ test('PINNED: writing goes straight to users and no profile row appears', functi
 
 test('PATCH /me requires authentication', function (): void {
     $this->patchJson('/api/v1/me', ['name' => 'Whoever'])->assertUnauthorized();
+});
+
+/*
+|--------------------------------------------------------------------------
+| The one thing the refactor changed on purpose
+|--------------------------------------------------------------------------
+|
+| Routing through UpdateUserProfileUseCase brought its event with it. Nothing
+| above pinned the absence of one, so the change would have passed unnoticed —
+| which is exactly why it is asserted here instead of left implicit.
+*/
+
+test('changing the name now records an event, and the actor is the account itself', function (): void {
+    $user = selfProfileUser();
+
+    Event::fake([UserProfileUpdated::class]);
+
+    $this->actingAs($user)->patchJson('/api/v1/me', ['name' => 'Updated Name'])->assertOk();
+
+    Event::assertDispatched(UserProfileUpdated::class, function (UserProfileUpdated $e) use ($user): bool {
+        return $e->userId === (string) $user->id
+            && $e->previousName === 'Original Name'
+            && $e->name === 'Updated Name'
+            // Self-service: the person who did it is the person it happened to.
+            && $e->byUserId === (string) $user->id;
+    });
+});
+
+test('submitting the same name unchanged records nothing', function (): void {
+    // The use case only emits when the name actually moved, so a form
+    // submitted without edits does not fill the trail with noise.
+    $user = selfProfileUser();
+
+    Event::fake([UserProfileUpdated::class]);
+
+    $this->actingAs($user)->patchJson('/api/v1/me', ['name' => 'Original Name'])->assertOk();
+
+    Event::assertNotDispatched(UserProfileUpdated::class);
 });

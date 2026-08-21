@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Crypt;
 use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Core\Application\Commands\CreateUserCommand;
 use Modules\Core\Application\UseCases\CreateUserUseCase;
+use Modules\Core\Application\UseCases\UpdateUserProfileUseCase;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
@@ -319,16 +320,42 @@ final class AuthController extends Controller
         ]);
     }
 
-    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    /**
+     * Self-service profile edit — the account editing itself.
+     *
+     * Routed through UpdateUserProfileUseCase rather than calling the Eloquent
+     * model, which is what this did until 2026-08-20 and made it the last
+     * place in Core bypassing its own use cases. Going through it buys the
+     * aggregate, the transaction, and a UserProfileUpdated event that fires
+     * only when the name actually changed.
+     *
+     * Both fields are passed straight through, null included: the request
+     * marks each `sometimes`, and the use case reads null as "leave it alone".
+     * Neither layer invents a default for a field the caller omitted.
+     *
+     * The actor is the account itself. Editing one's own name is allowed —
+     * unlike editing one's own roles, which PE-3 refuses — because a name
+     * changes what a person is called and not what they may do.
+     */
+    public function updateProfile(UpdateProfileRequest $request, UpdateUserProfileUseCase $updateProfile): JsonResponse
     {
         /** @var UserModel $user */
         $user = $request->user();
-        $user->update($request->validated());
+
+        $updateProfile->execute(
+            (string) $user->id,
+            $request->validated('name'),
+            $request->validated('preferred_locale'),
+            (string) $user->id,
+        );
 
         return response()->json([
             'success' => true,
             'message' => __('Profile updated successfully.'),
-            'data' => new UserResource($user),
+            // Re-read rather than reusing the instance the middleware
+            // resolved: the use case wrote through the repository, so the
+            // model already in hand is stale.
+            'data' => new UserResource(UserModel::query()->findOrFail($user->id)),
         ]);
     }
 
