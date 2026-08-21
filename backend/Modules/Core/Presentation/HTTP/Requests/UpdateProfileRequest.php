@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Core\Presentation\HTTP\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Core\Presentation\HTTP\Rules\AcceptableSocialLinks;
 
 final class UpdateProfileRequest extends FormRequest
 {
@@ -34,6 +35,23 @@ final class UpdateProfileRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'preferred_locale' => ['sometimes', 'string', 'in:ar,en,es'],
+
+            // The profile half — ADR-016 D1 — nested, because that is how it
+            // is read. A panel that sends back the object it was given must be
+            // sending the shape that works; the alternative is an endpoint
+            // that answers 200 to the wrong shape and saves none of it.
+            'profile' => ['sometimes', 'array'],
+
+            // `sometimes` throughout, so an omitted field is left alone while
+            // one sent as null clears it.
+            'profile.display_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'profile.bio' => ['sometimes', 'nullable', 'string', 'max:1000'],
+
+            // NOT `nullable`, unlike the two above. An empty object clears the
+            // set and omitting the key leaves it alone, which covers both
+            // intentions — so an explicit null would have to be given a third
+            // meaning that no specification has chosen. Refused until one does.
+            'profile.social_links' => ['sometimes', 'array', new AcceptableSocialLinks],
         ];
     }
 }

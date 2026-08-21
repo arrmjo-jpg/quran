@@ -49,32 +49,44 @@ test('GET /me requires authentication', function (): void {
     $this->getJson('/api/v1/me')->assertUnauthorized();
 });
 
-test('GET /me returns the account, and the shape it has always returned', function (): void {
+test('GET /me returns the account, and the shape Story 3 gave it', function (): void {
+    // The list it has always returned, plus `profile` at the end. `avatar`
+    // keeps its eighth place: adding a field is not licence to retire one.
     $user = selfProfileUser();
 
     $response = $this->actingAs($user)->getJson('/api/v1/me')->assertOk();
 
     expect(array_keys($response->json('data')))->toBe([
         'id', 'name', 'email', 'type', 'status', 'is_active',
-        'email_verified', 'avatar', 'roles', 'permissions', 'preferred_locale',
+        'email_verified', 'avatar', 'roles', 'permissions', 'preferred_locale', 'profile',
     ]);
 });
 
-test('PINNED: avatar is always null', function (): void {
-    // UserResource hardcodes it in both branches. The key has been in the
-    // contract since before there was anywhere for an avatar to live, and
-    // nothing in frontend-admin reads it. Story 1 created the column it was
-    // always waiting for; Story 3 is what fills it.
+test('PINNED: avatar is still present and still null', function (): void {
+    // `avatar` was hardcoded to null in both branches of UserResource since
+    // before there was anywhere for an avatar to live, and nothing in
+    // frontend-admin reads it. Story 3 adds profile.avatar_media_id beside it
+    // and leaves it exactly where it was: retiring a published key is a
+    // breaking change and belongs to a decision made out loud, not to a story
+    // that happened to be editing the same resource.
+    //
+    // Checked with array_key_exists, NOT assertJsonPath. A path that does not
+    // exist reads as null, so assertJsonPath('data.avatar', null) passes
+    // whether the key is present-and-null or absent — it cannot fail in the
+    // one direction it was written to catch, and it did not: the key was
+    // removed at one point and this test went on passing.
     $user = selfProfileUser();
 
-    $this->actingAs($user)->getJson('/api/v1/me')
-        ->assertOk()
-        ->assertJsonPath('data.avatar', null);
+    $data = $this->actingAs($user)->getJson('/api/v1/me')->assertOk()->json('data');
+
+    expect(array_key_exists('avatar', $data))->toBeTrue()
+        ->and($data['avatar'])->toBeNull()
+        ->and($data['profile'])->toHaveKey('avatar_media_id');
 });
 
-test('PINNED: no profile fields are exposed', function (): void {
-    // display_name, bio and social_links exist in the database as of Story 1
-    // and reach nobody.
+test('profile fields are nested, not mixed into the account', function (): void {
+    // One conceptual unit rather than three loose keys beside `name` and
+    // `email`, so `user_profiles` reads as the thing it is.
     $user = selfProfileUser();
 
     $data = $this->actingAs($user)->getJson('/api/v1/me')->assertOk()->json('data');
@@ -82,7 +94,7 @@ test('PINNED: no profile fields are exposed', function (): void {
     expect($data)->not->toHaveKey('display_name')
         ->and($data)->not->toHaveKey('bio')
         ->and($data)->not->toHaveKey('social_links')
-        ->and($data)->not->toHaveKey('profile');
+        ->and($data['profile'])->toHaveKeys(['display_name', 'bio', 'social_links']);
 });
 
 /*
@@ -192,10 +204,12 @@ test('PINNED: fields outside the two rules are dropped in silence', function ():
         ->and((bool) $fresh->is_active)->toBeTrue();
 });
 
-test('PINNED: writing goes straight to users and no profile row appears', function (): void {
-    // The endpoint bypasses every use case in Core and calls the Eloquent
-    // model directly — the last place in this module that still does. Story 3
-    // is what moves it onto UpdateProfileUseCase.
+test('an account-only edit creates no profile row', function (): void {
+    // Was pinned as "writing goes straight to users", describing the direct
+    // Eloquent call the refactor removed. It still holds for a better reason:
+    // UpdateSelfUseCase calls the profile use case only when the request
+    // actually carried profile fields, so renaming yourself does not leave an
+    // empty row behind for an account that has never had one.
     $user = selfProfileUser();
 
     $this->actingAs($user)->patchJson('/api/v1/me', ['name' => 'Updated Name'])->assertOk();

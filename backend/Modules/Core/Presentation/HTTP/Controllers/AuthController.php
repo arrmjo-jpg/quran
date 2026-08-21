@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Crypt;
 use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Core\Application\Commands\CreateUserCommand;
 use Modules\Core\Application\UseCases\CreateUserUseCase;
-use Modules\Core\Application\UseCases\UpdateUserProfileUseCase;
+use Modules\Core\Application\UseCases\UpdateSelfUseCase;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
@@ -337,16 +337,28 @@ final class AuthController extends Controller
      * unlike editing one's own roles, which PE-3 refuses — because a name
      * changes what a person is called and not what they may do.
      */
-    public function updateProfile(UpdateProfileRequest $request, UpdateUserProfileUseCase $updateProfile): JsonResponse
+    public function updateProfile(UpdateProfileRequest $request, UpdateSelfUseCase $updateSelf): JsonResponse
     {
         /** @var UserModel $user */
         $user = $request->user();
 
-        $updateProfile->execute(
+        $validated = $request->validated();
+
+        // Split by which table the field belongs to, and pass only the keys
+        // that were actually sent. `array_intersect_key` is what preserves the
+        // difference between "omitted" and "sent as null" — the first leaves a
+        // field alone, the second clears it, and a nullable parameter could
+        // not have expressed both.
+        //
+        // The intersect also drops `avatar_media_id`: it is absent from the
+        // request rules, so validated() never carries it, and naming the three
+        // writable fields here says so a second time. Story 3 reads an avatar
+        // and sets none — that needs an upload, and uploading needs
+        // media.create, which self-service does not hold.
+        $updateSelf->execute(
             (string) $user->id,
-            $request->validated('name'),
-            $request->validated('preferred_locale'),
-            (string) $user->id,
+            array_intersect_key($validated, array_flip(['name', 'preferred_locale'])),
+            array_intersect_key($validated['profile'] ?? [], array_flip(['display_name', 'bio', 'social_links'])),
         );
 
         return response()->json([
