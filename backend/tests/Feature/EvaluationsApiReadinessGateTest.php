@@ -101,8 +101,17 @@ function eval_contestant_user(string $email): array
     return ['user' => $user, 'contestant_id' => $contestantId];
 }
 
-/** Insert a season + stage + application row for a given contestant and return the application id. */
-function eval_application(string $contestantId): string
+/**
+ * A real season and a real stage, returned as [seasonId, stageId].
+ *
+ * Extracted from eval_application() so that tests needing only a stage can
+ * have one that exists. They used to invent `fake()->uuid()` and hand it
+ * straight to `stage_results.stage_id`, which is a foreign key — harmless
+ * only while the suite ran with foreign keys switched off.
+ *
+ * @return array{0: string, 1: string}
+ */
+function eval_season_stage(): array
 {
     $seasonId = fake()->uuid();
     DB::table('seasons')->insert([
@@ -132,6 +141,23 @@ function eval_application(string $contestantId): string
         'updated_at' => now(),
     ]);
 
+    return [$seasonId, $stageId];
+}
+
+/** A stage that exists, for tests that only need something to publish against. */
+function eval_stage(): string
+{
+    return eval_season_stage()[1];
+}
+
+/**
+ * An application belonging to a real contestant, in a real stage of a real
+ * season — every foreign key pointing at a row this function created.
+ */
+function eval_application(string $contestantId): string
+{
+    [$seasonId, $stageId] = eval_season_stage();
+
     $applicationId = fake()->uuid();
     DB::table('applications')->insert([
         'id' => $applicationId,
@@ -147,6 +173,18 @@ function eval_application(string $contestantId): string
     return $applicationId;
 }
 
+/**
+ * An application to evaluate, built from scratch.
+ *
+ * `evaluations.application_id` is a foreign key, and the judge tests used to
+ * fill it with `fake()->uuid()`. Each caller passes a distinct email because
+ * eval_contestant_user() derives the country's UNIQUE iso codes from it.
+ */
+function eval_application_for(string $email): string
+{
+    return eval_application(eval_contestant_user($email)['contestant_id']);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // JUDGE BLINDNESS TESTS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,7 +195,7 @@ test('Evaluations 16.7.1 — Judge Blindness: judge cannot access another judge\
     $judge1 = eval_judge($user1->id);
     $judge2 = eval_judge($user2->id);
 
-    $appId = fake()->uuid();
+    $appId = eval_application_for('blindness-subject@eval.test');
     // Create an evaluation assigned to judge1
     $evaluation = eval_evaluation($appId, $judge1->id, 'draft');
 
@@ -174,8 +212,8 @@ test('Evaluations 16.7.2 — Judge Blindness: judge can only see own evaluations
     $judge1 = eval_judge($user1->id);
     $judge2 = eval_judge($user2->id);
 
-    $appId1 = fake()->uuid();
-    $appId2 = fake()->uuid();
+    $appId1 = eval_application_for('list-subject-1@eval.test');
+    $appId2 = eval_application_for('list-subject-2@eval.test');
     eval_evaluation($appId1, $judge1->id, 'draft');   // belongs to judge1
     eval_evaluation($appId2, $judge2->id, 'draft');   // belongs to judge2
 
@@ -191,7 +229,7 @@ test('Evaluations 16.7.2 — Judge Blindness: judge can only see own evaluations
 test('Evaluations 16.7.3 — Double submission blocked: judge cannot submit locked evaluation', function (): void {
     $user = eval_user('judge-double@eval.test', 'admin');
     $judge = eval_judge($user->id);
-    $appId = fake()->uuid();
+    $appId = eval_application_for('double-subject@eval.test');
 
     // Create already-submitted evaluation
     $evaluation = eval_evaluation($appId, $judge->id, 'submitted');
@@ -210,7 +248,7 @@ test('Evaluations 16.7.3 — Double submission blocked: judge cannot submit lock
 test('Evaluations 16.7.4 — Judge can start evaluation (draft→in_progress)', function (): void {
     $user = eval_user('judge-start@eval.test', 'admin');
     $judge = eval_judge($user->id);
-    $appId = fake()->uuid();
+    $appId = eval_application_for('start-subject@eval.test');
 
     $evaluation = eval_evaluation($appId, $judge->id, 'draft');
 
@@ -224,7 +262,7 @@ test('Evaluations 16.7.4 — Judge can start evaluation (draft→in_progress)', 
 test('Evaluations 16.7.5 — Judge cannot start already-started evaluation (409)', function (): void {
     $user = eval_user('judge-restart@eval.test', 'admin');
     $judge = eval_judge($user->id);
-    $appId = fake()->uuid();
+    $appId = eval_application_for('restart-subject@eval.test');
 
     $evaluation = eval_evaluation($appId, $judge->id, 'in_progress');
 
@@ -240,7 +278,7 @@ test('Evaluations 16.7.5 — Judge cannot start already-started evaluation (409)
 
 test('Evaluations 16.7.6 — Admin: publish-results fails when no calculated results exist (422)', function (): void {
     $admin = eval_user('admin-noresults@eval.test', 'admin');
-    $stageId = fake()->uuid();
+    $stageId = eval_stage();
 
     $this->actingAs($admin)
         ->postJson("/api/v1/admin/stages/{$stageId}/publish-results")
@@ -250,7 +288,7 @@ test('Evaluations 16.7.6 — Admin: publish-results fails when no calculated res
 
 test('Evaluations 16.7.7 — Admin: can publish draft stage results', function (): void {
     $admin = eval_user('admin-publish@eval.test', 'admin');
-    $stageId = fake()->uuid();
+    $stageId = eval_stage();
 
     // Create a draft stage_result header
     StageResultModel::query()->create([
@@ -270,7 +308,7 @@ test('Evaluations 16.7.7 — Admin: can publish draft stage results', function (
 
 test('Evaluations 16.7.8 — Admin: cannot publish already-published results (409)', function (): void {
     $admin = eval_user('admin-republish@eval.test', 'admin');
-    $stageId = fake()->uuid();
+    $stageId = eval_stage();
 
     StageResultModel::query()->create([
         'id' => fake()->uuid(),
@@ -286,7 +324,7 @@ test('Evaluations 16.7.8 — Admin: cannot publish already-published results (40
 
 test('Evaluations 16.7.9 — Admin: can reopen published results (reverts to draft)', function (): void {
     $admin = eval_user('admin-reopen@eval.test', 'admin');
-    $stageId = fake()->uuid();
+    $stageId = eval_stage();
 
     StageResultModel::query()->create([
         'id' => fake()->uuid(),
@@ -306,7 +344,7 @@ test('Evaluations 16.7.9 — Admin: can reopen published results (reverts to dra
 
 test('Evaluations 16.7.10 — Admin: reopen fails when results not yet published (422)', function (): void {
     $admin = eval_user('admin-reopen-fail@eval.test', 'admin');
-    $stageId = fake()->uuid();
+    $stageId = eval_stage();
 
     // No stage_result exists
     $this->actingAs($admin)
@@ -342,11 +380,13 @@ test('Evaluations 16.7.11 — Contestant can submit appeal', function (): void {
 
 test('Evaluations 16.7.12 — Admin can accept pending appeal', function (): void {
     $admin = eval_user('admin-accept@eval.test', 'admin');
+    $subject = eval_contestant_user('appeal-accept-subject@eval.test');
 
     $appeal = AppealModel::query()->create([
         'id' => fake()->uuid(),
-        'application_id' => fake()->uuid(),
-        'contestant_id' => fake()->uuid(),
+        // Both are foreign keys. They used to be invented.
+        'application_id' => eval_application($subject['contestant_id']),
+        'contestant_id' => $subject['contestant_id'],
         'reason' => 'The evaluation was not conducted correctly according to the rulebook.',
         'status' => 'pending',
     ]);
@@ -364,11 +404,13 @@ test('Evaluations 16.7.12 — Admin can accept pending appeal', function (): voi
 
 test('Evaluations 16.7.13 — Admin cannot accept already-resolved appeal (409)', function (): void {
     $admin = eval_user('admin-conflict@eval.test', 'admin');
+    $subject = eval_contestant_user('appeal-conflict-subject@eval.test');
 
     $appeal = AppealModel::query()->create([
         'id' => fake()->uuid(),
-        'application_id' => fake()->uuid(),
-        'contestant_id' => fake()->uuid(),
+        // Both are foreign keys. They used to be invented.
+        'application_id' => eval_application($subject['contestant_id']),
+        'contestant_id' => $subject['contestant_id'],
         'reason' => 'The evaluation was not conducted correctly according to the rulebook.',
         'status' => 'rejected', // already resolved
     ]);
@@ -383,11 +425,13 @@ test('Evaluations 16.7.13 — Admin cannot accept already-resolved appeal (409)'
 
 test('Evaluations 16.7.14 — Admin can reject pending appeal', function (): void {
     $admin = eval_user('admin-reject@eval.test', 'admin');
+    $subject = eval_contestant_user('appeal-reject-subject@eval.test');
 
     $appeal = AppealModel::query()->create([
         'id' => fake()->uuid(),
-        'application_id' => fake()->uuid(),
-        'contestant_id' => fake()->uuid(),
+        // Both are foreign keys. They used to be invented.
+        'application_id' => eval_application($subject['contestant_id']),
+        'contestant_id' => $subject['contestant_id'],
         'reason' => 'The evaluation was not conducted correctly according to the rulebook.',
         'status' => 'pending',
     ]);

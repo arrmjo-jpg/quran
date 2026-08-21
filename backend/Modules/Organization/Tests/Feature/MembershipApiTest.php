@@ -37,8 +37,28 @@ function membershipAdmin(string $email = 'membership-admin@quran.test'): UserMod
     ]));
 }
 
+/**
+ * The country every centre in this file hangs off.
+ *
+ * Reused from the database rather than inserted blindly: `iso_code` and
+ * `iso3_code` are both UNIQUE, and this helper writes fixed values. It was
+ * only ever safe because membershipCircle() held a `static` that stopped it
+ * being called twice — and that static was itself the isolation bug fixed
+ * below. Removing one without the other trades a stale id for a duplicate key.
+ *
+ * The lookup is the fix, not a workaround: within a test the row either
+ * exists in this transaction or it does not, and RefreshDatabase rolls it
+ * back either way. State lives in the database, where the framework can
+ * manage it.
+ */
 function membershipCountry(): string
 {
+    $existing = DB::table('countries')->value('id');
+
+    if ($existing !== null) {
+        return (string) $existing;
+    }
+
     $id = (string) Str::uuid();
 
     DB::table('countries')->insert([
@@ -55,13 +75,28 @@ function membershipCountry(): string
     return $id;
 }
 
-/** A circle to enrol into, created directly: this file is not testing circle creation. */
+/**
+ * A circle to enrol into, created directly: this file is not testing circle
+ * creation.
+ *
+ * THE CENTRE IS LOOKED UP, NOT CACHED IN A `static`. It was cached, and that
+ * was a real test-isolation defect rather than a fixture nicety: a PHP static
+ * survives for the whole process, while RefreshDatabase rolls its row back
+ * after every test. So the first test created a centre, and the other twenty
+ * inserted circles pointing at a `center_id` that no longer existed —
+ * invisible only because the suite runs with foreign keys disabled.
+ *
+ * Reading it back from the database each time is what makes the helper honest
+ * under FK enforcement, and it is the only `static` that was in any test file
+ * in the repository.
+ */
 function membershipCircle(string $name = 'Morning Circle'): string
 {
-    static $centerId = null;
+    $centerId = CenterModel::query()->value('id');
 
     if ($centerId === null) {
         $centerId = (string) Str::uuid();
+
         CenterModel::query()->create([
             'id' => $centerId,
             'name' => 'Central Centre',
@@ -76,7 +111,7 @@ function membershipCircle(string $name = 'Morning Circle'): string
     CircleModel::query()->create([
         'id' => $id,
         'name' => $name,
-        'center_id' => $centerId,
+        'center_id' => (string) $centerId,
     ]);
 
     return $id;
