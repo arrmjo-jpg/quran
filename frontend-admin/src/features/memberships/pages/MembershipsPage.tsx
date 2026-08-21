@@ -19,6 +19,7 @@ import type { Membership } from '../types';
 
 const PER_PAGE = 20;
 const CIRCLE_LIMIT = 100;
+const CONTESTANT_LOOKUP_LIMIT = 100;
 
 type StatusFilter = 'all' | 'active' | 'ended';
 
@@ -47,10 +48,16 @@ export default function MembershipsPage(): React.JSX.Element {
    * id, so the name is resolved here from the contestants list rather than by
    * a request per row. A row showing two opaque ids is a row nobody can read —
    * which is the resource's own stated reason for nesting the circle.
+   *
+   * Bounded at one page since Epic 4 Story 1 made that endpoint paginate:
+   * a contestant past the first CONTESTANT_LOOKUP_LIMIT falls back to the
+   * shortened id the label below already handles. Resolving names properly
+   * needs a lookup by ids, which the memberships API does not offer and
+   * this story does not add.
    */
-  const contestants = useContestants();
+  const contestants = useContestants({ page: 1, per_page: CONTESTANT_LOOKUP_LIMIT });
   const contestantName = (id: string): string =>
-    contestants.data?.find((c) => c.id === id)?.full_name
+    contestants.data?.contestants.find((c) => c.id === id)?.full_name
     ?? t('contestant_unresolved', { id: id.slice(0, 8) });
 
   const formatDate = (iso: string | null): string =>

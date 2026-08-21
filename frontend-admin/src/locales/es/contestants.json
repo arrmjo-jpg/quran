@@ -1,13 +1,58 @@
 {
-  "title": "Concursantes (centro de perfiles 360°)",
-  "subtitle": "Busque por nombre del concursante, número de solicitud, teléfono o país, y revise el perfil completo",
+  "title": "Concursantes",
+  "subtitle": "Registre concursantes y mantenga sus datos al día; busque por nombre o número de teléfono",
   "empty": "Ningún concursante coincide con esa búsqueda.",
 
-  "col_id": "ID del concursante",
   "col_full_name": "Nombre completo",
+  "col_gender": "Sexo",
+  "col_date_of_birth": "Fecha de nacimiento",
   "col_phone": "Número de teléfono",
-  "col_profile": "Perfil 360°",
+  "col_completeness": "Perfil completado",
+  "col_actions": "Acciones",
   "view_full_profile": "Perfil completo",
+  "badge_deleted": "Eliminado",
+
+  "filter_all_countries": "País: todos",
+  "filter_all_genders": "Sexo: todos",
+  "show_deleted": "Mostrar eliminados",
+
+  "action_create": "Registrar concursante",
+  "action_create_submit": "Registrar",
+  "action_restore": "Restaurar",
+
+  "form_title_create": "Registrar un concursante",
+  "form_title_edit": "Editar concursante",
+
+  "field_account": "Cuenta",
+  "account_placeholder": "Elija una cuenta",
+  "account_search_placeholder": "Busque por nombre o correo electrónico",
+  "account_hint": "La cuenta debe existir previamente: esta pantalla vincula al concursante con su cuenta, no crea cuentas.",
+  "account_id_hint": "Sus permisos no incluyen consultar cuentas; introduzca el identificador de la cuenta (UUID) directamente.",
+
+  "field_country": "País",
+  "country_placeholder": "Elija un país",
+  "country_immutable_hint": "El país no puede cambiarse después del registro.",
+
+  "field_full_name": "Nombre completo",
+  "field_gender": "Sexo",
+  "gender_male": "Hombre",
+  "gender_female": "Mujer",
+
+  "field_national_id": "Documento nacional de identidad",
+  "national_id_hint": "Opcional. Dato sensible: nunca se muestra en la lista de concursantes.",
+  "national_id_edit_hint": "Déjelo en blanco para conservar el valor guardado; lo que escriba aquí lo sustituye.",
+
+  "delete_title": "Eliminar concursante",
+  "delete_message": "Se eliminará el registro de {{name}}. La eliminación se puede deshacer mediante la restauración y no se pierde ningún dato del concursante.",
+
+  "create_success": "Concursante registrado.",
+  "create_error": "No se ha podido registrar al concursante.",
+  "update_success": "Concursante actualizado.",
+  "update_error": "No se ha podido actualizar al concursante.",
+  "delete_success": "Concursante eliminado.",
+  "delete_error": "No se ha podido eliminar al concursante.",
+  "restore_success": "Concursante restaurado.",
+  "restore_error": "No se ha podido restaurar al concursante.",
 
   "drawer_title": "Perfil 360° — {{name}}",
 

@@ -1,13 +1,58 @@
 {
-  "title": "Contestants (360° profile hub)",
-  "subtitle": "Search by contestant name, application number, phone or country, and review the full profile",
+  "title": "Contestants",
+  "subtitle": "Register contestants and keep their records current; search by name or phone number",
   "empty": "No contestant matches that search.",
 
-  "col_id": "Contestant ID",
   "col_full_name": "Full name",
+  "col_gender": "Gender",
+  "col_date_of_birth": "Date of birth",
   "col_phone": "Phone number",
-  "col_profile": "360° profile",
+  "col_completeness": "Profile completeness",
+  "col_actions": "Actions",
   "view_full_profile": "Full profile",
+  "badge_deleted": "Deleted",
+
+  "filter_all_countries": "Country: all",
+  "filter_all_genders": "Gender: all",
+  "show_deleted": "Show deleted",
+
+  "action_create": "Register contestant",
+  "action_create_submit": "Register",
+  "action_restore": "Restore",
+
+  "form_title_create": "Register a contestant",
+  "form_title_edit": "Edit contestant",
+
+  "field_account": "Account",
+  "account_placeholder": "Choose an account",
+  "account_search_placeholder": "Search by name or email",
+  "account_hint": "The account must already exist — this screen links a contestant to their account, it does not create accounts.",
+  "account_id_hint": "Your permissions do not include browsing accounts; enter the account id (UUID) directly.",
+
+  "field_country": "Country",
+  "country_placeholder": "Choose a country",
+  "country_immutable_hint": "Country cannot be changed after registration.",
+
+  "field_full_name": "Full name",
+  "field_gender": "Gender",
+  "gender_male": "Male",
+  "gender_female": "Female",
+
+  "field_national_id": "National ID",
+  "national_id_hint": "Optional. Sensitive data — never shown in the contestants list.",
+  "national_id_edit_hint": "Leave blank to keep the stored value; anything typed here replaces it.",
+
+  "delete_title": "Delete contestant",
+  "delete_message": "The record for {{name}} will be deleted. Deletion is reversible through restore, and nothing about the contestant is lost.",
+
+  "create_success": "Contestant registered.",
+  "create_error": "The contestant could not be registered.",
+  "update_success": "Contestant updated.",
+  "update_error": "The contestant could not be updated.",
+  "delete_success": "Contestant deleted.",
+  "delete_error": "The contestant could not be deleted.",
+  "restore_success": "Contestant restored.",
+  "restore_error": "The contestant could not be restored.",
 
   "drawer_title": "360° profile — {{name}}",
 

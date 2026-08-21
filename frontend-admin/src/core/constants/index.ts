@@ -42,6 +42,10 @@ export const queryKeys = {
   },
   contestants: {
     all:    () => ['contestants'] as const,
+    // `list` supersedes `search` now that the endpoint paginates and
+    // filters: the key has to vary with every criterion, not just the
+    // query string, or two different filters would share a cache entry.
+    list:   (filters: unknown) => ['contestants', 'list', filters] as const,
     search: (q: string) => ['contestants', 'search', q] as const,
     detail: (id: string) => ['contestants', id] as const,
   },

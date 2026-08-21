@@ -1,13 +1,58 @@
 {
-  "title": "إدارة وشاشات المتسابقين (360° Profile Hub)",
-  "subtitle": "البحث المتخصص باسم المتسابق، رقم الطلب، الهاتف، أو الدولة ومعاينة الملف الكامل",
+  "title": "إدارة المتسابقين",
+  "subtitle": "تسجيل المتسابقين وتحديث بياناتهم، مع البحث بالاسم أو رقم الهاتف",
   "empty": "لم يتم العثور على أي متسابق مطابق للبحث.",
 
-  "col_id": "معرف المتسابق",
   "col_full_name": "الاسم الكامل",
+  "col_gender": "الجنس",
+  "col_date_of_birth": "تاريخ الميلاد",
   "col_phone": "رقم الهاتف",
-  "col_profile": "عرض الملف 360°",
+  "col_completeness": "اكتمال الملف",
+  "col_actions": "الإجراءات",
   "view_full_profile": "الملف الكامل",
+  "badge_deleted": "محذوف",
+
+  "filter_all_countries": "الدولة: الكل",
+  "filter_all_genders": "الجنس: الكل",
+  "show_deleted": "إظهار المحذوفين",
+
+  "action_create": "تسجيل متسابق",
+  "action_create_submit": "تسجيل",
+  "action_restore": "استعادة",
+
+  "form_title_create": "تسجيل متسابق جديد",
+  "form_title_edit": "تعديل بيانات المتسابق",
+
+  "field_account": "الحساب",
+  "account_placeholder": "اختر حسابًا",
+  "account_search_placeholder": "ابحث بالاسم أو البريد الإلكتروني",
+  "account_hint": "يجب أن يكون الحساب موجودًا مسبقًا؛ هذه الشاشة تربط المتسابق بحسابه ولا تنشئ الحسابات.",
+  "account_id_hint": "صلاحيتك لا تتيح استعراض الحسابات؛ أدخل معرّف الحساب (UUID) مباشرة.",
+
+  "field_country": "الدولة",
+  "country_placeholder": "اختر دولة",
+  "country_immutable_hint": "لا يمكن تغيير الدولة بعد التسجيل.",
+
+  "field_full_name": "الاسم الكامل",
+  "field_gender": "الجنس",
+  "gender_male": "ذكر",
+  "gender_female": "أنثى",
+
+  "field_national_id": "الرقم الوطني",
+  "national_id_hint": "اختياري. بيانات حساسة لا تظهر في قائمة المتسابقين.",
+  "national_id_edit_hint": "اتركه فارغًا للإبقاء على القيمة المحفوظة؛ ما تكتبه هنا يستبدلها.",
+
+  "delete_title": "حذف متسابق",
+  "delete_message": "سيتم حذف سجل {{name}}. الحذف قابل للتراجع عبر الاستعادة، ولا تُفقد بيانات المتسابق.",
+
+  "create_success": "تم تسجيل المتسابق.",
+  "create_error": "تعذّر تسجيل المتسابق.",
+  "update_success": "تم تحديث بيانات المتسابق.",
+  "update_error": "تعذّر تحديث بيانات المتسابق.",
+  "delete_success": "تم حذف المتسابق.",
+  "delete_error": "تعذّر حذف المتسابق.",
+  "restore_success": "تمت استعادة المتسابق.",
+  "restore_error": "تعذّرت استعادة المتسابق.",
 
   "drawer_title": "الملف الشخصي 360° — {{name}}",
 
