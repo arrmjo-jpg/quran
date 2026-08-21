@@ -178,9 +178,12 @@ final class PermissionCatalog
         'memberships' => ['view', 'create', 'end', 'transfer'],
 
         // ── People ──────────────────────────────────────────────────
-        // contestants.update: NO ENDPOINT YET (granted to data_entry in
-        // the ADR-015 §7.3 matrix).
-        'contestants' => ['view', 'update'],
+        // create/delete/restore added by Epic 4 Story 1, which built the
+        // management endpoints. `update` had been here since the catalogue
+        // was written, granted to data_entry and consulted by nothing —
+        // ADR-016 D17 is the moment that dormant grant was decided rather
+        // than inherited. delete/restore are super_admin's alone.
+        'contestants' => ['view', 'create', 'update', 'delete', 'restore'],
         'judges' => ['view', 'create'],
         // NO ENDPOINT YET — the judge_assignments table has no route at
         // all; its epic builds them.
@@ -293,6 +296,47 @@ final class PermissionCatalog
         }
 
         return $names;
+    }
+
+    /**
+     * One permission's name, assembled from the catalogue rather than
+     * written out.
+     *
+     * EXISTS BECAUSE THERE WAS NO WAY TO NAME A SINGLE PERMISSION. The
+     * catalogue could hand over all of them, a resource's worth of them, or
+     * answer whether a string was one — so any code needing exactly one wrote
+     * it as a literal, which PermissionSourceOfTruthTest rightly refuses:
+     * renaming a permission has to be a single-file change the suite catches
+     * everywhere it was referenced.
+     *
+     * `can:` middleware in a routes file escapes that by construction, since
+     * the name is embedded in a longer string. A runtime check — "may this
+     * reader see this branch?" — has no such cover, and Epic 4's Identity 360
+     * is the first place one was needed.
+     *
+     * Throws rather than returning a string that merely looks right: a
+     * resource or verb that has gone away is a reference that would silently
+     * never match any granted permission, which is the failure mode this
+     * whole class is written against.
+     */
+    public static function name(string $resource, string $verb): string
+    {
+        $grouped = self::grouped();
+
+        if (! isset($grouped[$resource])) {
+            throw new \InvalidArgumentException("Unknown permission resource: {$resource}");
+        }
+
+        $name = "{$resource}.{$verb}";
+
+        if (! in_array($name, $grouped[$resource], true)) {
+            throw new \InvalidArgumentException(
+                "Resource {$resource} has no verb {$verb}. It has: "
+                .implode(', ', $grouped[$resource])
+            );
+        }
+
+        return $name;
     }
 
     public static function has(string $name): bool

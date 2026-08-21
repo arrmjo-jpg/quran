@@ -17,6 +17,25 @@ namespace Modules\Core\Contracts;
  */
 interface CoreServiceContract
 {
-    // Define public methods that other modules may call.
-    // Keep this interface minimal — expose only what cross-module consumers need.
+    /**
+     * Resolve a batch of account ids to the four fields ADR-016 D18 admits
+     * into another module's context — id, name, derived status, type.
+     *
+     * A batch rather than a single id, following CountriesServiceContract:
+     * the callers that need this are rendering a set of rows, and a
+     * one-at-a-time method is an N+1 waiting for its first list.
+     *
+     * Soft-deleted accounts ARE returned, reported with status 'deleted'.
+     * A contestant whose account was removed still has one, and a screen
+     * that showed nothing there would say "no account" when the truth is
+     * "an account that can no longer sign in" — the more useful fact and
+     * the reason D18 admits `status` at all.
+     *
+     * Ids that match nothing are simply absent from the result; the caller
+     * decides what a missing account means in its own context.
+     *
+     * @param  array<int, string>  $ids
+     * @return array<int, ResolvedUserDTO>
+     */
+    public function findResolvedByIds(array $ids): array;
 }

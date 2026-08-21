@@ -16,6 +16,8 @@ const MembershipsPage  = lazy(() => import('@/features/memberships/pages/Members
 const RolesPage        = lazy(() => import('@/features/roles/pages/RolesPage'));
 const UsersPage        = lazy(() => import('@/features/users/pages/UsersPage'));
 const ContestantsPage  = lazy(() => import('@/features/contestants/pages/ContestantsPage'));
+const ContestantIdentityPage = lazy(() => import('@/features/contestants/pages/ContestantIdentityPage'));
+const UserDetailPage   = lazy(() => import('@/features/users/pages/UserDetailPage'));
 const JudgesPage       = lazy(() => import('@/features/judges/pages/JudgesPage'));
 const ApplicationsPage = lazy(() => import('@/features/applications/pages/ApplicationsPage'));
 const EvaluationsPage  = lazy(() => import('@/features/evaluations/pages/EvaluationsPage'));
@@ -76,7 +78,9 @@ const router = createBrowserRouter([
           page('memberships', <MembershipsPage />),
           page('roles', <RolesPage />),
           page('users', <UsersPage />),
+          page('users/:id', <UserDetailPage />),
           page('contestants', <ContestantsPage />),
+          page('contestants/:id', <ContestantIdentityPage />),
           page('judges', <JudgesPage />),
           page('applications', <ApplicationsPage />),
           page('evaluations', <EvaluationsPage />),

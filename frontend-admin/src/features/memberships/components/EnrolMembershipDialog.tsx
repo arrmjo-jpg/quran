@@ -15,6 +15,7 @@ import {
 import { useStartMembership } from '../hooks/useMemberships';
 
 const CIRCLE_LIMIT = 100;
+const CONTESTANT_LIMIT = 100;
 
 export interface EnrolMembershipDialogProps {
   isOpen:  boolean;
@@ -30,7 +31,14 @@ export function EnrolMembershipDialog({ isOpen, onClose }: EnrolMembershipDialog
   // Searched on the server rather than filtered here: there is no bound on how
   // many contestants exist, so loading them all to filter locally is the one
   // approach that gets slower the more successful the platform is.
-  const contestants = useContestants({ query: contestantQuery });
+  // `search` replaced `query` when the contestants endpoint gained
+  // pagination in Epic 4 Story 1; the term is still sent to the server for
+  // the reason above, only under the name every other admin list uses.
+  const contestants = useContestants({
+    page: 1,
+    per_page: CONTESTANT_LIMIT,
+    search: contestantQuery || undefined,
+  });
   const circles = useCircles({ page: 1, per_page: CIRCLE_LIMIT });
 
   const startMembership = useStartMembership();
@@ -64,7 +72,7 @@ export function EnrolMembershipDialog({ isOpen, onClose }: EnrolMembershipDialog
 
   const contestantOptions = [
     { value: '', label: t('field_contestant_placeholder') },
-    ...(contestants.data ?? []).map((c) => ({ value: c.id, label: c.full_name })),
+    ...(contestants.data?.contestants ?? []).map((c) => ({ value: c.id, label: c.full_name })),
   ];
 
   const circleOptions = [

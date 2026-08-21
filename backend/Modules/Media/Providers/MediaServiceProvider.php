@@ -10,8 +10,10 @@ namespace Modules\Media\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Media\Contracts\MediaServiceContract;
 use Modules\Media\Domain\Repositories\MediaAssetRepositoryContract;
 use Modules\Media\Infrastructure\Database\Repositories\MediaAssetRepository;
+use Modules\Media\Infrastructure\Services\MediaService;
 
 final class MediaServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,14 @@ final class MediaServiceProvider extends ServiceProvider
         $this->app->singleton(
             MediaAssetRepositoryContract::class,
             MediaAssetRepository::class
+        );
+
+        // The module's boundary, per ADR-002. Contestants resolves a photo
+        // through this and never learns that MediaAssetModel exists, nor
+        // which disk the file sits on.
+        $this->app->singleton(
+            MediaServiceContract::class,
+            MediaService::class
         );
     }
 

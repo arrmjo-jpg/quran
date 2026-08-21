@@ -35,6 +35,7 @@ import type { PermissionKey } from '@/core/permissions';
 export const ROUTE_PERMISSIONS: Readonly<Record<string, PermissionKey>> = {
   '/seasons': 'seasons.view',
   '/contestants': 'contestants.view',
+  '/contestants/:id': 'contestants.view',
   '/judges': 'judges.view',
   '/applications': 'applications.view',
   '/evaluations': 'evaluations.view',
@@ -50,6 +51,7 @@ export const ROUTE_PERMISSIONS: Readonly<Record<string, PermissionKey>> = {
   '/circles': 'circles.view',
   '/memberships': 'memberships.view',
   '/users': 'users.view',
+  '/users/:id': 'users.view',
   '/roles': 'roles.view',
   '/search': 'search.view',
   '/audit-logs': 'audit.view',
@@ -58,10 +60,16 @@ export const ROUTE_PERMISSIONS: Readonly<Record<string, PermissionKey>> = {
 /**
  * The permission `path` requires, or undefined if it is open.
  *
- * Paths are matched exactly. Every route in this panel is a top-level
- * screen, so there is nothing to prefix-match yet — and guessing at nesting
- * before it exists would mean `/users` quietly gating a future
- * `/users-something` that has nothing to do with it.
+ * Paths are matched exactly, and the key is the ROUTE PATTERN rather than a
+ * visited URL — `/users/:id`, not `/users/abc`. Epic 4 Story 3 added the
+ * panel's first nested routes, and exact matching still holds because
+ * `page()` hands this function the pattern it registered.
+ *
+ * That is why there is still no prefix matching: prefixes would mean
+ * `/users` quietly gating a future `/users-something` that has nothing to do
+ * with it, and a detail route that forgot its entry would inherit a
+ * permission nobody chose for it. A pattern absent from this map is open,
+ * loudly, rather than gated by accident.
  */
 export function requiredPermissionFor(path: string): PermissionKey | undefined {
   return ROUTE_PERMISSIONS[path];

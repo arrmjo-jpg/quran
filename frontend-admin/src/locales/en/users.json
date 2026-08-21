@@ -53,5 +53,21 @@
   "delete_success": "Account deleted",
   "delete_error": "Could not delete the account",
   "restore_success": "Account restored",
-  "restore_error": "Could not restore the account"
+  "restore_error": "Could not restore the account",
+  "detail_title": "Account detail",
+  "detail_subtitle": "The account, its roles and effective permissions, and the contestant linked to it",
+  "section_account": "Account",
+  "section_contestant": "Linked contestant",
+  "section_permissions": "Effective permissions",
+  "field_mfa": "Two-factor authentication",
+  "mfa_on": "Enabled",
+  "mfa_off": "Not enabled",
+  "contestant_none": "This account has no contestant record.",
+  "contestant_withheld": "Your permissions do not include being told whether this account has a contestant record.",
+  "contestant_deleted": "Deleted record",
+  "name_divergence": "The contestant's name differs from the account name.",
+  "open_identity": "Open the 360° profile",
+  "no_permissions": "This account holds no permissions.",
+  "permissions_count_one": "{{count}} effective permission",
+  "permissions_count_other": "{{count}} effective permissions"
 }

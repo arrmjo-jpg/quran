@@ -168,6 +168,10 @@ final class RolesSeeder extends Seeder
             'data_entry' => [
                 'countries.view',
                 'contestants.view',
+                // ADR-016 D17: the data-entry role enters and corrects
+                // contestant records. Destructive operations — delete and
+                // restore — stay with super_admin and are absent here.
+                'contestants.create',
                 'contestants.update',
                 'applications.view',
                 'media.view',

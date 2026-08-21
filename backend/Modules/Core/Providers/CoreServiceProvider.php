@@ -11,6 +11,7 @@ namespace Modules\Core\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Contracts\CoreServiceContract;
 use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserProfileRepositoryContract;
@@ -22,6 +23,7 @@ use Modules\Core\Infrastructure\Database\Repositories\UserProfileRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
+use Modules\Core\Infrastructure\Services\CoreService;
 
 final class CoreServiceProvider extends ServiceProvider
 {
@@ -47,6 +49,14 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserProfileRepositoryContract::class,
             UserProfileRepository::class
+        );
+
+        // The module's boundary, per ADR-002. Bound like every other
+        // contract here so a consumer type-hints the interface and never
+        // learns that UserModel exists.
+        $this->app->singleton(
+            CoreServiceContract::class,
+            CoreService::class
         );
     }
 

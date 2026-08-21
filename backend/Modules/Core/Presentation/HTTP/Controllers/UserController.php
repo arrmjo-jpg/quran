@@ -7,6 +7,7 @@ namespace Modules\Core\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Contestants\Contracts\ContestantsServiceContract;
 use Modules\Core\Application\UseCases\ActivateUserUseCase;
 use Modules\Core\Application\UseCases\CreateAdminUserUseCase;
 use Modules\Core\Application\UseCases\DeactivateUserUseCase;
@@ -20,6 +21,7 @@ use Modules\Core\Domain\Exceptions\SelfDeactivationException;
 use Modules\Core\Domain\Exceptions\SelfRoleChangeException;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
+use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 use Modules\Core\Presentation\HTTP\Requests\CreateAdminUserRequest;
 use Modules\Core\Presentation\HTTP\Requests\ListUsersRequest;
 use Modules\Core\Presentation\HTTP\Requests\SyncUserRolesRequest;
@@ -114,16 +116,47 @@ final class UserController extends Controller
      * because here it is one resolution for a question someone asked about
      * one person.
      */
-    public function show(string $id): JsonResponse
+    /**
+     * One account, with the contestant behind it — ADR-016 D22, D23.
+     *
+     * The `contestant` branch is the reverse of Identity 360: D16 drew the
+     * tree from a User downward, and until Story 3 the API only ran the other
+     * way. It carries the three fields D22 admits and no more, enforced by
+     * ResolvedContestantDTO rather than by this method remembering.
+     *
+     * Gated the way D20 gates memberships: contestants.view is a separate
+     * permission that users.view does not imply, so a reader without it is
+     * told the branch was WITHHELD rather than handed a null that reads as
+     * "this person is not a contestant". Those are different facts and the
+     * screen must not confuse them.
+     */
+    public function show(string $id, ContestantsServiceContract $contestants): JsonResponse
     {
         $user = UserModel::withTrashed()->findOrFail($id);
         $user->setAttribute('role_names', $this->authorization->rolesOf($user));
+
+        $mayReadContestants = $this->authorization->allows(
+            request()->user(),
+            PermissionCatalog::name('contestants', 'view')
+        );
+
+        $resolved = $mayReadContestants
+            ? $contestants->findResolvedByUserIds([(string) $user->id])[(string) $user->id] ?? null
+            : null;
 
         return response()->json([
             'success' => true,
             'data' => array_merge(
                 (new AdminUserResource($user))->toArray(request()),
-                ['permissions' => $this->authorization->permissionsOf($user)],
+                [
+                    'permissions' => $this->authorization->permissionsOf($user),
+                    'contestant' => $resolved === null ? null : [
+                        'id' => $resolved->id,
+                        'full_name' => $resolved->fullName,
+                        'is_deleted' => $resolved->isDeleted,
+                    ],
+                    'withheld' => $mayReadContestants ? [] : ['contestant'],
+                ],
             ),
         ]);
     }

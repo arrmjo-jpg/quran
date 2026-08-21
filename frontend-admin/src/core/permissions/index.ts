@@ -78,7 +78,10 @@ export const PERMISSIONS = [
   'memberships.transfer',
   // contestants
   'contestants.view',
+  'contestants.create',
   'contestants.update',
+  'contestants.delete',
+  'contestants.restore',
   // judges
   'judges.view',
   'judges.create',
