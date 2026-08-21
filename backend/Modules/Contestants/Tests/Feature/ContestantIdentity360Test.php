@@ -246,7 +246,13 @@ test('GM [SUPERSEDED BY STORY 4]: the branch carried ten keys before the photo a
 });
 
 test('GM [CHANGED IN STORY 4]: the photo id now resolves beside itself', function (): void {
-    [$contestantId] = idnContestant(['photo_media_id' => $mediaId = (string) Str::uuid()]);
+    // A real asset, not an invented uuid. `contestants.photo_media_id` is a
+    // foreign key, and this test wrote a random one — it passed only because
+    // the suite ran with foreign keys disabled, and it was the single failure
+    // when they were switched on. Written by me in Story 4; found by the
+    // enforcement this epic enabled, which is the point of enabling it.
+    $mediaId = idnMediaAsset();
+    [$contestantId] = idnContestant(['photo_media_id' => $mediaId]);
 
     $response = $this->actingAs(idnAs('super_admin'))
         ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")

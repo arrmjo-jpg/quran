@@ -534,11 +534,30 @@ test('all eight platforms Q5 closed the set to are accepted', function (): void 
 
     // The set the endpoint accepts is the set the value object defines, in the
     // same order — so adding a platform to one and not the other fails here.
+    // This one IS order-sensitive on purpose: both sides are PHP arrays this
+    // test controls, and the pairing is what it is checking.
     expect(array_keys($links))->toBe(SocialLinks::platforms());
 
-    $this->actingAs($user)->patchJson('/api/v1/me', ['profile' => ['social_links' => $links]])
+    $returned = $this->actingAs($user)
+        ->patchJson('/api/v1/me', ['profile' => ['social_links' => $links]])
         ->assertOk()
-        ->assertJsonPath('data.profile.social_links', $links);
+        ->json('data.profile.social_links');
+
+    // COMPARED WITHOUT REGARD TO KEY ORDER, and that is not a weakening.
+    // This asserted exact array equality and passed for one reason: SQLite
+    // stores JSON as text and hands the keys back in insertion order. MySQL's
+    // JSON type is a binary format that orders object keys itself, so the same
+    // eight platforms came back rearranged and the assertion failed — the only
+    // failure in the whole suite when it was first run against the production
+    // engine.
+    //
+    // Nothing about the contract promises key order: no client reads
+    // social_links positionally, and the value object is a map. The order was
+    // accidental precision borrowed from the test engine, and asserting it
+    // meant asserting something the platform does not actually guarantee.
+    // Every platform and every value is still checked.
+    expect($returned)->toEqualCanonicalizing($links);
+    expect(array_keys($returned))->toEqualCanonicalizing(SocialLinks::platforms());
 });
 
 test('avatar_media_id cannot be set through this endpoint', function (): void {
