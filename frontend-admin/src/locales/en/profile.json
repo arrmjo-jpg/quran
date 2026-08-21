@@ -1,0 +1,47 @@
+{
+  "title": "My profile",
+  "subtitle": "How you appear inside the panel, and where people can find you",
+  "save": "Save changes",
+
+  "section_account": "Account",
+  "section_profile": "Profile",
+  "section_links": "Social links",
+
+  "field_name": "Name",
+  "field_email": "Email",
+  "field_roles": "Roles:",
+  "no_roles": "No roles",
+  "field_display_name": "Display name",
+  "display_name_hint": "Leave empty to show the account name. A display name is shown alongside it, not instead of it.",
+  "field_bio": "Biography",
+  "field_avatar": "Avatar:",
+  "avatar_none": "Not set",
+  "avatar_readonly_hint": "The avatar cannot be changed here yet — uploading one needs the media permission, which self-service does not carry.",
+
+  "links_hint": "Every link is optional. Give the full URL starting with https://, and empty it to remove the link. Each must point at its own platform's domain.",
+  "platform_website": "Website",
+  "platform_x": "X (Twitter)",
+  "platform_linkedin": "LinkedIn",
+  "platform_facebook": "Facebook",
+  "platform_instagram": "Instagram",
+  "platform_youtube": "YouTube",
+  "platform_telegram": "Telegram",
+  "platform_tiktok": "TikTok",
+  "placeholder_website": "https://example.com",
+  "placeholder_x": "https://x.com/username",
+  "placeholder_linkedin": "https://linkedin.com/in/username",
+  "placeholder_facebook": "https://facebook.com/username",
+  "placeholder_instagram": "https://instagram.com/username",
+  "placeholder_youtube": "https://youtube.com/@username",
+  "placeholder_telegram": "https://t.me/username",
+  "placeholder_tiktok": "https://tiktok.com/@username",
+
+  "save_success": "Your profile has been saved.",
+  "save_error": "Could not save your profile.",
+
+  "error_name_required": "A name is required.",
+  "error_name_long": "The name is too long (255 characters maximum).",
+  "error_display_name_long": "The display name is too long (255 characters maximum).",
+  "error_bio_long": "The biography is too long (1000 characters maximum).",
+  "error_link_shape": "Give a full URL starting with http:// or https://"
+}

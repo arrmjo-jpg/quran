@@ -1,0 +1,47 @@
+{
+  "title": "ملفي الشخصي",
+  "subtitle": "بياناتك المعروضة داخل اللوحة وروابط تواصلك",
+  "save": "حفظ التغييرات",
+
+  "section_account": "بيانات الحساب",
+  "section_profile": "الملف الشخصي",
+  "section_links": "روابط التواصل",
+
+  "field_name": "الاسم",
+  "field_email": "البريد الإلكتروني",
+  "field_roles": "الأدوار:",
+  "no_roles": "بلا أدوار",
+  "field_display_name": "الاسم المعروض",
+  "display_name_hint": "اتركه فارغًا ليُعرض اسم الحساب. الاسم المعروض لا يحلّ محلّ اسم الحساب بل يُضاف إليه.",
+  "field_bio": "نبذة",
+  "field_avatar": "الصورة الشخصية:",
+  "avatar_none": "غير محددة",
+  "avatar_readonly_hint": "لا يمكن تغيير الصورة من هنا بعد؛ رفعها يتطلب صلاحية إدارة الوسائط التي لا تحملها الخدمة الذاتية.",
+
+  "links_hint": "كل الروابط اختيارية. أدخل الرابط كاملًا (يبدأ بـ https://)، واتركه فارغًا لإزالته. يجب أن ينتمي كل رابط إلى نطاق منصّته.",
+  "platform_website": "الموقع الشخصي",
+  "platform_x": "X (تويتر)",
+  "platform_linkedin": "لينكدإن",
+  "platform_facebook": "فيسبوك",
+  "platform_instagram": "إنستغرام",
+  "platform_youtube": "يوتيوب",
+  "platform_telegram": "تيليغرام",
+  "platform_tiktok": "تيك توك",
+  "placeholder_website": "https://example.com",
+  "placeholder_x": "https://x.com/username",
+  "placeholder_linkedin": "https://linkedin.com/in/username",
+  "placeholder_facebook": "https://facebook.com/username",
+  "placeholder_instagram": "https://instagram.com/username",
+  "placeholder_youtube": "https://youtube.com/@username",
+  "placeholder_telegram": "https://t.me/username",
+  "placeholder_tiktok": "https://tiktok.com/@username",
+
+  "save_success": "تم حفظ ملفك الشخصي.",
+  "save_error": "تعذّر حفظ الملف الشخصي.",
+
+  "error_name_required": "الاسم مطلوب.",
+  "error_name_long": "الاسم طويل جدًا (255 حرفًا كحد أقصى).",
+  "error_display_name_long": "الاسم المعروض طويل جدًا (255 حرفًا كحد أقصى).",
+  "error_bio_long": "النبذة طويلة جدًا (1000 حرف كحد أقصى).",
+  "error_link_shape": "أدخل رابطًا كاملًا يبدأ بـ http:// أو https://"
+}

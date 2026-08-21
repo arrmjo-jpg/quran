@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Sun, Moon, LogOut, User, Search } from 'lucide-react';
 import { useAuth } from '@/core/auth/AuthContext';
@@ -56,13 +57,23 @@ export default function Header(): React.JSX.Element {
 
         {/* User Info & Logout */}
         <div className="flex items-center gap-3 pr-3 border-r border-slate-100 dark:border-slate-800">
-          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
-            <User className="w-4 h-4" />
-          </div>
-          <div className="text-xs">
-            <p className="font-semibold text-slate-800 dark:text-slate-200">{user?.name ?? 'Admin User'}</p>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">{user?.email}</p>
-          </div>
+          {/* The name is the profile's natural entry point: someone looking
+              for their own settings looks at their own name first. The screen
+              is open to any signed-in administrator, so there is nothing to
+              gate this link behind. */}
+          <Link
+            to="/profile"
+            title={t('profile')}
+            className="flex items-center gap-3 rounded-lg px-1 py-0.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+              <User className="w-4 h-4" />
+            </div>
+            <div className="text-xs text-start">
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{user?.name ?? 'Admin User'}</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">{user?.email}</p>
+            </div>
+          </Link>
           <Button variant="ghost" size="sm" onClick={logout} className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
             <LogOut className="w-3.5 h-3.5" />
             <span>{t('logout')}</span>

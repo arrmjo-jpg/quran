@@ -1,0 +1,47 @@
+{
+  "title": "Mi perfil",
+  "subtitle": "Cómo apareces dentro del panel, y dónde pueden encontrarte",
+  "save": "Guardar cambios",
+
+  "section_account": "Cuenta",
+  "section_profile": "Perfil",
+  "section_links": "Enlaces sociales",
+
+  "field_name": "Nombre",
+  "field_email": "Correo electrónico",
+  "field_roles": "Roles:",
+  "no_roles": "Sin roles",
+  "field_display_name": "Nombre visible",
+  "display_name_hint": "Déjalo vacío para mostrar el nombre de la cuenta. El nombre visible se muestra junto a él, no en su lugar.",
+  "field_bio": "Biografía",
+  "field_avatar": "Avatar:",
+  "avatar_none": "Sin definir",
+  "avatar_readonly_hint": "El avatar aún no puede cambiarse aquí: subir uno requiere el permiso de medios, que el autoservicio no tiene.",
+
+  "links_hint": "Todos los enlaces son opcionales. Escribe la URL completa empezando por https://, y déjala vacía para quitarla. Cada una debe apuntar al dominio de su propia plataforma.",
+  "platform_website": "Sitio web",
+  "platform_x": "X (Twitter)",
+  "platform_linkedin": "LinkedIn",
+  "platform_facebook": "Facebook",
+  "platform_instagram": "Instagram",
+  "platform_youtube": "YouTube",
+  "platform_telegram": "Telegram",
+  "platform_tiktok": "TikTok",
+  "placeholder_website": "https://example.com",
+  "placeholder_x": "https://x.com/username",
+  "placeholder_linkedin": "https://linkedin.com/in/username",
+  "placeholder_facebook": "https://facebook.com/username",
+  "placeholder_instagram": "https://instagram.com/username",
+  "placeholder_youtube": "https://youtube.com/@username",
+  "placeholder_telegram": "https://t.me/username",
+  "placeholder_tiktok": "https://tiktok.com/@username",
+
+  "save_success": "Tu perfil se ha guardado.",
+  "save_error": "No se pudo guardar tu perfil.",
+
+  "error_name_required": "El nombre es obligatorio.",
+  "error_name_long": "El nombre es demasiado largo (máximo 255 caracteres).",
+  "error_display_name_long": "El nombre visible es demasiado largo (máximo 255 caracteres).",
+  "error_bio_long": "La biografía es demasiado larga (máximo 1000 caracteres).",
+  "error_link_shape": "Escribe una URL completa que empiece por http:// o https://"
+}

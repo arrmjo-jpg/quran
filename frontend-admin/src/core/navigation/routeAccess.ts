@@ -15,12 +15,16 @@ import type { PermissionKey } from '@/core/permissions';
  * a compile error rather than a gate that silently never opens.
  *
  * A path absent from this map is deliberately open to any signed-in
- * administrator. That is three destinations and each has a reason:
+ * administrator. That is four destinations and each has a reason:
  *
  *   /          the landing page. Gating it would refuse an operator at the
  *              moment they sign in, before they can reach anything they DO
  *              hold — a judge would meet a wall instead of a panel.
  *   /sessions  shows only the viewer's own sessions.
+ *   /profile   shows and edits only the viewer's own account. Gating it
+ *              behind users.update would mean a role could be edited into
+ *              one that cannot correct its own name — and the server agrees:
+ *              `admin.auth.update_profile` sits in SELF_SERVICE_ROUTES.
  *   /about     static build and environment facts, no data behind it.
  *
  * NOT A SECURITY BOUNDARY, for the same reason PermissionWrapper is not:
