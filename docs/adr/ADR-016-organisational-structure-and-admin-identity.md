@@ -506,6 +506,108 @@ Deletion is soft only, per D5. `contestants` already carries `SoftDeletes`, so `
 Story 1 precedes Story 2 for the reason in D15: a dashboard over an API that cannot create what it
 displays would be built twice.
 
+### Story 2 — Identity 360, settled 2026-08-21
+
+D16 drew the tree and D18 settled which User fields cross into it. Neither said how the tree is
+*served*, who may read each branch, or what happens to the branches the API cannot fill. Those are
+decided here, after Discovery measured the code rather than before.
+
+#### What Discovery measured, before any decision was taken
+
+| Finding | Evidence |
+|---|---|
+| The contestant's membership history is already readable | `GET /admin/memberships?contestant_id=…` exists, eager loads `circle`, and paginates — behind `can:memberships.view` |
+| The circle already carries its centre | `CircleModel::center()` and `ContestantMembershipModel::circle()` are declared relations, so `with('circle.center')` is three queries regardless of row count |
+| Two boundary contracts are empty stubs | `CoreServiceContract` and `OrganizationServiceContract` still carry the generated *"Define public methods"* comment. `CountriesServiceContract` is the only one with a real method, and it is the precedent this story follows |
+| The derived account status exists in exactly one place | The four-branch `match` in `AdminUserResource`. Identity 360 needs the same answer, which would make it two |
+| There is no `/users/{id}` route in the panel | `router.tsx` routes `/users` to a list with dialogs. D18 calls `id` *"the navigation target for `/users/{id}`"*; that target does not exist |
+| The drawer shows six branches the server has never sent | `Contestant360Drawer` renders applications, video, evaluations, a hard-coded *"94.5 / 100 — qualified"* result and a hard-coded two-entry timeline |
+
+#### D19 — one composed endpoint, and what it does *not* carry
+
+`GET /admin/contestants/{id}/identity`, behind `can:contestants.view`.
+
+Composed on the server rather than assembled by the client from four calls. The client-side
+alternative fails on permissions before it fails on round trips: the drawer would need
+`contestants.view` **and** `memberships.view` **and** `users.view`, and `data_entry` holds only the
+first — so the screen would break into partial 403s for the very role that spends the most time on
+it.
+
+**The contestant branch carries the list shape, without `national_id`.** Identity 360 is a
+relationship view, and D18's own rule decides this: *shows what identifies, explains, or links; not
+what describes.* An identity document describes. It stays exactly where Story 1 put it — on
+`GET /admin/contestants/{id}`, which is a deliberate act on one person and not a graph anyone
+browses. The D18 table already judged `national_id` **not shown**; this records that the judgement
+binds the identity payload too, so nobody re-derives it from "the caller holds `contestants.view`
+anyway".
+
+**No `user_profiles` branch, and no empty placeholder for one.** D18's consequence, unchanged.
+
+**No applications or appeals branch.** No endpoint returns either against a contestant, so there is
+nothing to serve. A branch present and always empty would be indistinguishable from a contestant
+who has never applied — which is a lie the current UI already tells.
+
+#### D20 — a branch withheld is not a branch that is empty
+
+The memberships branch is other-module data with its own permission, and `contestants.view` does
+not imply `memberships.view`. Row-level scoping is deferred to Epic 14, so visibility here stays
+all-or-nothing per permission, exactly as everywhere else.
+
+So the branch is served only to a caller holding `memberships.view` — and when it is not, the
+response says so:
+
+```json
+{ "memberships": [], "withheld": ["memberships"] }
+```
+
+The key is always present and always an array, so the shape does not change with the reader. What
+changes is `withheld`, which names each branch suppressed for lack of permission. Without it,
+`data_entry` would read an empty array and conclude the contestant has never belonged to a
+circle — the panel telling an operator a fact about a person that is not true. This is the same
+failure `routeAccess.ts` describes at the route level: *"telling the operator there is no data
+rather than that they may not see it."*
+
+`competition_manager` and `data_entry` hold `contestants.view` and neither holds
+`memberships.view`, so today **only `super_admin` sees the memberships branch**. That is a
+consequence of grants made in Epic 2, not a new restriction, and it is an operator's decision to
+change rather than a seeder's.
+
+#### D21 — the fabricated branches are removed, not left in place
+
+`Contestant360Drawer`'s applications, video, evaluations, results and timeline tabs render content
+no endpoint has ever returned, including a specific score and a specific verdict. Story 2 deletes
+them.
+
+Leaving them beside real data would be worse than leaving them alone was: an operator who sees a
+true account status and a true circle history next to *"Average score: 94.5 / 100 — qualified"* has
+every reason to believe the third. The tabs return when there is an endpoint behind them, which the
+Stories table already assigns elsewhere.
+
+#### Two things this story builds that ADR-002 has been waiting for
+
+`CoreServiceContract` and `OrganizationServiceContract` get their first real methods, each
+returning a DTO owned by the providing module — the shape `CountriesServiceContract` established:
+
+* `Core` exposes `id`, `name`, `status`, `type` and nothing else. D18 stops being a rule someone
+  has to remember and becomes a type: `email` cannot cross this boundary because there is nowhere
+  to put it.
+* `Organization` exposes a membership with its circle and that circle's centre, resolved in one
+  eager load.
+
+The `status` `match` moves out of `AdminUserResource` into a Core value object that both callers
+read, so the contestant screen and the users screen cannot disagree about whether somebody can sign
+in. `UserLifecycleTest`'s *"every account state is reported as one derived status"* already covers
+all four states and is the regression guard for that move; no new characterisation was needed
+because the existing one was already sufficient.
+
+#### Deferred by this story, on purpose
+
+* **`/users/{id}` does not exist**, so D18's `id`-as-a-link cannot be honoured. The account branch
+  shows the id rather than linking to a route that would 404. Building that route is a users-screen
+  change, not an Identity 360 one.
+* **`data_entry` cannot see memberships** — see D20. Granting `memberships.view` is an operator
+  decision through the roles panel.
+
 ### Carried into Epic 4 from Discovery, not fixed by it
 
 Recorded so they are not attributed to this epic when they surface in a full run:
