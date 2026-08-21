@@ -608,6 +608,75 @@ because the existing one was already sufficient.
 * **`data_entry` cannot see memberships** — see D20. Granting `memberships.view` is an operator
   decision through the roles panel.
 
+### Story 3 — Identity 360 UI, settled 2026-08-21
+
+D16 drew the tree from a **User** downward. Everything built so far runs the other way: Story 2
+serves `Contestant → User`, and nothing anywhere — not `AdminUserResource`, not `UserResource`, not
+the users screen — mentions a contestant. Verified by search before deciding: zero references. The
+link exists in the database and in one direction of the API only.
+
+#### D22 — what crosses the contestant→user link
+
+The mirror of D18, judged against the same rule: *shows what identifies, explains, or links; does
+not show what describes.* D18 measured what a **user** may contribute to a contestant screen; this
+measures what a **contestant** may contribute to an account screen.
+
+| Field | Source | Why the screen needs it | Personal | Shown |
+|---|---|---|:--:|:--:|
+| `id` | `contestants` | The navigation target for `/contestants/{id}`. Without it the relationship is displayed but cannot be followed — D18's own words about `users.id` | no | **yes**, as a link |
+| `full_name` | `contestants` | Identifies the competitor, and its *divergence* from `users.name` is itself information. D18 admitted `name` in the other direction for exactly this reason; the two columns are separate and nothing keeps them in step | no | **yes** |
+| `is_deleted` | `contestants` | Explains. An account that looks ordinary but whose contestant record was removed is not competing, and the account screen otherwise gives no hint why | no | **yes** |
+| `national_id` | `contestants` | Identity document of a person who may be a minor. D19 already keeps it off Identity 360 itself; it certainly does not travel further out | **yes** | no |
+| `date_of_birth` | `contestants` | Describes | **yes** | no |
+| `gender` | `contestants` | Describes | yes | no |
+| `phone_number` | `contestants` | Describes, and is contact data rather than identity | **yes** | no |
+| `country_id` | `contestants` | Belongs to the contestant's own screen; an account is not located anywhere | no | no |
+| `profile_completeness` | derived | A data-entry progress metric. It answers "is this record finished", which is a contestant-screen question | no | no |
+
+Three fields, and `ResolvedContestantDTO` has room for exactly three — the same enforcement
+`ResolvedUserDTO` gives D18. `ContestantsServiceContract` gets its first real method, leaving
+`Media`, `Videos`, `Judges` and the rest still stubs.
+
+#### D23 — one surface for the graph, and two routes
+
+**The drawer is replaced by a page at `/contestants/:id`, not joined by one.** Two surfaces
+rendering the same graph are two places that must be kept in step, and this codebase already
+carries the argument against that in three separate comments — `is_active` derived once rather than
+recomputed by three clients, `status` derived once rather than combined from three columns,
+`UserStatus` extracted the moment a second caller appeared. A quick-look drawer beside a full page
+would be the same mistake with more markup. The drawer's body becomes the page's body; the table's
+"Full profile" button navigates instead of opening a dialog.
+
+The payoff is not aesthetic. A dialog has no URL, so the relationship an operator is looking at
+cannot be linked to, and `User → Contestant → back` cannot be walked at all. A graph you can see
+but not traverse is a diagram, not a screen.
+
+**`/users/:id` is built.** `GET /admin/users/{id}` has existed since Epic 1 and returns the account
+with its effective permission set; `useUser(id)` has existed in the panel and is called from
+nowhere. What was missing was a route and a page. Building it is what makes D18's `id`-as-a-link
+real rather than an id printed as text, and it is the far end of every link D22 adds.
+
+**Both directions withhold rather than empty**, exactly as D20 established. The contestant branch
+on an account screen needs `contestants.view`, which `users.view` does not imply, and the account
+screen names it in `withheld` when refused. The reverse is already true of the memberships branch.
+So `super_admin` sees the whole graph, and every other role sees a graph that says where it has
+been cut rather than pretending those parts are empty.
+
+#### Recorded, not fixed, by this story
+
+The Golden Master written before the change (`AdminUserGoldenMasterTest`) records two
+inconsistencies between the two admin surfaces, both pre-existing:
+
+* a soft-deleted **account** is retrievable at `/admin/users/{id}`; a soft-deleted **contestant**
+  404s at `/admin/contestants/{id}`. `withTrashed()` on the first is what makes restore reachable
+  from a detail screen.
+* a malformed id answers **404** on the users route and **422 INVALID_CONTESTANT_ID** on the
+  contestant routes, because `ContestantId` validates shape while the users route hands the string
+  to `findOrFail`.
+
+Neither is touched here. Changing either is a users-endpoint decision with its own blast radius,
+and Story 3 is not the place to take it while adding a branch to the same response.
+
 ### Carried into Epic 4 from Discovery, not fixed by it
 
 Recorded so they are not attributed to this epic when they surface in a full run:
