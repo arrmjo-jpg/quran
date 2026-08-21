@@ -213,6 +213,73 @@ test('the payload carries exactly the five branches D19 defines', function (): v
         ->toEqualCanonicalizing(['contestant', 'user', 'country', 'memberships', 'withheld']);
 });
 
+test('GM: the contestant branch carries exactly these ten keys', function (): void {
+    [$contestantId] = idnContestant();
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // Recorded before Story 4 widens it (ADR-016 D24), as a closed set. The
+    // five top-level branches were already pinned above; the contestant
+    // branch's own keys were not, so `age` and `photo` could have been added
+    // without a single expectation moving.
+    expect(array_keys($response->json('data.contestant')))->toEqualCanonicalizing([
+        'id',
+        'user_id',
+        'country_id',
+        'full_name',
+        'date_of_birth',
+        'gender',
+        'phone_number',
+        'photo_media_asset_id',
+        'is_deleted',
+        'profile_completeness',
+    ]);
+});
+
+test('GM: the photo is a bare id that nothing resolves', function (): void {
+    [$contestantId] = idnContestant(['photo_media_id' => $mediaId = (string) Str::uuid()]);
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // THIS IS WHAT STORY 4 CHANGES. The id travels and there is nothing a
+    // screen can do with it — no url, no thumbnail, no mime type.
+    expect($response->json('data.contestant.photo_media_asset_id'))->toBe($mediaId);
+    expect($response->json('data.contestant'))->not->toHaveKey('photo');
+});
+
+test('GM: no age is reported, although the domain can calculate one', function (): void {
+    [$contestantId] = idnContestant(['date_of_birth' => '2000-01-01']);
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // BirthDate::calculateAgeAt() has existed since the module was written.
+    // No endpoint has ever called it.
+    expect($response->json('data.contestant'))->not->toHaveKey('age');
+});
+
+test('GM: missing_fields already travels, and holds only the photo', function (): void {
+    [$contestantId] = idnContestant();
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // Recorded because it is the evidence behind D24's warning about the
+    // metric. full_name, phone_number and country_id are required at
+    // creation and cannot be blanked through the API, and date_of_birth is
+    // counted unconditionally — so the photo is the only field that can be
+    // missing, and the score is 80 or 100 and nothing else.
+    expect($response->json('data.contestant.profile_completeness.missing_fields'))
+        ->toBe(['photo_media_asset_id']);
+    expect($response->json('data.contestant.profile_completeness.completeness_percent'))->toBe(80);
+});
+
 test('the user branch carries exactly the four fields D18 admits', function (): void {
     [$contestantId, $account] = idnContestant();
 

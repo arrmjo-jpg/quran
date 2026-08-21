@@ -677,6 +677,84 @@ inconsistencies between the two admin surfaces, both pre-existing:
 Neither is touched here. Changing either is a users-endpoint decision with its own blast radius,
 and Story 3 is not the place to take it while adding a branch to the same response.
 
+### Story 4 — Contestant Profile, settled 2026-08-21
+
+Story 3 shipped `/contestants/:id`, and most of what a "contestant profile" would show is already on
+it. Discovery measured the overlap before this story was scoped, so the remainder is small and
+specific rather than a second rendering of the same screen.
+
+#### What Discovery measured
+
+| Finding | Evidence |
+|---|---|
+| Seven of the twelve profile items already exist | `/contestants/:id` renders date of birth, gender, phone, country, account status, circle history and the completeness badge |
+| The photo is a bare UUID that nothing resolves | `photo_media_asset_id` travels in every contestant payload; `MediaServiceContract` is still the generated stub, and no consumer can turn the id into anything displayable |
+| Media *can* be resolved | `MediaAssetResource` derives a `url` from the asset's disk and path, and a `thumb` from `custom_properties['thumb_url']` |
+| `media.view` is held by every seeded role | super_admin, competition_manager, judge, evaluator, data_entry, moderator |
+| The profile page is read-only | Edit, delete and restore exist on the table row only; opening a contestant offers no action at all |
+| Age is computed but never exposed | `BirthDate::calculateAgeAt()` exists and `EligibilityService::checkEligibility()` returns an age, and no endpoint carries one |
+| `missing_fields` is computed and never rendered | It travels inside `profile_completeness` on every contestant payload |
+
+#### D24 — the profile is a tab, not a second page
+
+**One route, two tabs: `Profile` and `Relations`.** D23 replaced a drawer with a page because two
+surfaces showing the same person are two places to keep in step; a second route for "the profile"
+would reintroduce exactly that, one story later. Tabs give the visual separation the profile needs
+without giving the person two URLs.
+
+The division is the one D19 already drew. **Relations** holds the account, the country and the
+circle history — what *links*. **Profile** holds the person's own record — what the contestant *is*.
+Nothing appears in both.
+
+**`age` and `photo` are added to the identity endpoint's `contestant` branch, and nowhere else.**
+That branch is what the profile tab reads, and `GET /admin/contestants/{id}` is left exactly as
+Story 1 shaped it — it is the record-editing contract, and widening it would be widening a response
+this story has no screen for.
+
+Age is calculated by `BirthDate::calculateAgeAt()`, which is where it already lives, and handed to
+the resource as a finished integer. Not in React, which would put a business rule in a component;
+not inside the resource, which would make a presentation class do domain arithmetic. Not through
+`EligibilityService::checkEligibility()` either, despite it returning an age: that method answers
+"may this person compete in a season with these bounds", and calling it for a number would drag
+season semantics into a screen that has no season.
+
+**The photo carries no `withheld` branch.** D20's mechanism exists for a branch a reader may not
+see, and every seeded role holds `media.view` — a withheld photo would be an unreachable state
+dressed as a permission boundary. If `media.view` is ever narrowed, this becomes a real decision;
+today it would be theatre. The resolution still goes through `MediaServiceContract` rather than a
+direct model read, because ADR-002 is about coupling, not about permissions.
+
+**`MediaAssetResource` is not reused across the boundary.** It is a Presentation class in another
+module, and importing it here would be precisely the coupling the Contracts directory exists to
+prevent. Media's own service performs the same disk-and-path resolution and returns a DTO.
+
+**Uploading is out of scope.** This story resolves an id that something else set. There is no
+contestant photo upload anywhere today, and inventing one would mean deciding collection naming,
+size limits and who may replace another person's picture — a media decision, not a profile one.
+
+#### `profile_completeness` is shown, not fixed
+
+`missing_fields` is rendered on the profile tab. The metric behind it is **not** changed, and this
+records why the display is worth less than it looks:
+
+Of the five fields `EligibilityService::calculateProfileCompleteness()` counts, `date_of_birth` is
+incremented unconditionally — it is a required constructor argument, so the aggregate cannot exist
+without it — and `full_name`, `phone_number` and `country_id` are all required at creation and
+cannot be blanked through `UpdateContestantRequest`. The only field that can ever be absent is the
+photo.
+
+So in practice **the score is 80% or 100%, and `missing_fields` holds at most one entry.** Rendering
+it is still right — an operator seeing *what* is missing beats a percentage — but nobody should read
+the number as a measure of anything. Repairing the metric means deciding what a complete contestant
+record actually is, which is a product question this story does not open.
+
+#### Admin actions move onto the page
+
+Edit, delete and restore appear on `/contestants/:id`, each behind the permission that already
+governs it. **D17 is unchanged and no permission is invented**: `contestants.update` for edit,
+`contestants.delete` and `contestants.restore` for the destructive pair, which `data_entry` does not
+hold. A deleted contestant offers restore and nothing else, matching the table's behaviour.
+
 ### Carried into Epic 4 from Discovery, not fixed by it
 
 Recorded so they are not attributed to this epic when they surface in a full run:
