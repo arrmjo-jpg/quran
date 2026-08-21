@@ -118,6 +118,10 @@ reader the wrong lesson about how the decision was reached.
 | D12 | Device trust moves from Redis to the database. | ⚠️ not recorded. Affects Epic 6 |
 | D13 | The admin profile table is named `user_profiles`. | Naming decision, recorded |
 | D14 | Accounts are created Pending Activation and activated by invitation; no admin ever sets another user's password. | **Recorded — see Q7** |
+| D15 | Contestant management belongs to Epic 4, as its own story, completed before the dashboard is built. | **Recorded 2026-08-21 — see Epic 4 below.** The epic table places contestant creation, profile and search in Epic 2, and Epic 2 shipped without them by an explicit re-scope on 2026-08-20. Discovery measured the consequence: `admin/contestants` has `index` and `show` and nothing else, so "users ↔ contestants ↔ circles" has no manageable middle. Building the dashboard first would mean building it over an API that cannot create the records it displays |
+| D16 | The Epic 4 dashboard is an **Identity 360** — a relationship view of one person — not a statistics page. | **Recorded 2026-08-21.** The epic's one-line name in the table does not say which, and the two are different products. 360 is chosen because the question the panel cannot answer today is "who is this person, across the system", which is exactly what the three-way link exists for |
+| D17 | Contestant write permissions: `super_admin` holds create, update, delete and restore; `data_entry` holds create and update only. | **Recorded 2026-08-21.** `data_entry` is the data-entry role, and granting it create and update makes the `contestants.update` it has held since the catalogue was written mean something. Destructive operations stay with `super_admin`. See the dormant-grant note in Epic 4 below — this decision is the moment that existing grant becomes live, and it is taken deliberately rather than acquired as a side effect |
+| D18 | Across the user↔contestant link, Identity 360 carries exactly four user fields — `id`, `name`, `status`, `type` — and **nothing from `user_profiles`**. | **Recorded 2026-08-21 — see Epic 4 below.** The screen answers "who is this person across the system", so it needs what identifies the account, what explains the shape of the tree, and what allows navigation to it. Everything that *describes* the person rather than locating them is either personal data or already reachable on its own screen behind its own permission |
 
 ---
 
@@ -301,7 +305,7 @@ Thirteen epics, as set by the board:
 | 1 | User lifecycle — create (invitation-based), **the invitation mechanism itself**, edit, delete/restore, password reset |
 | 2 | Contestants — manual creation, full profile, circles, centres, search |
 | 3 | Admin profiles |
-| 4 | Identity dashboard — users ↔ contestants ↔ circles |
+| 4 | Identity dashboard — users ↔ contestants ↔ circles. **Scope settled 2026-08-21 — see "Epic 4" below.** Absorbs the contestant management Epic 2 was re-scoped to drop (D15) |
 | 5 | Activity Log |
 | 6 | Security — MFA, trusted devices, login history |
 | 7 | User menu |
@@ -368,6 +372,170 @@ Rejected alternatives, recorded so they are not revisited:
 
 Epic 12 is reduced to the management surface around the mechanism, and should be dropped outright
 if that surface turns out to be thin.
+
+---
+
+## Epic 4 — scope, settled 2026-08-21
+
+The epic table gives Epic 4 one line: *"Identity dashboard — users ↔ contestants ↔ circles"*. That
+line names three things and decides nothing about them. What follows is the scope, measured against
+the code first as the sequencing note above requires.
+
+### What Discovery measured, before any decision was taken
+
+| Finding | Evidence |
+|---|---|
+| Contestants cannot be managed at all | `admin/contestants` exposes `index` and `show`. No create, update, delete or restore route exists |
+| The middle of the three-way link is the gap | `users` has full lifecycle (Epic 1); centres, circles and memberships have full CRUD (Epic 2); contestants have neither |
+| No API links any two of the three | `UserResource` carries `profile` but no contestant; `ContestantPrivateResource` carries `user_id` but no membership, circle or centre |
+| The contestant list is unbounded | `ContestantRepository::search()` ends in `->get()` with no limit, and three `LIKE '%…%'` predicates that use no index |
+| The admin UI already draws data the API never sends | `Contestant360Drawer` renders applications and appeals tabs; no endpoint returns either |
+| `contestants.update` is a dormant grant | It sits in the catalogue marked `NO ENDPOINT YET` and is granted to `data_entry` in `RolesSeeder` |
+
+### D16 in full — what Identity 360 shows
+
+From a user:
+
+```
+User
+ ├── Account
+ ├── Profile            (user_profiles — Epic 3; ADMIN CONTEXT ONLY, see D18)
+ └── Contestant         (contestants.user_id, UNIQUE — at most one)
+      ├── Personal information
+      ├── Country
+      ├── Memberships   (contestant_memberships — historical, Q4)
+      │    ├── Circle
+      │    └── Center
+      └── Applications / Appeals
+```
+
+And the reverse, from a contestant: `Contestant → User`, carrying the four fields D18 names and
+**stopping there**. It does not continue to Profile.
+
+Two things about this tree are new construction rather than display, and are recorded here so they
+are not mistaken for wiring during estimation:
+
+* **Applications and Appeals are not readable today.** No endpoint returns either against a
+  contestant. The admin drawer draws the tabs regardless, so the screen currently promises data the
+  server has never sent. Whether this branch is in Epic 4's scope is a scope decision, not a
+  connection task.
+* **The Profile branch does not appear in a contestant context at all.** D18 settles which fields
+  cross the link, and none of `user_profiles` does.
+
+### D18 in full — what crosses the user↔contestant link
+
+Decided 2026-08-21 after measuring both resources and the profile table rather than choosing from
+what happened to be available.
+
+| Field | Source | Why the screen needs it | Personal | Shown |
+|---|---|---|:--:|:--:|
+| `id` | `users` | The navigation target for `/users/{id}`. Without it the relationship is displayed but cannot be followed | no | **yes**, as a link |
+| `name` | `users` | Identifies the account — and its *divergence* from `contestants.full_name` is itself information. The two are separate columns that nothing keeps in step | no | **yes** |
+| `status` | `users`, derived | The most operationally useful fact on a contestant screen: can this person sign in at all? A pending or deactivated account explains an unfinished registration without opening another screen | no | **yes** |
+| `type` | `users` | Explains the shape of the rest of the tree — why a Contestant branch exists, and why a Profile branch does not | no | **yes** |
+| `email` | `users` | Answers no relationship question. Reachable at `/users/{id}` behind `users.view` | **yes** | no |
+| `preferred_locale` | `users` | Support convenience, not identity | no | no |
+| `mfa_enabled` | `users` | Security posture — Epic 6's subject | yes | no |
+| `created_at` | `users` | A users-screen fact; the contestant carries its own | no | no |
+| `roles` | `role_user` | Empty for a contestant account; for an admin it belongs on the users screen | no | no |
+| `display_name` | `user_profiles` | Free text written by the account holder. `users.name` is what identifies the account | yes | no |
+| `bio` | `user_profiles` | A self-written biography; answers no relationship question | **yes** | no |
+| `social_links` | `user_profiles` | Personal links supplied by the person | **yes** | no |
+| `avatar_media_id` | `user_profiles` | A bare UUID; no resource resolves it to a displayable URL | no | no |
+| `national_id` | `contestants` | Identity document of a person who may be a minor | **yes** | no |
+
+The rule these follow, stated once so a future field can be judged against it rather than argued
+case by case: **Identity 360 shows what identifies, explains, or links. It does not show what
+describes.** A field that describes the person belongs on that person's own screen, behind that
+screen's permission.
+
+The consequence is that no `user_profiles` field crosses the link, so the Profile branch is absent
+from the contestant context entirely rather than present and empty.
+
+### D11 binds this epic, and it is already decided
+
+Q2 above closed on 2026-08-18 with option (b), and its consequence names this epic directly:
+*"Epics 2 and 4 must be designed without assuming a supervisor can read anything."*
+
+So Epic 4 is designed with no supervisor visibility, and no `supervisor` role is seeded by it. This
+is not re-opened here. The reasoning on record — data about minors, and no transitional exposure
+that cannot be undone — applies unchanged.
+
+Visibility for every other role was already settled and is unchanged by this epic:
+`super_admin` holds everything, `competition_manager` and `data_entry` hold `contestants.view`, and
+`judge`, `evaluator` and `moderator` hold nothing about contestants.
+
+### D17 in full — and the dormant grant it makes live
+
+The catalogue has no `contestants.create`, `contestants.delete` or `contestants.restore`; Epic 4
+adds them. `contestants.update` already exists and is already granted to `data_entry`.
+
+| Permission | `super_admin` | `data_entry` | Everyone else |
+|---|:--:|:--:|:--:|
+| `contestants.view` | ● | ● | `competition_manager` only |
+| `contestants.create` | ● | ● | — |
+| `contestants.update` | ● | ● | — |
+| `contestants.delete` | ● | — | — |
+| `contestants.restore` | ● | — | — |
+
+**The dormant grant.** `data_entry` has held `contestants.update` since the catalogue was written,
+and it has never done anything because no route consults it. The moment Story 1 builds the update
+endpoint, that grant becomes live — a real change in what an account may do, arriving with no diff
+against any permission file, because the permission was granted long ago. D17 is the board taking
+that decision on purpose rather than inheriting it. Recorded because a reader six months from now
+would otherwise find no moment where anyone chose it.
+
+`super_admin` acquires the three new permissions automatically: `RolesSeeder` defines it as
+`PermissionCatalog::all()` rather than a written list, by design, and a test proves a new catalogue
+entry reaches it on the next seed.
+
+Deletion is soft only, per D5. `contestants` already carries `SoftDeletes`, so `delete` and
+`restore` are the pair D5 describes and not a new retention question.
+
+### Stories
+
+| # | Story | Contains |
+|---|---|---|
+| 0 | **ADR & scope** | This section. Q1 and Q2 answered; D15–D18 recorded, including which User fields cross into a contestant context and that no `user_profiles` field does |
+| 1 | **Contestant management** | Create, update, delete/restore, search, pagination, validation, authorization. Golden Master on the existing `index`/`show` contracts **before** they change |
+| 2 | **Identity 360 backend** | User ↔ Contestant, Contestant ↔ Memberships, Circle ↔ Centre. Applications/Appeals only if scoped in. N+1 addressed as it is written, not after |
+| 3 | **Identity 360 admin UI** | The screen, search, and the relationships between the four entities |
+| 4 | **Contestant profile UI** | Full profile, memberships, related data, loading/empty/error states, AR/EN/ES |
+| 5 | **Hardening & review** | Permissions, tests, contracts, performance, CI, PR |
+
+Story 1 precedes Story 2 for the reason in D15: a dashboard over an API that cannot create what it
+displays would be built twice.
+
+### Carried into Epic 4 from Discovery, not fixed by it
+
+Recorded so they are not attributed to this epic when they surface in a full run:
+
+* `Modules/Organization/Tests/Feature/MembershipApiTest.php:61` holds a `static $centerId` that
+  survives between tests while `RefreshDatabase` rolls its row back. Belongs to the Test
+  Infrastructure epic.
+* `fix/countries-name-and-pagination` is unmerged, and the countries admin screen is broken on
+  `main` until it lands.
+* The test connection runs with foreign keys disabled. Epic 4 is built entirely on RESTRICT
+  foreign keys — `contestants.user_id`, `contestant_memberships.contestant_id` and `.circle_id` —
+  so the suite will not fail on a referential-integrity breach this epic introduces.
+* `Core/Routes/admin.php` still carries a comment reading *"Accounts. No create route"* directly
+  above the `POST users` route that Q7 added.
+* **`PATCH /me` is reachable by any authenticated account, contestants included.** The route sits
+  on the plain `auth:sanctum` group in `Modules/Core/Routes/api.php`, not the `admin` group, and
+  neither `UpdateSelfUseCase` nor `UpdateSelfProfileUseCase` consults `type`. So a contestant can
+  create a `user_profiles` row and write `display_name`, `bio` and `social_links` for themselves —
+  while D1 describes that table as the administrator's profile.
+
+  **Recorded as a note, not a defect, and deliberately not changed by Epic 4.** Discovery
+  established that the gap exists; it did not establish that the behaviour is unintended, and the
+  two are different findings. Deciding it means either amending D1's description or closing the
+  route, and both are Epic 3 / identity questions rather than Epic 4 ones. Measured on the dev
+  database at the time of writing: seven admin accounts, zero profiles, zero contestant accounts —
+  so nothing observed either confirms or contradicts intent.
+
+  It is noted here because it bears on D18: had any `user_profiles` field crossed the link, the
+  screen could have been rendering contestant-supplied free text and personal links. None does, so
+  Epic 4 is unaffected either way.
 
 ---
 
