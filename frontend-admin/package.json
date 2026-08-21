@@ -15,11 +15,12 @@
     "manifest:generate": "npx tsx scripts/generate-release-manifest.ts",
     "gate:functional": "npx tsx scripts/record-gate-result.ts functional \"npm run typecheck && npm run check:authz-model && npm run check:permissions && npm run build\"",
     "gate:security": "npx tsx scripts/record-gate-result.ts security \"docker exec quran_platform_app php artisan test tests/Feature/MfaAndSessionsTest.php tests/Feature/PhoneOtpTest.php tests/Feature/DeviceTrustTest.php tests/Feature/RateLimitingTest.php tests/Feature/CorrelationIdMiddlewareTest.php tests/Feature/AuditLoggingMiddlewareTest.php tests/Feature/AdminAuthorizationTest.php\"",
+    "gate:suite": "npx tsx scripts/record-gate-result.ts suite \"docker exec -e TEST_DB=mysql quran_platform_app php artisan test\"",
     "gate:e2e": "echo 'Running E2E Playwright Gate verification...'",
     "gate:performance": "npx tsx scripts/run-performance-gate.ts",
     "gate:reliability": "echo 'Running Reliability Gate verification...'",
     "gate:observability": "echo 'Running Observability Gate verification...'",
-    "gate:all": "npm run gate:functional && npm run gate:security && npm run gate:performance && npm run manifest:generate"
+    "gate:all": "npm run gate:functional && npm run gate:security && npm run gate:suite && npm run gate:performance && npm run manifest:generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

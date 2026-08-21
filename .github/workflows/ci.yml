@@ -85,6 +85,21 @@ jobs:
         working-directory: frontend-admin
         run: npm run gate:security
 
+      # THE WHOLE SUITE, not a list of files.
+      #
+      # Until now CI ran `gate:security`, which names seven test files — 43
+      # tests of the 1000-odd in the repository, about 4%. Every module suite,
+      # every architecture guard and every feature test an epic added ran only
+      # on developers' machines, so a pull request could be green here while
+      # breaking anything outside those seven files.
+      #
+      # The security gate above is kept rather than folded into this one: it
+      # writes its own artifact, and "the security tests passed" is a claim
+      # worth being able to make on its own.
+      - name: Run full test suite gate
+        working-directory: frontend-admin
+        run: npm run gate:suite
+
       - name: Regenerate release manifest
         working-directory: frontend-admin
         run: npm run manifest:generate
