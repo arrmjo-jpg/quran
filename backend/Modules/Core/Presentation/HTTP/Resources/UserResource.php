@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Core\Domain\Entities\User;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Core\Infrastructure\Database\Models\UserProfileModel;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 
 /**
@@ -57,6 +58,7 @@ final class UserResource extends JsonResource
                 'roles' => $model === null ? [] : self::authorization()->rolesOf($model),
                 'permissions' => $model === null ? [] : self::authorization()->permissionsOf($model),
                 'preferred_locale' => (string) $resource->getPreferredLocale(),
+                'profile' => self::profileOf($resource->id->value),
             ];
         }
 
@@ -74,6 +76,46 @@ final class UserResource extends JsonResource
             'roles' => $resource instanceof UserModel ? self::authorization()->rolesOf($resource) : [],
             'permissions' => $resource instanceof UserModel ? self::authorization()->permissionsOf($resource) : [],
             'preferred_locale' => $resource->preferred_locale ?? 'ar',
+            'profile' => self::profileOf((string) $resource->id),
+        ];
+    }
+
+    /**
+     * The `user_profiles` half — ADR-016 D1.
+     *
+     * ALWAYS AN OBJECT, never absent and never null, even for an account that
+     * has no row. A client should not have to distinguish "no profile yet"
+     * from "profile with nothing in it"; both mean the same thing to a screen,
+     * and only one of them would need a special case.
+     *
+     * `avatar_media_id` carries the raw media id under the column's own name.
+     * Core does not resolve media URLs — that lives in MediaResource, and
+     * teaching a second module to do it would put the storage layout in two
+     * places.
+     *
+     * THE LONG-STANDING `avatar` KEY STAYS, and stays null. It has been in
+     * this contract since before there was anywhere for an avatar to live.
+     * Replacing it with `avatar_media_id` would be a breaking change to a
+     * published shape, and one that nothing would have caught: the test
+     * pinning it asserts `assertJsonPath('data.avatar', null)`, and data_get
+     * cannot tell a null value from an absent key. Retiring it is a decision
+     * someone should make out loud, not a side effect of adding a field.
+     *
+     * Read-only in Story 3: nothing writes an avatar, because setting one
+     * needs an upload and uploading needs `media.create`, which self-service
+     * does not carry.
+     *
+     * @return array<string, mixed>
+     */
+    private static function profileOf(string $userId): array
+    {
+        $profile = UserProfileModel::query()->where('user_id', $userId)->first();
+
+        return [
+            'display_name' => $profile?->display_name,
+            'bio' => $profile?->bio,
+            'social_links' => $profile?->social_links,
+            'avatar_media_id' => $profile?->avatar_media_id,
         ];
     }
 

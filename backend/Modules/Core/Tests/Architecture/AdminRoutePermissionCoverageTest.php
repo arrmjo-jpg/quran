@@ -75,6 +75,12 @@ function routePermission(\Illuminate\Routing\Route $route): ?string
  */
 const SELF_SERVICE_ROUTES = [
     'admin.auth.me',
+    // Editing one's own name, locale and profile. Self-service for the same
+    // reason reading it is: an administrator must be able to correct their own
+    // details whatever role they hold, and gating this behind users.update
+    // would mean a role could be edited into one that cannot fix its own
+    // biography.
+    'admin.auth.update_profile',
     'admin.auth.logout',
     'admin.auth.mfa.setup',
     'admin.auth.mfa.verify',

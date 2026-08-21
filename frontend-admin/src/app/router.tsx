@@ -30,6 +30,7 @@ const SearchPage       = lazy(() => import('@/features/search/pages/SearchPage')
 const AuditExplorerPage= lazy(() => import('@/features/dashboard/pages/AuditExplorerPage'));
 const AboutDiagnosticsPage = lazy(() => import('@/features/dashboard/pages/AboutDiagnosticsPage'));
 const ActiveSessionsPage = lazy(() => import('@/features/auth/pages/ActiveSessionsPage'));
+const ProfilePage      = lazy(() => import('@/features/profile/pages/ProfilePage'));
 
 const Loading = () => (
   <div className="flex h-screen items-center justify-center">
@@ -90,6 +91,7 @@ const router = createBrowserRouter([
           page('audit-logs', <AuditExplorerPage />),
           page('about', <AboutDiagnosticsPage />),
           page('sessions', <ActiveSessionsPage />),
+          page('profile', <ProfilePage />),
         ],
       },
     ],

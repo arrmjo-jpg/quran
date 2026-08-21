@@ -32,14 +32,30 @@ final class UpdateUserProfileUseCase
         private UserRepositoryContract $users,
     ) {}
 
-    public function execute(string $userId, string $name, string $locale, ?string $byUserId = null): User
+    /**
+     * A null field means "leave it as it is", never "reset it".
+     *
+     * PATCH is partial: a caller may send one field and omit the other, and
+     * the endpoint must not decide the missing one on their behalf. The rule
+     * lives here rather than in a controller, which would otherwise have to
+     * read the account itself to invent a default.
+     *
+     * What the alternative costs is visible next door: UserController::update
+     * passes `validated('locale', 'ar')`, so an administrator who sends only a
+     * name silently resets that account to Arabic. Existing callers may keep
+     * passing both — this only adds the ability not to.
+     */
+    public function execute(string $userId, ?string $name = null, ?string $locale = null, ?string $byUserId = null): User
     {
         return DB::transaction(function () use ($userId, $name, $locale, $byUserId): User {
             $user = $this->users->findOrFail(new UserId($userId));
 
             $before = $user->getName();
 
-            $user->updateProfile($name, new Locale($locale));
+            $user->updateProfile(
+                $name ?? $user->getName(),
+                $locale === null ? $user->getPreferredLocale() : new Locale($locale)
+            );
             $this->users->save($user);
 
             // Only when something changed. A log full of entries recording

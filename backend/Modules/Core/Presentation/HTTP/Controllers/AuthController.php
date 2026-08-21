@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Crypt;
 use Laravel\Sanctum\PersonalAccessToken;
 use Modules\Core\Application\Commands\CreateUserCommand;
 use Modules\Core\Application\UseCases\CreateUserUseCase;
+use Modules\Core\Application\UseCases\UpdateSelfUseCase;
 use Modules\Core\Domain\ValueObjects\Email;
 use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\PasswordHash;
@@ -319,16 +320,54 @@ final class AuthController extends Controller
         ]);
     }
 
-    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    /**
+     * Self-service profile edit — the account editing itself.
+     *
+     * Routed through UpdateUserProfileUseCase rather than calling the Eloquent
+     * model, which is what this did until 2026-08-20 and made it the last
+     * place in Core bypassing its own use cases. Going through it buys the
+     * aggregate, the transaction, and a UserProfileUpdated event that fires
+     * only when the name actually changed.
+     *
+     * Both fields are passed straight through, null included: the request
+     * marks each `sometimes`, and the use case reads null as "leave it alone".
+     * Neither layer invents a default for a field the caller omitted.
+     *
+     * The actor is the account itself. Editing one's own name is allowed —
+     * unlike editing one's own roles, which PE-3 refuses — because a name
+     * changes what a person is called and not what they may do.
+     */
+    public function updateProfile(UpdateProfileRequest $request, UpdateSelfUseCase $updateSelf): JsonResponse
     {
         /** @var UserModel $user */
         $user = $request->user();
-        $user->update($request->validated());
+
+        $validated = $request->validated();
+
+        // Split by which table the field belongs to, and pass only the keys
+        // that were actually sent. `array_intersect_key` is what preserves the
+        // difference between "omitted" and "sent as null" — the first leaves a
+        // field alone, the second clears it, and a nullable parameter could
+        // not have expressed both.
+        //
+        // The intersect also drops `avatar_media_id`: it is absent from the
+        // request rules, so validated() never carries it, and naming the three
+        // writable fields here says so a second time. Story 3 reads an avatar
+        // and sets none — that needs an upload, and uploading needs
+        // media.create, which self-service does not hold.
+        $updateSelf->execute(
+            (string) $user->id,
+            array_intersect_key($validated, array_flip(['name', 'preferred_locale'])),
+            array_intersect_key($validated['profile'] ?? [], array_flip(['display_name', 'bio', 'social_links'])),
+        );
 
         return response()->json([
             'success' => true,
             'message' => __('Profile updated successfully.'),
-            'data' => new UserResource($user),
+            // Re-read rather than reusing the instance the middleware
+            // resolved: the use case wrote through the repository, so the
+            // model already in hand is stale.
+            'data' => new UserResource(UserModel::query()->findOrFail($user->id)),
         ]);
     }
 

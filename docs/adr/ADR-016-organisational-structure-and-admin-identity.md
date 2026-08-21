@@ -104,8 +104,8 @@ reader the wrong lesson about how the decision was reached.
 
 | # | Decision | Rationale on record |
 |---|---|---|
-| D1 | The admin profile lives in a table of its own. | ⚠️ not recorded |
-| D2 | Social links live inside a JSON value object. | ⚠️ not recorded |
+| D1 | The admin profile lives in a table of its own. | **Recorded 2026-08-20.** Not a split of anything: an administrator today is a `users` row and nothing more — `type = 'admin'` plus roles (ADR-015 §1) — so there is no existing home to divide. The measurement above shows `contestants` already carries the equivalent fields for its own kind of person; `user_profiles` is the same provision for the other. Widening `users` instead would put optional presentation data on the table every authentication and authorization path reads |
+| D2 | Social links live inside a JSON value object. | **Recorded 2026-08-20 — see Q5.** Eight optional links are eight columns that are almost always null, and each new platform would be a migration on a table read by every admin screen. A JSON column avoids that — but only once Q5 closed it to a known set with per-platform validation. An open JSON column would have been a text field with extra steps, which is the failure the value object exists to prevent |
 | D3 | The Activity Log is separate from the Audit Log. | Supported by measurement above |
 | D4 | The admin profile is separate from the contestant profile. | Supported by measurement above |
 | D5 | Account deletion is soft delete only. | **Closed 2026-08-19 via Q6.** Measured to be a restatement of existing behaviour — the only `forceDelete` in the codebase is a media asset destroyed with its file, and seven models already soft-delete. No retention policy enters any epic on this basis. Now enforced by `AccountDeletionTest`, which also refuses the quieter regression of removing the SoftDeletes trait |
@@ -131,7 +131,7 @@ each must be answered before its epic starts, not before this document is used.
 | Q1 — reuse or replace `spatie/laravel-activitylog` | Activity Log | open, before **Epic 5** |
 | Q3 — how a Circle inherits a Centre's location | Circles/Centres | **CLOSED 2026-08-19** — see below |
 | Q4 — an Application whose contestant has no circle | Applications ↔ Circles | **CLOSED 2026-08-19** — see below |
-| Q5 — which social platforms, validated how | Admin profiles | open, before **Epic 3** |
+| Q5 — which social platforms, validated how | Admin profiles | **CLOSED 2026-08-20** — see below |
 | Q6 — whether "soft delete only" is new or a restatement | User lifecycle | **CLOSED 2026-08-19** — narrow reading plus an enforcing guard; see `AccountDeletionTest` |
 
 Deferring them is a decision, not an oversight: none changes more than one epic's design, so
@@ -174,6 +174,57 @@ database permits null so historical rows and future migrations are not trapped, 
 `SubmitApplicationUseCase` refuses to create an application for a contestant with no active
 membership. A NOT NULL column would have made every past row a migration problem; a rule with no
 enforcement would have been decoration.
+
+### Q5 — CLOSED: a closed set of eight platforms, storing full URLs, validated by domain
+
+**The set is closed.** Eight platforms and no more: `website`, `x`, `linkedin`, `facebook`,
+`instagram`, `youtube`, `telegram`, `tiktok`. GitHub, GitLab and Discord were considered and left
+out — this is an administrator directory, not a developer profile, and a platform nobody fills in
+is a field every form and every validator carries for nothing.
+
+Closed rather than open because an open list makes the value object an `array<string, string>`
+wearing a type name. Adding a platform later is then a deliberate act — this ADR plus whatever
+migration the storage needs — instead of a value someone writes into JSON and nothing checks.
+
+**The stored value is the full URL, not a username.** `"linkedin": "https://linkedin.com/in/name"`,
+never `"linkedin": "name"`. Storing usernames would mean the platform owns a URL template for each
+site, and every template is a guess about a third party's routing that breaks silently when they
+change it. It would also make validation weaker, not stronger: there is nothing to check in a bare
+string, while a URL can be checked as a URL.
+
+**Validation, per platform.** Every field is optional. A field that is present must be a valid URL
+*and* belong to that platform's official domain:
+
+| Field | Accepted host |
+|---|---|
+| `website` | any host, `https` only |
+| `x` | `x.com` or `twitter.com` |
+| `linkedin` | `linkedin.com` |
+| `facebook` | `facebook.com` |
+| `instagram` | `instagram.com` |
+| `youtube` | `youtube.com` |
+| `telegram` | `t.me` |
+| `tiktok` | `tiktok.com` |
+
+`x` accepts both hosts because the rename is still in progress and refusing `twitter.com` would
+reject links that work.
+
+**No normalisation — DECIDED 2026-08-20.** A URL entered as `twitter.com/...` is stored exactly as
+entered. The value object validates; it does not rewrite what someone typed. Accepting
+`twitter.com` is a compatibility decision, not a data-migration one, and conflating the two would
+make every save a silent edit. If the platform later wants one host in storage, that is a migration
+or a one-off script that can be reviewed and reversed — not an invisible side effect of validation.
+
+**An unset platform has no key — DECIDED 2026-08-20.** The JSON carries the links that exist and
+nothing else; it is not a fixed-shape record with eight slots. So this:
+
+```json
+{ "website": "https://example.com", "linkedin": "https://linkedin.com/in/admin" }
+```
+
+and never `"facebook": null` alongside it. Three consequences, all wanted: less noise to read,
+comparison and validation that operate on what is present rather than on placeholders, and a ninth
+platform later that costs nothing — no backfill of nulls across every existing row.
 
 ### Q1. Does the Activity Log reuse `spatie/laravel-activitylog`, or replace it?
 
