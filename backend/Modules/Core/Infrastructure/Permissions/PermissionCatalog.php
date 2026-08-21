@@ -178,9 +178,12 @@ final class PermissionCatalog
         'memberships' => ['view', 'create', 'end', 'transfer'],
 
         // ── People ──────────────────────────────────────────────────
-        // contestants.update: NO ENDPOINT YET (granted to data_entry in
-        // the ADR-015 §7.3 matrix).
-        'contestants' => ['view', 'update'],
+        // create/delete/restore added by Epic 4 Story 1, which built the
+        // management endpoints. `update` had been here since the catalogue
+        // was written, granted to data_entry and consulted by nothing —
+        // ADR-016 D17 is the moment that dormant grant was decided rather
+        // than inherited. delete/restore are super_admin's alone.
+        'contestants' => ['view', 'create', 'update', 'delete', 'restore'],
         'judges' => ['view', 'create'],
         // NO ENDPOINT YET — the judge_assignments table has no route at
         // all; its epic builds them.
