@@ -212,6 +212,46 @@ test('no route exists for uploading or setting an avatar in this story', functio
 
 /*
 |--------------------------------------------------------------------------
+| The admin surface writes where it reads
+|--------------------------------------------------------------------------
+|
+| frontend-admin reads from `/admin/auth/me`, and until Story 4 the only way
+| to write was `/me` — a different prefix for the same account's own data.
+| Both now exist and are the same controller method, so the panel never has to
+| leave the `/admin` space to edit the person using it.
+*/
+
+test('PATCH /admin/auth/me edits the profile exactly as PATCH /me does', function (): void {
+    $user = profileTestUser();
+
+    $this->actingAs($user)->patchJson('/api/v1/admin/auth/me', [
+        'profile' => [
+            'display_name' => 'Through The Admin Prefix',
+            'bio' => 'Written on the admin surface.',
+        ],
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.profile.display_name', 'Through The Admin Prefix')
+        ->assertJsonPath('data.profile.bio', 'Written on the admin surface.');
+});
+
+test('PATCH /admin/auth/me refuses a bad link like its twin', function (): void {
+    // Same request class, same rule, same value object — asserted rather than
+    // assumed, because "points at the same method" is a claim about wiring
+    // that a route file can quietly stop being true.
+    $user = profileTestUser();
+
+    $this->actingAs($user)->patchJson('/api/v1/admin/auth/me', [
+        'profile' => ['social_links' => ['linkedin' => 'https://facebook.com/someone']],
+    ])->assertStatus(422);
+});
+
+test('PATCH /admin/auth/me requires authentication', function (): void {
+    $this->patchJson('/api/v1/admin/auth/me', ['profile' => ['bio' => 'Nobody']])->assertUnauthorized();
+});
+
+/*
+|--------------------------------------------------------------------------
 | Writing
 |--------------------------------------------------------------------------
 */

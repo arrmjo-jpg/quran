@@ -40,6 +40,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
 // for their own account, so $user->type is trustworthy there too.
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin/auth')->group(function (): void {
     Route::get('me', [AuthController::class, 'me'])->name('admin.auth.me');
+
+    // The same handler as `PATCH /me`, on the prefix the admin panel already
+    // reads from. Without it the panel would read its own profile at
+    // /admin/auth/me and write it at /me — two prefixes for one account's own
+    // data, which reads as an oversight rather than a decision.
+    Route::patch('me', [AuthController::class, 'updateProfile'])->name('admin.auth.update_profile');
+
     Route::post('logout', [AuthController::class, 'logout'])->name('admin.auth.logout');
 
     // MFA & Session Revocation Routes
