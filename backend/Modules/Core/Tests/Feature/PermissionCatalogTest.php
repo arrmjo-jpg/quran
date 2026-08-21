@@ -198,8 +198,19 @@ test('competition_manager can run a broadcast and read the rule catalogues', fun
 
     $held = app(RoleRepositoryContract::class)->findByName('competition_manager')->getPermissionNames();
 
+    // The positive form is safe with several needles — it means "holds all
+    // of these", which is what is wanted.
     expect($held)->toContain('streaming.start', 'streaming.stop', 'videos.reprocess', 'lookups.view');
-    expect($held)->not->toContain('users.view', 'roles.view', 'audit.view', 'settings.view');
+
+    // ONE NEEDLE PER ASSERTION, DELIBERATELY. Pest's toContain is variadic
+    // and `not` negates the whole conjunction, so
+    // `->not->toContain('a', 'b')` asserts only "does not hold BOTH" — a role
+    // holding 'a' and not 'b' would sail through. Proven with a throwaway
+    // test: a role holding one of four forbidden permissions passed the
+    // four-argument form. Separated so each one can actually fail.
+    foreach (['users.view', 'roles.view', 'audit.view', 'settings.view'] as $forbidden) {
+        expect($held)->not->toContain($forbidden);
+    }
 });
 
 /*

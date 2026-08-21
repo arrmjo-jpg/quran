@@ -327,7 +327,11 @@ test('no editable role was handed the new permission silently', function (): voi
     foreach (['competition_manager', 'moderator'] as $name) {
         $held = app(RoleRepositoryContract::class)->findByName($name)->getPermissionNames();
 
-        expect($held)->not->toContain('roles.grant_permissions', 'roles.update');
+        // One needle per assertion — see the note in PermissionCatalogTest:
+        // the multi-argument negated form only fails when ALL are held.
+        foreach (['roles.grant_permissions', 'roles.update'] as $forbidden) {
+            expect($held)->not->toContain($forbidden);
+        }
     }
 });
 

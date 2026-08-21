@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\Core\Application\UseCases\CreateRoleUseCase;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
 use Modules\Core\Domain\ValueObjects\UserId;
@@ -92,14 +93,22 @@ test('competition_manager cannot touch identity', function (): void {
     $manager = enforcementUser('manager-identity@quran.test', 'competition_manager');
     $held = app(RoleRepositoryContract::class)->findByName('competition_manager')->getPermissionNames();
 
-    expect($held)->not->toContain('users.view', 'users.create', 'roles.view', 'roles.update', 'audit.view', 'settings.update');
+    // ONE NEEDLE PER ASSERTION, DELIBERATELY. Pest's toContain is variadic
+    // and `not` negates the whole conjunction, so
+    // `->not->toContain('a', 'b')` asserts only "does not hold BOTH" — a role
+    // holding 'a' and not 'b' would sail through. Proven with a throwaway
+    // test: a role holding one of four forbidden permissions passed the
+    // four-argument form. Separated so each one can actually fail.
+    foreach (['users.view', 'users.create', 'roles.view', 'roles.update', 'audit.view', 'settings.update'] as $forbidden) {
+        expect($held)->not->toContain($forbidden);
+    }
 });
 
 test('a role that can view seasons still cannot change them', function (): void {
     // The finest-grained claim in the whole design: read and write are
     // separately grantable on the same resource.
     $roles = app(RoleRepositoryContract::class);
-    $viewer = app(\Modules\Core\Application\UseCases\CreateRoleUseCase::class)
+    $viewer = app(CreateRoleUseCase::class)
         ->execute('season_viewer', ['seasons.view']);
 
     $user = enforcementUser('viewer@quran.test', 'season_viewer');
@@ -118,7 +127,7 @@ test('starting a broadcast is refused to a role that may only create one', funct
     // The reason streaming.start exists as its own permission. If this
     // test ever passes because the route checks streaming.create, the
     // separation added in 6.3c-0 has been quietly undone.
-    app(\Modules\Core\Application\UseCases\CreateRoleUseCase::class)
+    app(CreateRoleUseCase::class)
         ->execute('stream_setup', ['streaming.view', 'streaming.create']);
 
     $user = enforcementUser('stream-setup@quran.test', 'stream_setup');
