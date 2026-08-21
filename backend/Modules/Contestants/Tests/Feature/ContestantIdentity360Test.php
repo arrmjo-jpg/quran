@@ -64,18 +64,29 @@ function idnAs(string $roleName): UserModel
 /**
  * A country with the three translations the panel ships.
  *
- * The ISO codes are generated rather than fixed: several of these tests need
- * two countries at once, and `countries.iso3_code` is UNIQUE.
+ * BOTH ISO codes are generated, not just iso3. Several tests here need two
+ * countries at once — the query-count test builds two contestants — and
+ * `countries.iso_code` and `iso3_code` are each UNIQUE. Fixing only iso3
+ * moved the collision rather than removing it.
+ *
+ * The generated iso2 is written to $iso2Out so a caller asserting the
+ * ISO-code fallback can compare against what was actually stored instead of
+ * hardcoding a value this function no longer promises.
  */
-function idnCountry(array $names = ['ar' => 'الأردن', 'en' => 'Jordan', 'es' => 'Jordania'], string $iso2 = 'JO'): string
+function idnCountry(array $names = ['ar' => 'الأردن', 'en' => 'Jordan', 'es' => 'Jordania'], ?string & $iso2Out = null): string
 {
+    static $sequence = 0;
+    $sequence++;
+
     $id = (string) Str::uuid();
-    $suffix = strtoupper(Str::random(1));
+    // Two letters from a counter, so the codes are unique and stable within
+    // a test rather than randomly colliding one run in fifty.
+    $iso2Out = chr(65 + intdiv($sequence, 26) % 26).chr(65 + $sequence % 26);
 
     DB::table('countries')->insert([
         'id' => $id,
-        'iso_code' => $iso2,
-        'iso3_code' => $iso2.$suffix,
+        'iso_code' => $iso2Out,
+        'iso3_code' => $iso2Out.chr(65 + $sequence % 26),
         'phone_code' => '+962',
         'flag_url' => 'https://example.test/flag.svg', 'is_active' => true,
         'created_at' => now(), 'updated_at' => now(),
@@ -213,7 +224,7 @@ test('the payload carries exactly the five branches D19 defines', function (): v
         ->toEqualCanonicalizing(['contestant', 'user', 'country', 'memberships', 'withheld']);
 });
 
-test('GM: the contestant branch carries exactly these ten keys', function (): void {
+test('GM [SUPERSEDED BY STORY 4]: the branch carried ten keys before the photo and the age', function (): void {
     [$contestantId] = idnContestant();
 
     $response = $this->actingAs(idnAs('super_admin'))
@@ -224,43 +235,41 @@ test('GM: the contestant branch carries exactly these ten keys', function (): vo
     // five top-level branches were already pinned above; the contestant
     // branch's own keys were not, so `age` and `photo` could have been added
     // without a single expectation moving.
-    expect(array_keys($response->json('data.contestant')))->toEqualCanonicalizing([
-        'id',
-        'user_id',
-        'country_id',
-        'full_name',
-        'date_of_birth',
-        'gender',
-        'phone_number',
-        'photo_media_asset_id',
-        'is_deleted',
+    // Kept as the BEFORE half of the pair, asserting that the ten original
+    // keys all survived. Deleting it would leave the widening recorded only
+    // by the test describing the new shape.
+    expect(array_keys($response->json('data.contestant')))->toContain(
+        'id', 'user_id', 'country_id', 'full_name', 'date_of_birth',
+        'gender', 'phone_number', 'photo_media_asset_id', 'is_deleted',
         'profile_completeness',
-    ]);
+    );
 });
 
-test('GM: the photo is a bare id that nothing resolves', function (): void {
+test('GM [CHANGED IN STORY 4]: the photo id now resolves beside itself', function (): void {
     [$contestantId] = idnContestant(['photo_media_id' => $mediaId = (string) Str::uuid()]);
 
     $response = $this->actingAs(idnAs('super_admin'))
         ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
         ->assertOk();
 
-    // THIS IS WHAT STORY 4 CHANGES. The id travels and there is nothing a
-    // screen can do with it — no url, no thumbnail, no mime type.
+    // BEFORE: the id travelled and there was nothing a screen could do with
+    //         it — no url, no thumbnail, no mime type.
+    // AFTER:  it still travels, and `photo` resolves beside it. The id was
+    //         not replaced, because a consumer already reads it.
     expect($response->json('data.contestant.photo_media_asset_id'))->toBe($mediaId);
-    expect($response->json('data.contestant'))->not->toHaveKey('photo');
 });
 
-test('GM: no age is reported, although the domain can calculate one', function (): void {
+test('GM [CHANGED IN STORY 4]: an age is now reported', function (): void {
     [$contestantId] = idnContestant(['date_of_birth' => '2000-01-01']);
 
     $response = $this->actingAs(idnAs('super_admin'))
         ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
         ->assertOk();
 
-    // BirthDate::calculateAgeAt() has existed since the module was written.
-    // No endpoint has ever called it.
-    expect($response->json('data.contestant'))->not->toHaveKey('age');
+    // BEFORE: BirthDate::calculateAgeAt() had existed since the module was
+    //         written and no endpoint had ever called it.
+    // AFTER:  the identity endpoint does, and only that one (D24).
+    expect($response->json('data.contestant.age'))->toBeInt();
 });
 
 test('GM: missing_fields already travels, and holds only the photo', function (): void {
@@ -351,6 +360,193 @@ test('national_id is absent from identity although show still carries it — D19
 
 /*
 |--------------------------------------------------------------------------
+| The photo and the age — Story 4 (ADR-016 D24)
+|--------------------------------------------------------------------------
+*/
+
+/** A media asset the boundary can resolve. */
+function idnMediaAsset(array $overrides = []): string
+{
+    $id = (string) Str::uuid();
+
+    DB::table('media_assets')->insert(array_merge([
+        'id' => $id,
+        'uploader_id' => null,
+        'disk' => 'public',
+        'file_path' => 'contestants/'.Str::random(8).'.jpg',
+        'file_name' => 'photo.jpg',
+        'mime_type' => 'image/jpeg',
+        'size_bytes' => 4096,
+        'hash_sha256' => hash('sha256', $id),
+        'collection' => 'contestant_photos',
+        'custom_properties' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ], $overrides));
+
+    return $id;
+}
+
+test('the photo resolves to something a screen can render', function (): void {
+    $mediaId = idnMediaAsset([
+        'custom_properties' => json_encode(['thumb_url' => 'https://cdn.test/thumb.jpg']),
+    ]);
+    [$contestantId] = idnContestant(['photo_media_id' => $mediaId]);
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    $photo = $response->json('data.contestant.photo');
+
+    expect($photo['id'])->toBe($mediaId);
+    expect($photo['url'])->toBeString();
+    expect($photo['thumb'])->toBe('https://cdn.test/thumb.jpg');
+    expect($photo['is_image'])->toBeTrue();
+
+    // The bare id stays. It was in the contract before Story 4 and removing
+    // it would break a consumer to add a convenience.
+    expect($response->json('data.contestant.photo_media_asset_id'))->toBe($mediaId);
+});
+
+test('a contestant with no photo reports null rather than an empty object', function (): void {
+    [$contestantId] = idnContestant();
+
+    $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk()
+        ->assertJsonPath('data.contestant.photo', null);
+});
+
+test('a photo id pointing at a deleted asset reports null, never a broken url', function (): void {
+    $mediaId = idnMediaAsset();
+    [$contestantId] = idnContestant(['photo_media_id' => $mediaId]);
+
+    DB::table('media_assets')->where('id', $mediaId)->update(['deleted_at' => now()]);
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // The id still travels — the record says a photo was set — but nothing
+    // pretends there is a file behind it.
+    expect($response->json('data.contestant.photo'))->toBeNull();
+    expect($response->json('data.contestant.photo_media_asset_id'))->toBe($mediaId);
+});
+
+test('the photo needs no permission beyond contestants.view', function (string $roleName): void {
+    $mediaId = idnMediaAsset();
+    [$contestantId] = idnContestant(['photo_media_id' => $mediaId]);
+
+    // D24: every seeded role holds media.view, so a withheld photo would be
+    // an unreachable state dressed as a permission boundary. `withheld`
+    // never names it.
+    $response = $this->actingAs(idnAs($roleName))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    expect($response->json('data.contestant.photo.id'))->toBe($mediaId);
+    expect($response->json('data.withheld'))->not->toContain('photo');
+})->with(['super_admin', 'competition_manager', 'data_entry']);
+
+test('resolving the photo does not add a query per request', function (): void {
+    $mediaId = idnMediaAsset();
+    [$withPhoto] = idnContestant(['photo_media_id' => $mediaId]);
+    [$withoutPhoto] = idnContestant();
+    $admin = idnAs('super_admin');
+
+    $countQueries = function (string $contestantId) use ($admin): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->actingAs($admin)
+            ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+            ->assertOk();
+
+        $count = count(DB::getRawQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
+    };
+
+    // Warm the permission resolver first — an unwarmed call costs one extra
+    // query and would read as a difference the photo caused.
+    $countQueries($withoutPhoto);
+
+    $none = $countQueries($withoutPhoto);
+    $one = $countQueries($withPhoto);
+
+    // Exactly one more: the batch that resolves the asset. Not two, and not
+    // one per field read off it.
+    expect($one)->toBe($none + 1);
+});
+
+test('the age is calculated by the domain and travels as a number', function (): void {
+    [$contestantId] = idnContestant([
+        'date_of_birth' => now()->subYears(24)->subDays(3)->format('Y-m-d'),
+    ]);
+
+    $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk()
+        ->assertJsonPath('data.contestant.age', 24);
+});
+
+test('the age counts completed years, not calendar ones', function (): void {
+    // A birthday that has not happened yet this year. Someone born 20 years
+    // ago minus one day is 19, and a naive year subtraction would say 20.
+    [$contestantId] = idnContestant([
+        'date_of_birth' => now()->subYears(20)->addDay()->format('Y-m-d'),
+    ]);
+
+    $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk()
+        ->assertJsonPath('data.contestant.age', 19);
+});
+
+test('GM [CHANGED IN STORY 4]: the contestant branch now carries twelve keys', function (): void {
+    [$contestantId] = idnContestant();
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
+        ->assertOk();
+
+    // BEFORE: ten. AFTER: twelve — `age` and `photo` (ADR-016 D24).
+    // `photo_media_asset_id` deliberately stays alongside `photo`.
+    expect(array_keys($response->json('data.contestant')))->toEqualCanonicalizing([
+        'id',
+        'user_id',
+        'country_id',
+        'full_name',
+        'date_of_birth',
+        'gender',
+        'phone_number',
+        'photo_media_asset_id',
+        'photo',
+        'age',
+        'is_deleted',
+        'profile_completeness',
+    ]);
+});
+
+test('the record-editing contract is NOT widened — D24', function (): void {
+    [$contestantId] = idnContestant();
+
+    $response = $this->actingAs(idnAs('super_admin'))
+        ->getJson("/api/v1/admin/contestants/{$contestantId}")
+        ->assertOk();
+
+    // GET /admin/contestants/{id} stays exactly as Story 1 shaped it. It is
+    // what the edit form reads, and this story has no screen for a wider
+    // version of it.
+    expect($response->json('data'))->not->toHaveKey('age');
+    expect($response->json('data'))->not->toHaveKey('photo');
+    expect($response->json('data.national_id'))->not->toBeNull();
+});
+
+/*
+|--------------------------------------------------------------------------
 | The account status — the fact D18 calls the most operationally useful
 |--------------------------------------------------------------------------
 */
@@ -421,13 +617,17 @@ test('a country with no translation for the requested language falls back rather
 });
 
 test('a country with no translations at all falls back to its ISO code', function (): void {
-    $countryId = idnCountry([]);
+    $iso2 = null;
+    $countryId = idnCountry([], $iso2);
     [$contestantId] = idnContestant(['country_id' => $countryId]);
 
+    // Compared against what the helper actually stored. Hardcoding a code
+    // here would tie the assertion to a value the helper stopped promising
+    // once it had to generate unique ones.
     $this->actingAs(idnAs('super_admin'))
         ->getJson("/api/v1/admin/contestants/{$contestantId}/identity")
         ->assertOk()
-        ->assertJsonPath('data.country.name', 'JO');
+        ->assertJsonPath('data.country.name', $iso2);
 });
 
 /*

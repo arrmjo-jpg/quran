@@ -24,6 +24,7 @@ use Modules\Contestants\Presentation\HTTP\Resources\ContestantPrivateResource;
 use Modules\Core\Contracts\CoreServiceContract;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 use Modules\Countries\Contracts\CountriesServiceContract;
+use Modules\Media\Contracts\MediaServiceContract;
 use Modules\Organization\Contracts\OrganizationServiceContract;
 
 /**
@@ -97,6 +98,7 @@ final class AdminContestantController extends Controller
         CoreServiceContract $users,
         CountriesServiceContract $countries,
         OrganizationServiceContract $organization,
+        MediaServiceContract $media,
     ): JsonResponse {
         try {
             $contestant = $this->repository->findOrFail(new ContestantId($id));
@@ -106,6 +108,13 @@ final class AdminContestantController extends Controller
 
         $resolvedUsers = $users->findResolvedByIds([$contestant->userId]);
         $resolvedCountries = $countries->findResolvedByIds([$contestant->countryId]);
+
+        // Skipped entirely when there is no photo, so a contestant without
+        // one costs no query at all rather than one that returns nothing.
+        $photoId = $contestant->getPhotoMediaId();
+        $resolvedPhoto = $photoId === null
+            ? null
+            : ($media->findResolvedByIds([$photoId])[$photoId] ?? null);
 
         // Named through the catalogue rather than as a literal. A `can:`
         // middleware string escapes PermissionSourceOfTruthTest by
@@ -127,6 +136,10 @@ final class AdminContestantController extends Controller
                     : [],
                 withheld: $mayReadMemberships ? [] : ['memberships'],
                 locale: $this->requestedLocale($request),
+                // Calculated by the value object that owns the rule, and
+                // passed in as a finished number (D24).
+                age: $contestant->getDateOfBirth()->calculateAgeAt(now()->toDateString()),
+                photo: $resolvedPhoto,
             ),
         ]);
     }

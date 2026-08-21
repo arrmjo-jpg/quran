@@ -10,6 +10,7 @@ use Modules\Contestants\Domain\Entities\Contestant;
 use Modules\Contestants\Domain\Services\EligibilityService;
 use Modules\Core\Contracts\ResolvedUserDTO;
 use Modules\Countries\Contracts\ResolvedCountryDTO;
+use Modules\Media\Contracts\ResolvedMediaDTO;
 use Modules\Organization\Contracts\ResolvedMembershipDTO;
 
 /**
@@ -38,6 +39,12 @@ use Modules\Organization\Contracts\ResolvedMembershipDTO;
  * There is no applications or appeals branch. No endpoint returns either
  * against a contestant, and a branch that were always empty would be
  * indistinguishable from a contestant who has never applied.
+ *
+ * `photo` carries no `withheld` entry, unlike the memberships branch. Every
+ * seeded role holds media.view, so a withheld photo would be an unreachable
+ * state dressed as a permission boundary (D24). It still resolves through
+ * MediaServiceContract rather than a model read, because ADR-002 is about
+ * coupling and not about permissions.
  */
 final class ContestantIdentityResource extends JsonResource
 {
@@ -52,6 +59,12 @@ final class ContestantIdentityResource extends JsonResource
         private readonly array $memberships,
         private readonly array $withheld,
         private readonly string $locale,
+        // Handed in finished rather than calculated here. The arithmetic
+        // belongs to BirthDate, which has done it since the module was
+        // written; a presentation class doing domain maths is the thing
+        // ADR-012 draws its layers to prevent (D24).
+        private readonly ?int $age = null,
+        private readonly ?ResolvedMediaDTO $photo = null,
     ) {
         parent::__construct($contestant);
     }
@@ -71,7 +84,20 @@ final class ContestantIdentityResource extends JsonResource
                 'date_of_birth' => (string) $contestant->getDateOfBirth(),
                 'gender' => (string) $contestant->getGender(),
                 'phone_number' => $contestant->getPhoneNumber(),
+                'age' => $this->age,
+
+                // Both. The bare id was in this contract before Story 4 and
+                // a consumer already reads it, so `photo` arrives beside it
+                // rather than replacing it.
                 'photo_media_asset_id' => $contestant->getPhotoMediaId(),
+                'photo' => $this->photo === null ? null : [
+                    'id' => $this->photo->id,
+                    'url' => $this->photo->url,
+                    'thumb' => $this->photo->thumb,
+                    'mime_type' => $this->photo->mimeType,
+                    'is_image' => $this->photo->isImage,
+                ],
+
                 'is_deleted' => $contestant->isDeleted(),
                 'profile_completeness' => (new EligibilityService)->calculateProfileCompleteness($contestant),
             ],
