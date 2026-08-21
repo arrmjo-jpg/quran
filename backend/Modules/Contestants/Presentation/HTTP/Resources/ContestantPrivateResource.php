@@ -31,6 +31,7 @@ final class ContestantPrivateResource extends JsonResource
                 'phone_number' => $resource->getPhoneNumber(),
                 'national_id' => $resource->getNationalId(),
                 'photo_media_asset_id' => $resource->getPhotoMediaId(),
+                'is_deleted' => $resource->isDeleted(),
                 'profile_completeness' => $completeness,
             ];
         }

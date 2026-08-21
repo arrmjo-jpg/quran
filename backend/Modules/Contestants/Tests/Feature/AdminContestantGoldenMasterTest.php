@@ -150,32 +150,43 @@ test('GM: a contestant-typed account is refused the admin surface', function ():
 |--------------------------------------------------------------------------
 */
 
-test('GM: the list returns success plus data, and NO pagination meta', function (): void {
-    // Pinned as a defect, not as a feature. Story 1 adds a bound; this
-    // records that today there is none, so the addition is visible in the
-    // diff of this file rather than silent.
+test('GM [CHANGED IN STORY 1]: the list is paginated and carries meta.pagination', function (): void {
+    // BEFORE: success + data, no meta, every contestant on the platform.
+    // AFTER:  success + data + meta.pagination, 20 per page by default.
+    //
+    // The change the Golden Master existed to make visible. Story 1 could
+    // not ship an unbounded list — it computes profile_completeness per row
+    // and returned every national ID the platform held in one response.
+    // Shape follows UserController and CenterController exactly.
     gmContestant();
 
     $response = $this->actingAs(gmAdmin())->getJson('/api/v1/admin/contestants');
 
     $response->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonCount(1, 'data');
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('meta.pagination.current_page', 1)
+        ->assertJsonPath('meta.pagination.per_page', 20)
+        ->assertJsonPath('meta.pagination.total', 1)
+        ->assertJsonPath('meta.pagination.last_page', 1);
 
-    expect($response->json())->toHaveKeys(['success', 'data']);
-    expect($response->json())->not->toHaveKey('meta');
+    expect($response->json())->toHaveKeys(['success', 'data', 'meta']);
 });
 
-test('GM: the list resource carries exactly these ten keys', function (): void {
+test('GM [CHANGED IN STORY 1]: the list drops national_id and gains is_deleted', function (): void {
+    // BEFORE: ten keys, national_id among them.
+    // AFTER:  ten keys, national_id gone, is_deleted added.
+    //
+    // The list is a browsing surface. Before Story 1 one request returned
+    // every contestant with their identity document in full; paginating
+    // reduces that per request but not in principle, since paging through
+    // still collects them all. No admin list column displays it. The detail
+    // endpoint keeps it — see the test below — because that is one person
+    // looked at deliberately.
     gmContestant();
 
     $row = $this->actingAs(gmAdmin())->getJson('/api/v1/admin/contestants')->json('data.0');
 
-    // The exact shape, including national_id — which Discovery flagged as
-    // personal data on a possibly-minor subject, and which D18 keeps out of
-    // Identity 360. It is pinned here because it is what the endpoint
-    // returns TODAY; removing it would be a contract change and has to be
-    // decided, not drifted into.
     expect(array_keys($row))->toBe([
         'id',
         'user_id',
@@ -184,33 +195,26 @@ test('GM: the list resource carries exactly these ten keys', function (): void {
         'date_of_birth',
         'gender',
         'phone_number',
-        'national_id',
         'photo_media_asset_id',
+        'is_deleted',
         'profile_completeness',
     ]);
 });
 
-test('GM: list and show return the identical key set', function (): void {
-    // ContestantPrivateResource has two branches — one for a domain entity
-    // (ten keys, completeness included) and one for an Eloquent model
-    // (nine, no completeness). Both routes read through the repository,
-    // which returns entities, so BOTH take the ten-key branch and the
-    // nine-key branch is unreachable from either endpoint.
-    //
-    // Measured, not assumed: this file first pinned the list at nine keys
-    // and the run disproved it.
-    //
-    // It matters for Story 1 because completeness is computed per row, so
-    // an unbounded list computes it N times — and because introducing
-    // pagination must not silently switch the list onto the model branch
-    // and drop a key.
+test('GM [CHANGED IN STORY 1]: list and show now differ by exactly national_id', function (): void {
+    // BEFORE: identical key sets — both took ContestantPrivateResource's
+    //         entity branch, and the model branch was unreachable.
+    // AFTER:  the list has its own resource. The ONLY difference is
+    //         national_id, asserted here rather than described, so a future
+    //         field cannot diverge between the two unnoticed.
     $id = gmContestant();
     $admin = gmAdmin();
 
     $listRow = $this->actingAs($admin)->getJson('/api/v1/admin/contestants')->json('data.0');
     $showRow = $this->actingAs($admin)->getJson("/api/v1/admin/contestants/{$id}")->json('data');
 
-    expect(array_keys($listRow))->toBe(array_keys($showRow));
+    expect(array_diff(array_keys($showRow), array_keys($listRow)))->toBe([7 => 'national_id']);
+    expect(array_diff(array_keys($listRow), array_keys($showRow)))->toBe([]);
     expect($listRow)->toHaveKey('profile_completeness');
 });
 
@@ -226,7 +230,16 @@ test('GM: the list is ordered by full_name ascending', function (): void {
     expect($names)->toBe(['Anas Al-Madani', 'Bilal Al-Habashi', 'Zayd Al-Ansari']);
 });
 
-test('GM: ?q searches full_name, phone_number and national_id', function (): void {
+test('GM [CHANGED IN STORY 1]: ?q searches full_name and phone_number, NOT national_id', function (): void {
+    // BEFORE: full_name, phone_number and national_id.
+    // AFTER:  national_id is not searchable.
+    //
+    // A leading-wildcard LIKE over an identity document lets any holder of
+    // contestants.view confirm or enumerate fragments of one — a lookup
+    // oracle, not a search feature — and the subjects may be minors. That is
+    // the reasoning D11 uses to withhold contestant visibility from
+    // supervisors until scoping is real, applied to a field rather than a
+    // role. Nothing in the admin UI searched by it.
     gmContestant(['full_name' => 'Searchable Person', 'phone_number' => '+962700000001', 'national_id' => '1110000001']);
     gmContestant(['full_name' => 'Other Person', 'phone_number' => '+962700000002', 'national_id' => '2220000002']);
 
@@ -234,7 +247,25 @@ test('GM: ?q searches full_name, phone_number and national_id', function (): voi
 
     expect($this->actingAs($admin)->getJson('/api/v1/admin/contestants?q=Searchable')->json('data'))->toHaveCount(1);
     expect($this->actingAs($admin)->getJson('/api/v1/admin/contestants?q=0000001')->json('data'))->toHaveCount(1);
-    expect($this->actingAs($admin)->getJson('/api/v1/admin/contestants?q=1110000001')->json('data'))->toHaveCount(1);
+
+    // The national ID of a real contestant now matches nothing.
+    expect($this->actingAs($admin)->getJson('/api/v1/admin/contestants?q=1110000001')->json('data'))->toHaveCount(0);
+});
+
+test('the list accepts ?search as well as ?q, with identical results', function (): void {
+    // `q` is what this endpoint has always taken and keeps taking; `search`
+    // is what every other admin list uses. Two spellings of one input, not
+    // two contracts.
+    gmContestant(['full_name' => 'Searchable Person']);
+    gmContestant(['full_name' => 'Other Person']);
+
+    $admin = gmAdmin();
+
+    $byQ = $this->actingAs($admin)->getJson('/api/v1/admin/contestants?q=Searchable')->json('data');
+    $bySearch = $this->actingAs($admin)->getJson('/api/v1/admin/contestants?search=Searchable')->json('data');
+
+    expect($byQ)->toHaveCount(1);
+    expect($bySearch)->toBe($byQ);
 });
 
 test('GM: ?q matches on a substring, anywhere in the value', function (): void {
@@ -280,7 +311,11 @@ test('GM: soft-deleted contestants are absent from the list', function (): void 
 |--------------------------------------------------------------------------
 */
 
-test('GM: show returns the ten-key shape, including profile_completeness', function (): void {
+test('GM [CHANGED IN STORY 1]: show keeps national_id and gains is_deleted', function (): void {
+    // BEFORE: ten keys.
+    // AFTER:  eleven — is_deleted added so the panel can tell a restored
+    //         record from a live one. national_id stays: an administrator
+    //         opening one contestant is looking at one person on purpose.
     $id = gmContestant();
 
     $data = $this->actingAs(gmAdmin())->getJson("/api/v1/admin/contestants/{$id}")->json('data');
@@ -295,6 +330,7 @@ test('GM: show returns the ten-key shape, including profile_completeness', funct
         'phone_number',
         'national_id',
         'photo_media_asset_id',
+        'is_deleted',
         'profile_completeness',
     ]);
 });
@@ -368,24 +404,25 @@ test('GM: a soft-deleted contestant is not retrievable by id', function (): void
 |--------------------------------------------------------------------------
 */
 
-test('GM: there is no create, update, delete or restore route today', function (): void {
+test('GM [CHANGED IN STORY 1]: create, update, delete and restore now exist', function (): void {
+    // BEFORE: 405 on every write verb, 404 on restore. The gap D15 named.
+    // AFTER:  all four routed. Behaviour is covered in
+    //         AdminContestantManagementTest; this only records that they
+    //         stopped being absent.
     $admin = gmAdmin();
     $id = gmContestant();
 
-    // 405 where the path exists for another verb, 404 where it does not.
-    // Either way: not 200, not 201, and no record changes.
-    $this->actingAs($admin)->postJson('/api/v1/admin/contestants', [])
-        ->assertStatus(405);
+    // 422 rather than 405: the route exists and validation rejects an
+    // empty body.
+    $this->actingAs($admin)->postJson('/api/v1/admin/contestants', [])->assertStatus(422);
 
-    $this->actingAs($admin)->patchJson("/api/v1/admin/contestants/{$id}", [])
-        ->assertStatus(405);
+    // An empty PATCH is a valid no-op update.
+    $this->actingAs($admin)->patchJson("/api/v1/admin/contestants/{$id}", [])->assertStatus(200);
 
-    $this->actingAs($admin)->deleteJson("/api/v1/admin/contestants/{$id}")
-        ->assertStatus(405);
+    $this->actingAs($admin)->deleteJson("/api/v1/admin/contestants/{$id}")->assertStatus(200);
+    $this->actingAs($admin)->postJson("/api/v1/admin/contestants/{$id}/restore")->assertStatus(200);
 
-    $this->actingAs($admin)->patchJson("/api/v1/admin/contestants/{$id}/restore")
-        ->assertStatus(404);
-
+    // Still there — deletion was soft, per ADR-016 D5.
     expect(DB::table('contestants')->where('id', $id)->exists())->toBeTrue();
 });
 
