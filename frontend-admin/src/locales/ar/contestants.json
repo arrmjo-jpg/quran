@@ -69,5 +69,22 @@
   "circle_deleted": "حلقة محذوفة",
   "identity_title": "الملف الشخصي 360°",
   "identity_subtitle": "الحساب والدولة وسجل الحلقات المرتبطة بهذا المتسابق",
-  "open_account": "فتح صفحة الحساب"
+  "open_account": "فتح صفحة الحساب",
+  "tab_profile": "الملف",
+  "tab_relations": "العلاقات",
+  "field_age": "العمر",
+  "age_years_zero": "أقل من سنة",
+  "age_years_one": "سنة واحدة",
+  "age_years_two": "سنتان",
+  "age_years_few": "{{count}} سنوات",
+  "age_years_many": "{{count}} سنة",
+  "age_years_other": "{{count}} سنة",
+  "section_completeness": "اكتمال الملف",
+  "completeness_label": "نسبة الاكتمال",
+  "completeness_complete": "الملف مكتمل.",
+  "completeness_missing_label": "الحقول الناقصة:",
+  "missing_field_photo_media_asset_id": "صورة المتسابق",
+  "missing_field_full_name": "الاسم الكامل",
+  "missing_field_phone_number": "رقم الهاتف",
+  "missing_field_country_id": "الدولة"
 }

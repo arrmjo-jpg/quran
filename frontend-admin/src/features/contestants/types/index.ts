@@ -19,6 +19,22 @@ export interface ProfileCompleteness {
   missing_fields:       string[];
 }
 
+/**
+ * A stored photo, resolved to something renderable — ADR-016 D24.
+ *
+ * `url` and `thumb` are both nullable and for different reasons. A private
+ * disk issues presigned URLs on demand and has no permanent address to give;
+ * a thumbnail exists only if one was generated. A component must fall back
+ * rather than assume either.
+ */
+export interface ResolvedPhoto {
+  id:        string;
+  url:       string | null;
+  thumb:     string | null;
+  mime_type: string;
+  is_image:  boolean;
+}
+
 /** A row in the contestants table. */
 export interface ContestantListItem {
   id:                    string;
@@ -90,8 +106,24 @@ export interface IdentityMembership {
  */
 export type IdentityBranch = 'memberships';
 
+/**
+ * The contestant as the identity endpoint returns them — Story 4 widened
+ * this beyond the list shape (ADR-016 D24).
+ *
+ * `photo_media_asset_id` stays alongside the resolved `photo`: it was in the
+ * contract before Story 4 and removing it would break a consumer to add a
+ * convenience.
+ *
+ * `age` arrives calculated. It is not derived here, and not in a component —
+ * BirthDate owns that arithmetic and the server hands over the answer.
+ */
+export interface IdentityContestant extends ContestantListItem {
+  age:   number;
+  photo: ResolvedPhoto | null;
+}
+
 export interface ContestantIdentity {
-  contestant:  ContestantListItem;
+  contestant:  IdentityContestant;
   user:        IdentityAccount | null;
   country:     IdentityCountry | null;
   memberships: IdentityMembership[];

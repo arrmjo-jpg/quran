@@ -1,35 +1,55 @@
-import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, EyeOff, Globe2, IdCard, User, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  Building2,
+  EyeOff,
+  Globe2,
+  IdCard,
+  Link2,
+  Pencil,
+  RotateCcw,
+  Trash2,
+  User,
+  UserCircle2,
+  Users,
+} from 'lucide-react';
 import { PageLayout } from '@/ui/page-layout/PageLayout';
 import { ErrorState } from '@/ui/error-state/ErrorState';
 import { EmptyState } from '@/ui/empty-state/EmptyState';
+import { ConfirmDialog } from '@/ui/dialog/Dialog';
+import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
 import Badge from '@/ui/Badge';
+import Button from '@/ui/Button';
 import Spinner from '@/ui/Spinner';
-import { useContestantIdentity } from '../hooks/useContestants';
-import type { IdentityMembership } from '../types';
+import {
+  useContestantIdentity,
+  useDeleteContestant,
+  useRestoreContestant,
+} from '../hooks/useContestants';
+import { ContestantFormDialog } from '../components/ContestantFormDialog';
+import type { IdentityMembership, ResolvedPhoto } from '../types';
 
 /**
- * Identity 360 — one contestant and everything that links to them
- * (ADR-016 D16, D19, D20, D23).
+ * The contestant's screen — profile and relations, one route, two tabs
+ * (ADR-016 D19, D20, D23, D24).
  *
- * A PAGE, NOT A DIALOG, AND THAT IS THE POINT OF D23. The drawer this
- * replaces had no URL, so the relationship an operator was looking at could
- * not be linked to and `User → Contestant → back` could not be walked at
- * all. A graph you can see but not traverse is a diagram.
+ * ONE ROUTE, BECAUSE D23 ALREADY SETTLED THAT. A second page for "the
+ * profile" would put the same person behind two URLs one story after a
+ * drawer was removed for putting them behind none. Tabs give the separation
+ * without the duplication.
  *
- * It replaces the drawer rather than joining it. Two surfaces rendering the
- * same graph are two places that have to be kept in step, and this codebase
- * already carries that argument three times over — `is_active` derived once
- * rather than recomputed by three clients, `status` derived once rather than
- * combined from three columns, `UserStatus` extracted the moment a second
- * caller appeared.
+ * The split is by what the data IS, not by where it comes from. Profile
+ * holds the person's own record — including their country, which is a fact
+ * about them rather than a link that leads anywhere. Relations holds what
+ * they are attached to: the account, and the circles they have belonged to.
+ * Nothing appears twice.
  *
- * There is no national ID here and no profile branch, and neither is an
- * oversight: this shows what identifies, explains or links, never what
- * describes.
+ * There is no national ID on either tab, and no applications or appeals.
  */
+type Tab = 'profile' | 'relations';
+
 const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
   active: 'success',
   pending_activation: 'warning',
@@ -65,6 +85,34 @@ function Field({ label, value }: { label: string; value: React.ReactNode }): Rea
       <span className="text-[11px] text-slate-500">{label}</span>
       <span className="text-slate-900 dark:text-white">{value}</span>
     </div>
+  );
+}
+
+/**
+ * The photograph, or an honest placeholder.
+ *
+ * `url` can be null for an asset that really exists — a private disk issues
+ * presigned URLs on demand and has no permanent address — so "we have a
+ * photo" and "we can show it" are separate questions and this answers both
+ * rather than rendering a broken image.
+ */
+function Photo({ photo, alt }: { photo: ResolvedPhoto | null; alt: string }): React.JSX.Element {
+  const src = photo?.thumb ?? photo?.url ?? null;
+
+  if (src === null || photo?.is_image !== true) {
+    return (
+      <div className="w-28 h-28 shrink-0 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+        <UserCircle2 className="w-12 h-12" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-28 h-28 shrink-0 rounded-2xl object-cover border border-slate-200 dark:border-slate-800"
+    />
   );
 }
 
@@ -120,8 +168,15 @@ export default function ContestantIdentityPage(): React.JSX.Element {
   const { t } = useTranslation('contestants');
   const { t: tc } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const [tab, setTab] = useState<Tab>('profile');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useContestantIdentity(id ?? '');
+  const deleteContestant = useDeleteContestant();
+  const restoreContestant = useRestoreContestant();
 
   const crumbs = [
     { label: tc('home'), href: '/' },
@@ -149,100 +204,229 @@ export default function ContestantIdentityPage(): React.JSX.Element {
 
   const { contestant, user, country, memberships, withheld } = data;
   const membershipsWithheld = withheld.includes('memberships');
+  const completeness = contestant.profile_completeness;
+
+  const tabs: { id: Tab; icon: typeof User }[] = [
+    { id: 'profile', icon: IdCard },
+    { id: 'relations', icon: Link2 },
+  ];
 
   return (
     <PageLayout
       title={contestant.full_name}
       subtitle={t('identity_subtitle')}
       breadcrumbs={crumbs}
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-        <Section icon={IdCard} title={t('section_contestant')}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-slate-900 dark:text-white">
-                {contestant.full_name}
-              </span>
-              <div className="flex items-center gap-1.5">
-                {contestant.is_deleted && <Badge variant="neutral">{t('badge_deleted')}</Badge>}
-                <Badge variant={contestant.profile_completeness.is_complete ? 'success' : 'warning'}>
-                  {`${contestant.profile_completeness.completeness_percent}%`}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('field_date_of_birth')} value={contestant.date_of_birth} />
-              <Field label={t('field_gender')} value={t(`gender_${contestant.gender}`)} />
-              <Field label={t('field_phone')} value={contestant.phone_number} />
-            </div>
-          </div>
-        </Section>
-
-        <Section icon={User} title={t('section_account')}>
-          {user === null ? (
-            /* contestants.user_id is NOT NULL and RESTRICT, so this is a
-               broken link rather than an absent one — worth naming. */
-            <p className="text-rose-600 dark:text-rose-400">{t('account_missing')}</p>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-900 dark:text-white">{user.name}</span>
-                <Badge variant={STATUS_VARIANT[user.status] ?? 'neutral'}>
-                  {t(`account_status_${user.status}`)}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t('field_account_type')} value={t(`type_${user.type}`)} />
-              </div>
-
-              {/* The link D18 admitted `id` for. It only became followable in
-                  Story 3 — before /users/:id existed this was an id printed
-                  as text. */}
-              <Link
-                to={`/users/${user.id}`}
-                className="inline-block text-brand-600 hover:underline font-semibold"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {/* A deleted record offers restore and nothing else, matching the
+              table. Editing a row that is gone would offer work the server
+              refuses. D17 decides who sees which: data_entry holds update
+              and neither of the destructive pair. */}
+          {contestant.is_deleted ? (
+            <PermissionWrapper permission="contestants.restore">
+              <Button
+                variant="outline"
+                isLoading={restoreContestant.isPending}
+                onClick={() => restoreContestant.mutate(contestant.id)}
               >
-                {t('open_account')}
-              </Link>
+                <RotateCcw className="w-4 h-4" />
+                <span>{t('action_restore')}</span>
+              </Button>
+            </PermissionWrapper>
+          ) : (
+            <>
+              <PermissionWrapper permission="contestants.update">
+                <Button variant="outline" onClick={() => setIsFormOpen(true)}>
+                  <Pencil className="w-4 h-4" />
+                  <span>{tc('edit')}</span>
+                </Button>
+              </PermissionWrapper>
 
-              {user.name !== contestant.full_name && (
-                <p className="text-amber-700 dark:text-amber-400">{t('name_divergence')}</p>
+              <PermissionWrapper permission="contestants.delete">
+                <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>
+                  <Trash2 className="w-4 h-4" />
+                  <span>{tc('delete')}</span>
+                </Button>
+              </PermissionWrapper>
+            </>
+          )}
+        </div>
+      }
+    >
+      <div className="space-y-5 text-xs">
+        <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800 pb-1">
+          {tabs.map(({ id: tabId, icon: Icon }) => (
+            <button
+              key={tabId}
+              onClick={() => setTab(tabId)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                tab === tabId
+                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{t(`tab_${tabId}`)}</span>
+            </button>
+          ))}
+        </div>
+
+        {tab === 'profile' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Section icon={IdCard} title={t('section_contestant')}>
+              <div className="flex gap-4">
+                <Photo photo={contestant.photo} alt={contestant.full_name} />
+
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                      {contestant.full_name}
+                    </span>
+                    {contestant.is_deleted && (
+                      <Badge variant="neutral">{t('badge_deleted')}</Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Calculated by the server from the date of birth. A
+                        component doing the arithmetic would be a component
+                        holding a business rule. */}
+                    <Field label={t('field_age')} value={t('age_years', { count: contestant.age })} />
+                    <Field label={t('field_date_of_birth')} value={contestant.date_of_birth} />
+                    <Field label={t('field_gender')} value={t(`gender_${contestant.gender}`)} />
+                    <Field label={t('field_phone')} value={contestant.phone_number} />
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            <Section icon={Globe2} title={t('section_country')}>
+              {country === null ? (
+                <p className="text-slate-400">{t('country_missing')}</p>
+              ) : (
+                <p className="text-slate-900 dark:text-white">
+                  {country.name} <span className="font-mono text-slate-400">({country.iso2})</span>
+                </p>
               )}
-            </div>
-          )}
-        </Section>
+            </Section>
 
-        <Section icon={Globe2} title={t('section_country')}>
-          {country === null ? (
-            <p className="text-slate-400">{t('country_missing')}</p>
-          ) : (
-            <p className="text-slate-900 dark:text-white">
-              {country.name} <span className="font-mono text-slate-400">({country.iso2})</span>
-            </p>
-          )}
-        </Section>
+            <Section icon={AlertTriangle} title={t('section_completeness')}>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600 dark:text-slate-300">
+                    {t('completeness_label')}
+                  </span>
+                  <Badge variant={completeness.is_complete ? 'success' : 'warning'}>
+                    {`${completeness.completeness_percent}%`}
+                  </Badge>
+                </div>
 
-        <Section icon={Users} title={t('section_memberships')}>
-          {membershipsWithheld ? (
-            /* D20: not the same as "none", and the screen must not say the
-               one when the other is true. */
-            <p className="flex items-center gap-2 text-slate-500">
-              <EyeOff className="w-4 h-4 shrink-0" />
-              <span>{t('memberships_withheld')}</span>
-            </p>
-          ) : memberships.length === 0 ? (
-            <EmptyState title={t('memberships_empty')} />
-          ) : (
-            <div className="space-y-2">
-              {memberships.map((membership) => (
-                <MembershipRow key={membership.id} membership={membership} t={t} />
-              ))}
-            </div>
-          )}
-        </Section>
+                {completeness.is_complete ? (
+                  <p className="text-emerald-700 dark:text-emerald-400">
+                    {t('completeness_complete')}
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <p className="text-slate-500">{t('completeness_missing_label')}</p>
+                    <ul className="space-y-1">
+                      {completeness.missing_fields.map((field) => (
+                        <li key={field} className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          {/* Named, not shown as a raw column. The server
+                              returns field keys; the panel says what they
+                              mean to the person reading. */}
+                          <span>{t(`missing_field_${field}`)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Section>
+          </div>
+        )}
+
+        {tab === 'relations' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Section icon={User} title={t('section_account')}>
+              {user === null ? (
+                /* contestants.user_id is NOT NULL and RESTRICT, so this is a
+                   broken link rather than an absent one — worth naming. */
+                <p className="text-rose-600 dark:text-rose-400">{t('account_missing')}</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-900 dark:text-white">{user.name}</span>
+                    <Badge variant={STATUS_VARIANT[user.status] ?? 'neutral'}>
+                      {t(`account_status_${user.status}`)}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={t('field_account_type')} value={t(`type_${user.type}`)} />
+                  </div>
+
+                  <Link
+                    to={`/users/${user.id}`}
+                    className="inline-block text-brand-600 hover:underline font-semibold"
+                  >
+                    {t('open_account')}
+                  </Link>
+
+                  {user.name !== contestant.full_name && (
+                    <p className="text-amber-700 dark:text-amber-400">{t('name_divergence')}</p>
+                  )}
+                </div>
+              )}
+            </Section>
+
+            <Section icon={Users} title={t('section_memberships')}>
+              {membershipsWithheld ? (
+                /* D20: not the same as "none", and the screen must not say
+                   the one when the other is true. */
+                <p className="flex items-center gap-2 text-slate-500">
+                  <EyeOff className="w-4 h-4 shrink-0" />
+                  <span>{t('memberships_withheld')}</span>
+                </p>
+              ) : memberships.length === 0 ? (
+                <EmptyState title={t('memberships_empty')} />
+              ) : (
+                <div className="space-y-2">
+                  {memberships.map((membership) => (
+                    <MembershipRow key={membership.id} membership={membership} t={t} />
+                  ))}
+                </div>
+              )}
+            </Section>
+          </div>
+        )}
       </div>
+
+      <ContestantFormDialog
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        editing={contestant}
+      />
+
+      <ConfirmDialog
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        title={t('delete_title')}
+        description={t('delete_message', { name: contestant.full_name })}
+        confirmLabel={tc('delete')}
+        isLoading={deleteContestant.isPending}
+        onConfirm={() => {
+          deleteContestant.mutate(contestant.id, {
+            onSuccess: () => {
+              setIsDeleteOpen(false);
+              // Back to the list. Staying would leave the operator on a
+              // record the default list no longer contains, with only a
+              // restore button and no way back to what they were doing.
+              void navigate('/contestants');
+            },
+          });
+        }}
+      />
     </PageLayout>
   );
 }

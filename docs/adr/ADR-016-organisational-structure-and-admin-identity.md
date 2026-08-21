@@ -702,9 +702,14 @@ surfaces showing the same person are two places to keep in step; a second route 
 would reintroduce exactly that, one story later. Tabs give the visual separation the profile needs
 without giving the person two URLs.
 
-The division is the one D19 already drew. **Relations** holds the account, the country and the
-circle history — what *links*. **Profile** holds the person's own record — what the contestant *is*.
-Nothing appears in both.
+**Profile** holds the person's own record — photo, name, age, country, phone, date of birth,
+gender, contestant status, completeness and what is missing. **Relations** holds what the contestant
+is *linked to* — the account and the circle history. Nothing appears in both.
+
+The country sits in Profile rather than Relations, although Story 3 rendered it beside the account.
+It is not a relationship an operator navigates: nothing hangs off it, there is no country screen to
+open, and what it answers — where this person competes from — is a fact about the person in the same
+way their date of birth is. Relations is for links that lead somewhere.
 
 **`age` and `photo` are added to the identity endpoint's `contestant` branch, and nowhere else.**
 That branch is what the profile tab reads, and `GET /admin/contestants/{id}` is left exactly as

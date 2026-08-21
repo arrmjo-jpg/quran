@@ -69,5 +69,18 @@
   "circle_deleted": "Deleted circle",
   "identity_title": "360° profile",
   "identity_subtitle": "The account, country and circle history linked to this contestant",
-  "open_account": "Open the account"
+  "open_account": "Open the account",
+  "tab_profile": "Profile",
+  "tab_relations": "Relations",
+  "field_age": "Age",
+  "age_years_one": "{{count}} year",
+  "age_years_other": "{{count}} years",
+  "section_completeness": "Profile completeness",
+  "completeness_label": "Completeness",
+  "completeness_complete": "This record is complete.",
+  "completeness_missing_label": "Missing:",
+  "missing_field_photo_media_asset_id": "Contestant photo",
+  "missing_field_full_name": "Full name",
+  "missing_field_phone_number": "Phone number",
+  "missing_field_country_id": "Country"
 }

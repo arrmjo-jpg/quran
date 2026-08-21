@@ -69,5 +69,18 @@
   "circle_deleted": "Círculo eliminado",
   "identity_title": "Perfil 360°",
   "identity_subtitle": "La cuenta, el país y el historial de círculos vinculados a este concursante",
-  "open_account": "Abrir la cuenta"
+  "open_account": "Abrir la cuenta",
+  "tab_profile": "Perfil",
+  "tab_relations": "Relaciones",
+  "field_age": "Edad",
+  "age_years_one": "{{count}} año",
+  "age_years_other": "{{count}} años",
+  "section_completeness": "Perfil completado",
+  "completeness_label": "Grado de compleción",
+  "completeness_complete": "Este registro está completo.",
+  "completeness_missing_label": "Falta:",
+  "missing_field_photo_media_asset_id": "Foto del concursante",
+  "missing_field_full_name": "Nombre completo",
+  "missing_field_phone_number": "Número de teléfono",
+  "missing_field_country_id": "País"
 }
