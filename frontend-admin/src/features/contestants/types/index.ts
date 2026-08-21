@@ -171,8 +171,3 @@ export interface UpdateContestantPayload {
   national_id?:    string | null;
   photo_media_id?: string | null;
 }
-
-/** Kept for the existing drawer's props. */
-export interface ContestantSearchFilters {
-  query?: string;
-}

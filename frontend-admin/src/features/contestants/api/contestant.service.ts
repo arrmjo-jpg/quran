@@ -39,11 +39,6 @@ export const contestantService = {
     };
   },
 
-  async getContestant(id: string): Promise<ContestantDetail> {
-    const { data } = await http.get<ApiSuccess<ContestantDetail>>(`/admin/contestants/${id}`);
-    return data.data;
-  },
-
   async createContestant(payload: CreateContestantPayload): Promise<ContestantDetail> {
     const { data } = await http.post<ApiSuccess<ContestantDetail>>('/admin/contestants', payload);
     return data.data;

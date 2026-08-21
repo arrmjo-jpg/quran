@@ -9,7 +9,6 @@ import {
   IdCard,
   Link2,
   Pencil,
-  RotateCcw,
   Trash2,
   User,
   UserCircle2,
@@ -23,11 +22,7 @@ import { PermissionWrapper } from '@/ui/permission-wrapper/PermissionWrapper';
 import Badge from '@/ui/Badge';
 import Button from '@/ui/Button';
 import Spinner from '@/ui/Spinner';
-import {
-  useContestantIdentity,
-  useDeleteContestant,
-  useRestoreContestant,
-} from '../hooks/useContestants';
+import { useContestantIdentity, useDeleteContestant } from '../hooks/useContestants';
 import { ContestantFormDialog } from '../components/ContestantFormDialog';
 import type { IdentityMembership, ResolvedPhoto } from '../types';
 
@@ -176,7 +171,6 @@ export default function ContestantIdentityPage(): React.JSX.Element {
 
   const { data, isLoading, isError, refetch } = useContestantIdentity(id ?? '');
   const deleteContestant = useDeleteContestant();
-  const restoreContestant = useRestoreContestant();
 
   const crumbs = [
     { label: tc('home'), href: '/' },
@@ -217,39 +211,30 @@ export default function ContestantIdentityPage(): React.JSX.Element {
       subtitle={t('identity_subtitle')}
       breadcrumbs={crumbs}
       actions={
+        // No restore here, and its absence is deliberate. This endpoint reads
+        // through findOrFail, which the soft-delete scope filters, so a
+        // deleted contestant 404s and `is_deleted` is ALWAYS false on this
+        // page. A restore button would be a branch that can never render —
+        // Story 4 shipped one before this audit found it could not.
+        //
+        // Restoring is done from the list with `show deleted` ticked, which is
+        // the only surface that can hold a deleted row. D17 decides who sees
+        // what here: data_entry holds update and neither of the destructive
+        // pair.
         <div className="flex flex-wrap items-center gap-2">
-          {/* A deleted record offers restore and nothing else, matching the
-              table. Editing a row that is gone would offer work the server
-              refuses. D17 decides who sees which: data_entry holds update
-              and neither of the destructive pair. */}
-          {contestant.is_deleted ? (
-            <PermissionWrapper permission="contestants.restore">
-              <Button
-                variant="outline"
-                isLoading={restoreContestant.isPending}
-                onClick={() => restoreContestant.mutate(contestant.id)}
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>{t('action_restore')}</span>
-              </Button>
-            </PermissionWrapper>
-          ) : (
-            <>
-              <PermissionWrapper permission="contestants.update">
-                <Button variant="outline" onClick={() => setIsFormOpen(true)}>
-                  <Pencil className="w-4 h-4" />
-                  <span>{tc('edit')}</span>
-                </Button>
-              </PermissionWrapper>
+          <PermissionWrapper permission="contestants.update">
+            <Button variant="outline" onClick={() => setIsFormOpen(true)}>
+              <Pencil className="w-4 h-4" />
+              <span>{tc('edit')}</span>
+            </Button>
+          </PermissionWrapper>
 
-              <PermissionWrapper permission="contestants.delete">
-                <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>
-                  <Trash2 className="w-4 h-4" />
-                  <span>{tc('delete')}</span>
-                </Button>
-              </PermissionWrapper>
-            </>
-          )}
+          <PermissionWrapper permission="contestants.delete">
+            <Button variant="danger" onClick={() => setIsDeleteOpen(true)}>
+              <Trash2 className="w-4 h-4" />
+              <span>{tc('delete')}</span>
+            </Button>
+          </PermissionWrapper>
         </div>
       }
     >
@@ -278,14 +263,11 @@ export default function ContestantIdentityPage(): React.JSX.Element {
                 <Photo photo={contestant.photo} alt={contestant.full_name} />
 
                 <div className="flex-1 min-w-0 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-base font-bold text-slate-900 dark:text-white">
-                      {contestant.full_name}
-                    </span>
-                    {contestant.is_deleted && (
-                      <Badge variant="neutral">{t('badge_deleted')}</Badge>
-                    )}
-                  </div>
+                  {/* No deleted badge: see the note on `actions` — this
+                      page cannot be reached for a deleted contestant. */}
+                  <span className="text-base font-bold text-slate-900 dark:text-white">
+                    {contestant.full_name}
+                  </span>
 
                   <div className="grid grid-cols-2 gap-3">
                     {/* Calculated by the server from the date of birth. A
