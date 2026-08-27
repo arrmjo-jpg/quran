@@ -77,6 +77,31 @@ jobs:
           docker compose logs app
           exit 1
 
+      # gate:suite runs on MySQL as quran_user against quran_platform_test.
+      # Both the schema and that account's grant on it come from
+      # docker/mysql/init, which the MySQL entrypoint runs only on FIRST
+      # initialisation of the data volume. If that ever silently does not
+      # happen, the suite does not fail with one clear error -- it fails with
+      # SQLSTATE[HY000] [1044] repeated across a thousand tests.
+      #
+      # So check it here, as quran_user rather than root, because root can
+      # reach a schema quran_user cannot and would report success either way.
+      - name: Verify the test database is reachable by the test user
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec quran_platform_mysql                  mysql -uquran_user -pquran_secret_password                  -e "USE quran_platform_test; SELECT 1;" >/dev/null 2>&1; then
+              echo "quran_platform_test reachable as quran_user."
+              exit 0
+            fi
+            echo "Waiting for quran_platform_test... ($i/30)"
+            sleep 2
+          done
+          echo "quran_platform_test is not reachable as quran_user."
+          echo "Expected docker/mysql/init to have created and granted it."
+          docker exec quran_platform_mysql             mysql -uroot -proot_secret_password             -e "SHOW DATABASES; SHOW GRANTS FOR 'quran_user'@'%';" || true
+          docker compose logs mysql
+          exit 1
+
       - name: Run functional gate
         working-directory: frontend-admin
         run: npm run gate:functional

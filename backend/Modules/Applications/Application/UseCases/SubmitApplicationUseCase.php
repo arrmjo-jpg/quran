@@ -104,6 +104,23 @@ final class SubmitApplicationUseCase
 
             $this->applications->save($application);
 
+            // THE DISPATCH LOOP THIS CLASS WAS EXTRACTED TO MAKE POSSIBLE.
+            //
+            // Application::submit() has recorded ApplicationSubmitted since it
+            // was written, and nothing ever called releaseEvents(), so the
+            // event was dead code — recorded into an array and dropped when
+            // the aggregate went out of scope. The extraction commit
+            // deliberately did not add this, and pinned its own absence in
+            // SubmitApplicationGoldenMasterTest so that adding it would be
+            // visible rather than silent. This is that moment (ADR-017 D8).
+            //
+            // Inside the transaction, like every other use case in this
+            // codebase: an event announcing a change that then rolls back is
+            // worse than no event.
+            foreach ($application->releaseEvents() as $event) {
+                event($event);
+            }
+
             return $application;
         });
     }

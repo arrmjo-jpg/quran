@@ -37,6 +37,10 @@ export const queryKeys = {
     list: (filters: unknown) => ['users', 'list', filters] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
   },
+  activity: {
+    all:  () => ['activity'] as const,
+    list: (filters: unknown) => ['activity', 'list', filters] as const,
+  },
   permissions: {
     all: () => ['permissions'] as const,
   },

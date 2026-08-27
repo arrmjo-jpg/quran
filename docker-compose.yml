@@ -25,6 +25,13 @@ services:
       QUEUE_CONNECTION: redis
       SESSION_DRIVER: file
       MEILISEARCH_HOST: http://meilisearch:7700
+      # Must equal the meilisearch service's MEILI_MASTER_KEY below. That
+      # service runs WITH a master key, so it rejects unauthenticated calls,
+      # and CountryModel is Scout-Searchable -- every test that creates a
+      # country indexes. Without this the whole suite failed on a clean
+      # runner with "The Authorization header is missing", while passing
+      # locally because a developer .env happened to carry the key.
+      MEILISEARCH_KEY: master_key_quran_platform
       SCOUT_DRIVER: meilisearch
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
@@ -58,6 +65,10 @@ services:
       - "3306:3306"
     volumes:
       - quran_mysql_data:/var/lib/mysql
+      # Creates quran_platform_test and grants quran_user on it. MYSQL_DATABASE
+      # above only ever made the dev schema; the test schema was a manual step
+      # nothing in the repository performed. Runs on first init of the volume.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - quran_network
 

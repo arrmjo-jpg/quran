@@ -151,14 +151,35 @@ test('the emailed token is the one that actually works', function (): void {
 test('the link points at the admin panel, not at the API', function (): void {
     // APP_URL is the API's address; an invitee following it gets JSON instead
     // of the form that lets them choose a password.
+    //
+    // Compared as ORIGINS. The first version asked whether acceptUrl starts
+    // with config('app.url'), which answers a different question whenever one
+    // URL is a textual prefix of the other. APP_URL=http://localhost with
+    // ADMIN_URL=http://localhost:5173 -- the values in .env.example -- differ
+    // in origin but not in prefix, so a perfectly correct link was read as
+    // pointing at the API. It passed on the machine it was written on for the
+    // sole reason that APP_URL carried a port there, and failed on the first
+    // runner that copied .env.example.
+    //
+    // Stated positively too: the requirement is that the link points AT the
+    // admin panel, which is the thing worth asserting. It also stays correct
+    // where the two are deliberately configured to the same origin, which the
+    // old `||` escape hatch existed to allow.
+    $origin = static function (?string $url): string {
+        $parts = parse_url((string) $url) ?: [];
+
+        return ($parts['scheme'] ?? '').'://'.($parts['host'] ?? '')
+            .(isset($parts['port']) ? ':'.$parts['port'] : '');
+    };
+
     $this->actingAs(creatorAdmin())
         ->postJson('/api/v1/admin/users', createUserPayload())
         ->assertCreated();
 
-    Mail::assertSent(InvitationMail::class, function (InvitationMail $mail): bool {
-        return ! str_starts_with($mail->acceptUrl, (string) config('app.url'))
-            || config('app.url') === config('core.admin_url');
-    });
+    Mail::assertSent(
+        InvitationMail::class,
+        fn (InvitationMail $mail): bool => $origin($mail->acceptUrl) === $origin(config('core.admin_url'))
+    );
 });
 
 /*

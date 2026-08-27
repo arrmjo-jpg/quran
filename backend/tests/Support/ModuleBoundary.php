@@ -378,7 +378,15 @@ final class ModuleBoundary
         foreach (self::modules() as $module) {
             foreach (self::phpFilesUnder(base_path("Modules/$module/Presentation/HTTP/Controllers")) as $path) {
                 preg_match_all(
-                    '/use (Modules\\\\\w+\\\\[\w\\\\]*Models\\\\\w+);/',
+                    // `\\Models\\` as a whole segment, not `Models` anywhere in
+                    // the namespace. The first version read
+                    // `[\w\\]*Models\\` and matched
+                    // `Modules\Core\Domain\ReadModels\ActivityEntry`, because
+                    // the character class happily absorbed the `Read`. That is
+                    // a read model — the very thing a controller is supposed to
+                    // use INSTEAD of Eloquent — so the guard was failing the
+                    // fix it exists to demand.
+                    '/use (Modules\\\\\w+\\\\(?:[\w\\\\]+\\\\)?Models\\\\\w+);/',
                     (string) file_get_contents($path),
                     $matches
                 );
