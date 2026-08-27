@@ -371,16 +371,18 @@ test('PINNED: `notes` is accepted by validation and then discarded', function ()
         ->not->toHaveKey('notes');
 });
 
-test('PINNED: no domain event reaches a listener', function (): void {
-    // Application::submit() records ApplicationSubmitted on the aggregate, but
-    // nothing calls releaseEvents() anywhere in the codebase and nothing
-    // listens for it. Every other module's use case ends with a dispatch loop;
-    // this path has no use case, so the event is dead code.
+test('GM [CHANGED IN EPIC 5]: the submitted event now reaches the dispatcher', function (): void {
+    // BEFORE: Application::submit() recorded ApplicationSubmitted on the
+    //         aggregate, nothing called releaseEvents() anywhere in the
+    //         codebase, and nothing listened. The event was dead code.
     //
-    // This is the strongest argument for the extraction — and the reason the
-    // extraction must NOT add the dispatch loop in the same step. Starting to
-    // dispatch is a behavioural change, and this test is what will make it
-    // visible when it happens.
+    // AFTER:  SubmitApplicationUseCase releases it inside the transaction,
+    //         like every other use case in this codebase (ADR-017 D8).
+    //
+    // This test was written to be broken, once, deliberately. Its original
+    // comment said the extraction "must NOT add the dispatch loop in the same
+    // step … this test is what will make it visible when it happens." It is
+    // updated rather than deleted, so the moment stays on the record.
     $user = goldenContestantUser();
     goldenContestant($user);
     [$season, $stage] = goldenSeasonAndStage();
@@ -393,7 +395,7 @@ test('PINNED: no domain event reaches a listener', function (): void {
         'video_media_asset_id' => goldenMediaAsset(),
     ])->assertCreated();
 
-    Event::assertNotDispatched(ApplicationSubmitted::class);
+    Event::assertDispatched(ApplicationSubmitted::class);
 });
 
 test('a contestant in no circle is refused — G3', function (): void {
