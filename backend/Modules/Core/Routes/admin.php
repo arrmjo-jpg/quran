@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Core\Presentation\HTTP\Controllers\ActivityLogController;
 use Modules\Core\Presentation\HTTP\Controllers\PermissionController;
 use Modules\Core\Presentation\HTTP\Controllers\RoleController;
 use Modules\Core\Presentation\HTTP\Controllers\UserController;
@@ -104,3 +105,14 @@ Route::patch('users/{id}/activate', [UserController::class, 'activate'])
 Route::patch('users/{id}/deactivate', [UserController::class, 'deactivate'])
     ->name('admin.users.deactivate')
     ->middleware('can:users.deactivate');
+
+// The activity log — ADR-017. Read-only: rows arrive from the event listener,
+// and a log that could be posted to is not a record of what happened.
+//
+// THIS MAKES `audit.view` LIVE. The permission has been in the catalogue since
+// it was written and held by super_admin alone, and no route has ever consulted
+// it — a dormant grant of exactly the kind ADR-016 D17 described. Recorded here
+// so the moment it started to mean something is findable.
+Route::get('activity-logs', [ActivityLogController::class, 'index'])
+    ->name('admin.activity-logs.index')
+    ->middleware('can:audit.view');

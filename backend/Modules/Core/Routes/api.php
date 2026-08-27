@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Presentation\HTTP\Controllers\AuthController;
-use Modules\Core\Presentation\HTTP\Controllers\InvitationController;
 use Modules\Core\Presentation\HTTP\Controllers\HealthCheckController;
+use Modules\Core\Presentation\HTTP\Controllers\InvitationController;
 use Modules\Core\Presentation\HTTP\Controllers\PublicSettingsController;
 
 Route::prefix('auth')->group(function (): void {
