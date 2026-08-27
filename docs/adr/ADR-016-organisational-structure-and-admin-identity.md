@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **Accepted — 2026-08-18**, amended 2026-08-19. The two cross-epic questions are decided in place (Q2 row-level security, Q7 user creation). **Q3, Q4 and Q6 are now closed** by the epics that owned them. **Q1 and Q5 remain open** and gate Epics 5 and 3 respectively — each carries a named blocking marker. |
+| **Status** | **Accepted — 2026-08-18**, amended 2026-08-19. The two cross-epic questions are decided in place (Q2 row-level security, Q7 user creation). **Q3, Q4 and Q6 are now closed** by the epics that owned them. **Q1 is now closed** by ADR-017 (Activity Log). **Q5 remains open** and gates Epic 3 — it carries a named blocking marker. |
 | **Date** | 2026-08-18 |
 | **Supersedes** | **ADR-015's decision that no admin-facing user-creation endpoint exists** (see Q7). Effective on acceptance. ADR-003 is **not** superseded — it already provides for provisioning by a Super Administrator holding `users.create`, and forbids only admin self-registration, which stays forbidden. |
 | **Depends on** | ADR-015 (Identity & Access), ADR-003 (Authentication), ADR-002 (module boundaries), ADR-005 (database) |
@@ -230,13 +230,21 @@ and never `"facebook": null` alongside it. Three consequences, all wanted: less 
 comparison and validation that operate on what is present rather than on placeholders, and a ninth
 platform later that costs nothing — no backfill of nulls across every existing row.
 
-### Q1. Does the Activity Log reuse `spatie/laravel-activitylog`, or replace it?
+### Q1. Does the Activity Log reuse `spatie/laravel-activitylog`, or replace it? — **CLOSED 2026-08-22**
+
+**Answered: replace.** See ADR-017 D1, which carries the reasoning and the measurements.
 
 The package is installed and unused. ADR-015 faced the identical question for
 `laravel-permission` and answered *replace*, for reasons that are not activity-log-specific
 (UUID keys, structural impossibility over policy, a cache sized for a problem this system does
 not have). The board should answer this explicitly rather than let the installed package decide
 by inertia — which is how the half-Spatie hybrid schema ADR-015 had to untangle came about.
+
+It was answered explicitly, and the reasons turned out to be of the same kind after all:
+`activity_log` uses a bigint auto-increment key against ADR-005 D2, stores PHP class names in
+`nullableMorphs` columns across module boundaries, is driven by Eloquent model events rather than
+the domain events this platform dispatches, and has no `correlation_id`. The package remains
+installed and unused; removing the dependency was considered and left alone as outside the epic.
 
 ### Q2. What does D11 mean for supervisors in the meantime? — **a product decision, not only a technical one**
 
