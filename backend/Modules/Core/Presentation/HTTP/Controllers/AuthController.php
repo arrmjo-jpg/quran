@@ -55,6 +55,30 @@ final class AuthController extends Controller
         /** @var UserModel|null $user */
         $user = UserModel::query()->where('email', $request->validated('email'))->first();
 
+        // Declare who this attempt was against, for the audit row -- ADR-018
+        // D10. The guard cannot resolve it: authentication ends with a token
+        // being issued, so $request->user() is null for the whole request and
+        // actor_id was null on every login ever recorded.
+        //
+        // Declared BEFORE the password is checked, deliberately. A failed
+        // attempt on a real account is the row a login history most needs to
+        // show -- "somebody has been trying my account from an address I do
+        // not recognise" is unanswerable without it. An unknown email leaves
+        // it null, because there is no account to name.
+        // WRITTEN TO request(), NOT TO $request. A FormRequest is a separate
+        // object: Request::createFrom() copies the attribute bag by value, so
+        // anything set on $request here never reaches the middleware, which
+        // holds the container's request. request() returns that one.
+        //
+        // Injecting `Illuminate\Http\Request` as a second parameter does not
+        // work either -- the controller dispatcher silently drops it when a
+        // FormRequest is already in the signature, and the next argument slides
+        // into its place.
+        if ($user !== null) {
+            request()->attributes->set('audit_actor_id', $user->id);
+            request()->attributes->set('audit_actor_type', $user->type);
+        }
+
         if (! $user || ! password_verify($request->validated('password'), $user->password_hash)) {
             return response()->json([
                 'success' => false,

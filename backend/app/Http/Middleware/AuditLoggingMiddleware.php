@@ -27,6 +27,22 @@ final class AuditLoggingMiddleware
 
         try {
             $user = $request->user();
+
+            // A LOGIN HAS NO $request->user() -- ADR-018 D10.
+            //
+            // The user authenticates by RECEIVING a token, not by presenting
+            // one, so the guard resolves nobody for the duration of the
+            // request. actor_id was therefore NULL on every login row ever
+            // written: 47 of them in development, the 32 successes included.
+            //
+            // That made the column useless for exactly the question a login
+            // history exists to answer, so AuthController::login declares the
+            // account it resolved and this prefers that declaration. Set only
+            // by handlers that know something the guard cannot; everything
+            // else is unaffected.
+            $declaredActorId = $request->attributes->get('audit_actor_id');
+            $declaredActorType = $request->attributes->get('audit_actor_type');
+
             $requestSize = strlen($request->getContent());
             $responseContent = $response->getContent();
 
@@ -34,8 +50,8 @@ final class AuditLoggingMiddleware
                 'id' => (string) Uuid::v7(),
                 'correlation_id' => $request->header('X-Correlation-ID'),
                 'execution_duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-                'actor_id' => $user?->id,
-                'actor_type' => $user?->type,
+                'actor_id' => $user?->id ?? $declaredActorId,
+                'actor_type' => $user?->type ?? $declaredActorType,
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'method' => $request->method(),
