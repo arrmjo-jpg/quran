@@ -23,27 +23,9 @@ export interface SystemHealthData {
   };
 }
 
-export interface AuditLogEntry {
-  id:           string;
-  user_name:    string;
-  user_role:    string;
-  action:       string;
-  entity_type:  string;
-  entity_id:    string;
-  ip_address:   string;
-  user_agent:   string;
-  result:       'success' | 'failure';
-  created_at:   string;
-}
-
 export const systemHealthService = {
   async getHealth(): Promise<SystemHealthData> {
     const { data } = await http.get<ApiSuccess<SystemHealthData>>('/admin/system/health');
-    return data.data;
-  },
-
-  async getAuditLogs(): Promise<AuditLogEntry[]> {
-    const { data } = await http.get<ApiSuccess<AuditLogEntry[]>>('/admin/system/audit-logs');
     return data.data;
   },
 };

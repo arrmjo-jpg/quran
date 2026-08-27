@@ -29,7 +29,7 @@ const ContentPage      = lazy(() => import('@/features/content/pages/ContentPage
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
 const ReportsPage      = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const SearchPage       = lazy(() => import('@/features/search/pages/SearchPage'));
-const AuditExplorerPage= lazy(() => import('@/features/dashboard/pages/AuditExplorerPage'));
+const ActivityLogPage  = lazy(() => import('@/features/activity/pages/ActivityLogPage'));
 const AboutDiagnosticsPage = lazy(() => import('@/features/dashboard/pages/AboutDiagnosticsPage'));
 const ActiveSessionsPage = lazy(() => import('@/features/auth/pages/ActiveSessionsPage'));
 const ProfilePage      = lazy(() => import('@/features/profile/pages/ProfilePage'));
@@ -92,7 +92,7 @@ const router = createBrowserRouter([
           page('notifications', <NotificationsPage />),
           page('reports', <ReportsPage />),
           page('search', <SearchPage />),
-          page('audit-logs', <AuditExplorerPage />),
+          page('audit-logs', <ActivityLogPage />),
           page('about', <AboutDiagnosticsPage />),
           page('sessions', <ActiveSessionsPage />),
           page('profile', <ProfilePage />),
