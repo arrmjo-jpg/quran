@@ -192,15 +192,23 @@ test('GOLDEN MASTER: clearing the cache silently revokes every trusted device', 
 test('GOLDEN MASTER: MFA cannot be turned off once enabled', function (): void {
     $user = gmSecurityUser(mfa: true);
 
-    // BEFORE Epic 6: no route exists to disable MFA, so an account that
-    // enables it is committed permanently. ADR-018 D4 -- an optional feature
-    // you cannot leave is not optional.
-    $response = $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/disable', [
-        'password' => 'Pass123!',
-    ]);
+    // BEFORE Epic 6: no route existed to disable MFA, so an account that
+    // enabled it was committed permanently -- an optional feature you cannot
+    // leave is not optional.
+    // AFTER (ADR-018 D4): it can be turned off, and the password is required
+    // again because this is one of the two operations that lower the
+    // account's own protection.
+    $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/disable', [
+        'password' => 'wrong-password',
+    ])->assertStatus(422);
 
-    expect($response->status())->toBeIn([404, 405]);
     expect($user->fresh()->mfa_enabled)->toBeTrue();
+
+    $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/disable', [
+        'password' => 'Pass123!',
+    ])->assertOk()->assertJsonPath('data.mfa_enabled', false);
+
+    expect($user->fresh()->mfa_enabled)->toBeFalse();
 })->group('golden-master');
 
 /*

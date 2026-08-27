@@ -166,3 +166,47 @@ test('the plaintext token is never stored', function (): void {
     // And it is not recoverable from the model's array form either.
     expect(json_encode($row->toArray()))->not->toContain($token);
 });
+
+test('disabling MFA revokes every trusted device', function (): void {
+    $user = secUser('trusted@quran.test');
+    trustTokenFor($user, 'browser-1');
+    trustTokenFor($user, 'browser-2');
+
+    expect(TrustedDeviceModel::query()->where('user_id', $user->id)->count())->toBe(2);
+
+    $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/disable', [
+        'password' => 'Pass123!',
+    ])->assertOk();
+
+    // They existed only to skip a challenge that no longer happens.
+    expect(TrustedDeviceModel::query()->where('user_id', $user->id)->count())->toBe(0);
+});
+
+test('regenerating recovery codes replaces the old ones', function (): void {
+    $user = secUser('trusted@quran.test');
+    $user->update(['mfa_recovery_codes' => [password_hash('OLDCODE1', PASSWORD_BCRYPT)]]);
+
+    $response = $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/recovery-codes', [
+        'password' => 'Pass123!',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('data.recovery_codes'))->toHaveCount(8);
+
+    // The old code must be gone, not appended to: a code the user believes
+    // they have spent must not still work.
+    $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/recovery', ['code' => 'OLDCODE1'])
+        ->assertStatus(422);
+
+    $fresh = $response->json('data.recovery_codes')[0];
+    $this->actingAs($user->fresh())->postJson('/api/v1/admin/auth/mfa/recovery', ['code' => $fresh])
+        ->assertOk();
+});
+
+test('regenerating recovery codes requires the password', function (): void {
+    $user = secUser('trusted@quran.test');
+
+    $this->actingAs($user)->postJson('/api/v1/admin/auth/mfa/recovery-codes', [
+        'password' => 'wrong-password',
+    ])->assertStatus(422);
+});
