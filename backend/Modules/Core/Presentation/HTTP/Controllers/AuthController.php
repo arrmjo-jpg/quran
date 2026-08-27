@@ -49,7 +49,7 @@ final class AuthController extends Controller
         ], 201);
     }
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, DeviceTrustService $trustService): JsonResponse
     {
         /** @var UserModel|null $user */
         $user = UserModel::query()->where('email', $request->validated('email'))->first();
@@ -76,18 +76,35 @@ final class AuthController extends Controller
             ], 403);
         }
 
-        // Enforcement: If MFA is enabled, issue challenge token instead of full auth token
+        // Enforcement: If MFA is enabled, issue challenge token instead of full
+        // auth token -- UNLESS this device has been trusted (ADR-018 D5).
+        //
+        // The trust token arrives in a header because login is unauthenticated:
+        // there is no session yet to carry it. It is verified against this
+        // account's live grants only, so a token belonging to another user
+        // proves nothing here.
+        //
+        // This is the point where trust stops being decorative. It is also,
+        // stated plainly, where MFA is deliberately weakened for 30 days on
+        // this browser -- see D5's trade-off.
         if ($user->mfa_enabled) {
-            $challengeToken = $user->createToken('mfa_challenge', ['mfa-challenge'])->plainTextToken;
+            $trusted = $trustService->verifyTrust(
+                $user,
+                $request->header('X-Device-Trust-Token')
+            );
 
-            return response()->json([
-                'success' => true,
-                'message' => __('MFA verification required.'),
-                'data' => [
-                    'mfa_required' => true,
-                    'challenge_token' => $challengeToken,
-                ],
-            ]);
+            if (! $trusted) {
+                $challengeToken = $user->createToken('mfa_challenge', ['mfa-challenge'])->plainTextToken;
+
+                return response()->json([
+                    'success' => true,
+                    'message' => __('MFA verification required.'),
+                    'data' => [
+                        'mfa_required' => true,
+                        'challenge_token' => $challengeToken,
+                    ],
+                ]);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

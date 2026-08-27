@@ -128,12 +128,14 @@ test('GOLDEN MASTER: trusting a device returns the token on every read', functio
         'data' => ['id', 'user_id', 'trust_token', 'ip', 'user_agent', 'trusted_at', 'expires_at'],
     ]);
 
-    // BEFORE Epic 6: the secret comes back again from the LIST endpoint, on
-    // every read, for every device. ADR-018 D5 returns it exactly once and
-    // stores only a hash.
+    // BEFORE Epic 6: the secret came back again from the LIST endpoint, on
+    // every read, for every device.
+    // AFTER (ADR-018 D5): returned exactly once, by the call that created it.
+    // Only a sha256 is stored, so no read can recover it.
     $list = $this->actingAs($user)->getJson('/api/v1/admin/auth/devices');
     $list->assertOk();
-    expect($list->json('data.0'))->toHaveKey('trust_token');
+    expect($list->json('data.0'))->not->toHaveKey('trust_token');
+    expect($list->json('data.0'))->not->toHaveKey('token_hash');
 })->group('golden-master');
 
 test('GOLDEN MASTER: a trusted device does not affect authentication', function (): void {
@@ -144,9 +146,14 @@ test('GOLDEN MASTER: a trusted device does not affect authentication', function 
         ->postJson('/api/v1/admin/auth/devices/trust')
         ->assertOk();
 
-    // BEFORE Epic 6: logging in from the very device just trusted still gets
-    // an MFA challenge, because login never consults the service. This is the
-    // defect ADR-018 D5 exists to fix -- recorded, not endorsed.
+    // BEFORE Epic 6: logging in from the very device just trusted still got
+    // an MFA challenge, because login never consulted the service at all --
+    // no request could have avoided it.
+    //
+    // AFTER (ADR-018 D5): a challenge is still correct HERE, because this
+    // request presents no trust token. The behaviour changed; this assertion
+    // did not, and that is the point -- it now passes for a different reason,
+    // so the case that proves the change lives in the test below it.
     $login = $this->postJson('/api/v1/admin/auth/login', [
         'email' => 'gm-security@quran.test',
         'password' => 'Pass123!',
@@ -168,10 +175,12 @@ test('GOLDEN MASTER: clearing the cache silently revokes every trusted device', 
 
     Cache::flush();
 
-    // BEFORE Epic 6: a routine maintenance command destroys a security
-    // decision the user made deliberately. ADR-018 D1's first reason.
+    // BEFORE Epic 6: a routine maintenance command destroyed a security
+    // decision the user made deliberately -- ADR-018 D1's first reason.
+    // AFTER (D1): the grant lives in trusted_devices and cache:clear cannot
+    // touch it.
     $this->actingAs($user)->getJson('/api/v1/admin/auth/devices')
-        ->assertOk()->assertJsonCount(0, 'data');
+        ->assertOk()->assertJsonCount(1, 'data');
 })->group('golden-master');
 
 /*
