@@ -58,6 +58,10 @@ services:
       - "3306:3306"
     volumes:
       - quran_mysql_data:/var/lib/mysql
+      # Creates quran_platform_test and grants quran_user on it. MYSQL_DATABASE
+      # above only ever made the dev schema; the test schema was a manual step
+      # nothing in the repository performed. Runs on first init of the volume.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - quran_network
 
