@@ -6,7 +6,7 @@ namespace Modules\Core\Presentation\HTTP\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Core\Infrastructure\Database\Models\ActivityLogModel;
+use Modules\Core\Domain\ReadModels\ActivityEntry;
 
 /**
  * One activity row — ADR-017 D3.
@@ -32,32 +32,32 @@ final class ActivityLogResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        /** @var ActivityLogModel $row */
+        /** @var ActivityEntry $row */
         $row = $this->resource;
 
         return [
-            'id' => (string) $row->id,
+            'id' => $row->id,
             'action' => $row->action,
 
-            'entity_type' => $row->entity_type,
-            'entity_id' => (string) $row->entity_id,
+            'entity_type' => $row->entityType,
+            'entity_id' => $row->entityId,
 
-            'actor_id' => $row->actor_id === null ? null : (string) $row->actor_id,
+            'actor_id' => $row->actorId,
 
             // 'user' or 'system'. Null actor_id with type 'system' means a
             // console command or a scheduled job did this — which is a
             // different statement from "we did not record who".
-            'actor_type' => $row->actor_type,
+            'actor_type' => $row->actorType,
 
             // The event's own payload, verbatim. Events decide what is safe to
             // carry; nothing is added here from the database.
             'payload' => $row->payload,
 
-            'correlation_id' => $row->correlation_id === null ? null : (string) $row->correlation_id,
+            'correlation_id' => $row->correlationId,
 
             // Both, and they are not the same fact.
-            'occurred_at' => $row->occurred_at?->toIso8601String(),
-            'recorded_at' => $row->created_at?->toIso8601String(),
+            'occurred_at' => $row->occurredAt,
+            'recorded_at' => $row->recordedAt,
         ];
     }
 }

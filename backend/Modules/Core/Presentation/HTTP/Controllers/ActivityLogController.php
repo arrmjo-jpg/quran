@@ -7,7 +7,8 @@ namespace Modules\Core\Presentation\HTTP\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Modules\Core\Contracts\CoreServiceContract;
-use Modules\Core\Infrastructure\Database\Models\ActivityLogModel;
+use Modules\Core\Domain\ReadModels\ActivityEntry;
+use Modules\Core\Domain\Repositories\ActivityLogRepositoryContract;
 use Modules\Core\Presentation\HTTP\Requests\ListActivityLogsRequest;
 use Modules\Core\Presentation\HTTP\Resources\ActivityLogResource;
 
@@ -24,78 +25,43 @@ use Modules\Core\Presentation\HTTP\Resources\ActivityLogResource;
  * the moment it starts to mean something, recorded so nobody has to hunt for
  * it later.
  *
+ * GOES THROUGH A REPOSITORY, NOT THE MODEL. The first version of this class
+ * queried ActivityLogModel directly and the repaired architecture guard failed
+ * it on the first full run — a controller reaching past its own application
+ * layer into Eloquent (ADR-009/ADR-012). It was fixed rather than added to
+ * CONTROLLER_MODEL_BASELINE: that list is for debt that predates the guard,
+ * not a place to put new violations.
+ *
  * Actor names are resolved in one batched call through CoreServiceContract
  * rather than per row: 100 rows would otherwise be 100 queries, and the DTO
  * that answers carries exactly the four fields ADR-016 D18 admits.
  */
 final class ActivityLogController extends Controller
 {
-    /** How many rows a page holds unless the caller says otherwise. */
-    private const DEFAULT_PER_PAGE = 25;
+    public function __construct(
+        private readonly ActivityLogRepositoryContract $activity,
+    ) {}
 
     public function index(ListActivityLogsRequest $request, CoreServiceContract $users): JsonResponse
     {
-        $query = ActivityLogModel::query();
-
-        if ($entityType = $request->validated('entity_type')) {
-            $query->where('entity_type', $entityType)
-                ->where('entity_id', $request->validated('entity_id'));
-        }
-
-        if ($actorId = $request->validated('actor_id')) {
-            $query->where('actor_id', $actorId);
-        }
-
-        if ($action = $request->validated('action')) {
-            $query->where('action', $action);
-        }
-
-        if ($correlationId = $request->validated('correlation_id')) {
-            $query->where('correlation_id', $correlationId);
-        }
-
-        // Windowed on occurred_at, not created_at — a backdated entry belongs
-        // to the period it describes.
-        if ($from = $request->validated('from')) {
-            $query->where('occurred_at', '>=', $from);
-        }
-
-        if ($to = $request->validated('to')) {
-            $query->where('occurred_at', '<=', $to);
-        }
-
-        $paginator = $query
-            ->orderByDesc('occurred_at')
-            // Tie-broken by id so a page boundary cannot drop or repeat a row
-            // when several events share a timestamp — which they do, because
-            // one request can dispatch a handful in the same second.
-            ->orderByDesc('id')
-            ->paginate(
-                perPage: (int) ($request->validated('per_page') ?? self::DEFAULT_PER_PAGE),
-                page: (int) ($request->validated('page') ?? 1),
-            );
+        $page = $this->activity->paginate($request->validated());
 
         return response()->json([
             'success' => true,
-            'data' => ActivityLogResource::collection($paginator->items()),
+            'data' => ActivityLogResource::collection($page['items']),
 
             // A sibling of `data`, not a field on every row. The name is a
             // display convenience resolved live (D3 keeps roles and names out
             // of the stored row), and repeating it per row would repeat it for
             // every one of the twenty entries one person made this morning.
-            //
-            // Set here rather than through Resource::additional(), which only
-            // reaches the response when the collection IS the response — it is
-            // silently dropped when the collection is nested inside a hand-
-            // built array like this one.
-            'actors' => $this->resolveActors($paginator->items(), $users),
+            'actors' => $this->resolveActors($page['items'], $users),
 
             'meta' => [
                 'pagination' => [
-                    'current_page' => $paginator->currentPage(),
-                    'per_page' => $paginator->perPage(),
-                    'total' => $paginator->total(),
-                    'last_page' => $paginator->lastPage(),
+                    'current_page' => $page['current_page'],
+                    'per_page' => $page['per_page'],
+                    'total' => $page['total'],
+                    'last_page' => $page['last_page'],
                 ],
             ],
         ]);
@@ -109,13 +75,13 @@ final class ActivityLogController extends Controller
      * changes. The name is resolved live here for the same reason — it is a
      * display convenience, not a stored fact.
      *
-     * @param  array<int, ActivityLogModel>  $rows
+     * @param  array<int, ActivityEntry>  $rows
      * @return array<string, string>
      */
     private function resolveActors(array $rows, CoreServiceContract $users): array
     {
         $ids = array_values(array_unique(array_filter(
-            array_map(static fn (ActivityLogModel $row): ?string => $row->actor_id, $rows)
+            array_map(static fn (ActivityEntry $row): ?string => $row->actorId, $rows)
         )));
 
         if ($ids === []) {

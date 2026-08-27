@@ -8,23 +8,25 @@ declare(strict_types=1);
 
 namespace Modules\Core\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Event;
 use Modules\Core\Contracts\CoreServiceContract;
+use Modules\Core\Domain\Repositories\ActivityLogRepositoryContract;
 use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserProfileRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
+use Modules\Core\Infrastructure\ActivityLog\RecordActivity;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
+use Modules\Core\Infrastructure\Database\Repositories\ActivityLogRepository;
 use Modules\Core\Infrastructure\Database\Repositories\InvitationRepository;
 use Modules\Core\Infrastructure\Database\Repositories\RoleRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserProfileRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
-use Modules\Core\Infrastructure\ActivityLog\RecordActivity;
 use Modules\Core\Infrastructure\Services\CoreService;
 
 final class CoreServiceProvider extends ServiceProvider
@@ -51,6 +53,15 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             UserProfileRepositoryContract::class,
             UserProfileRepository::class
+        );
+
+        // Read-only: the activity feed is queried through this, while rows are
+        // written by the listener. Bound so the controller depends on the
+        // contract rather than on Eloquent — the architecture guard failed the
+        // first version of that controller for exactly this.
+        $this->app->singleton(
+            ActivityLogRepositoryContract::class,
+            ActivityLogRepository::class
         );
 
         // The module's boundary, per ADR-002. Bound like every other
