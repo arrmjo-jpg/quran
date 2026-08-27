@@ -6,6 +6,17 @@ frontend-admin/dist/
 frontend-admin/.env
 frontend-admin/tsconfig.tsbuildinfo
 
-# backend runtime/cache (source-controlled parts already covered by backend/.gitignore)
-backend/storage/framework/
-backend/storage/logs/
+# backend runtime/cache
+#
+# NOT directory-level ignores. This read `backend/storage/framework/` and
+# `backend/storage/logs/`, which excluded those directories outright -- and
+# with them Laravel's own .gitignore placeholders, the files whose entire
+# job is to make the directories exist in a fresh clone. So they did not
+# exist there, and a clean checkout had nowhere for Blade to compile into:
+# "Please provide a valid cache path". It worked on developer machines
+# because artisan had created the directories there months earlier.
+#
+# Each of those directories carries its own .gitignore ignoring its own
+# contents, so nothing runtime becomes tracked. A negation could not fix
+# this in place: git cannot re-include a file inside an excluded directory.
+backend/storage/framework/phpstan-tmp/
