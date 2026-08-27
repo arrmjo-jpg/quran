@@ -11,6 +11,7 @@ namespace Modules\Core\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
 use Modules\Core\Contracts\CoreServiceContract;
 use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
@@ -23,6 +24,7 @@ use Modules\Core\Infrastructure\Database\Repositories\UserProfileRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
+use Modules\Core\Infrastructure\ActivityLog\RecordActivity;
 use Modules\Core\Infrastructure\Services\CoreService;
 
 final class CoreServiceProvider extends ServiceProvider
@@ -66,6 +68,25 @@ final class CoreServiceProvider extends ServiceProvider
         $this->registerRoutes();
         $this->registerTranslations();
         $this->registerGates();
+        $this->registerActivityLog();
+    }
+
+    /**
+     * The first consumer of a domain event this platform has ever had.
+     *
+     * 46 event classes existed before this line and nothing listened to any of
+     * them — they were dispatched into nothing. ADR-017 D2 makes this the
+     * activity log's only entry point.
+     *
+     * A WILDCARD, NOT A LIST OF EVENT CLASSES. Naming them here would mean Core
+     * importing events owned by seven other modules, which ADR-002 forbids and
+     * the repaired boundary guard detects. ActivityEventRegistry decides what
+     * is loggable by class-name string, and RecordActivity ignores everything
+     * else the framework dispatches.
+     */
+    private function registerActivityLog(): void
+    {
+        Event::listen('*', [RecordActivity::class, 'handle']);
     }
 
     /**

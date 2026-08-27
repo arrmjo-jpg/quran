@@ -164,11 +164,47 @@ product and compliance decision with GDPR-shaped consequences, and inventing "on
 years" here would be exactly the kind of number that gets treated as a decision later because it is
 written down. **Recorded as an open question, deliberately unanswered.**
 
-## D8 — The muted modules are in scope
+## D8 — The muted modules, and what turned out to be reachable
 
-Seven modules record events that nothing releases. Epic 5 releases them, because an activity log
-covering four modules while the rest of the system drops its events on the floor would be a log
-nobody can trust to be complete.
+Seven modules record events that nothing releases, and the intent was to release all seven so the
+log would not cover four modules while the rest dropped their events on the floor.
+
+**Measuring where each aggregate is actually persisted changed that.** Amended 2026-08-22, before
+any code was written:
+
+| Module | Aggregate imported by | Persisted by application code | Releasable |
+|---|---|---|:--:|
+| Applications | use case, repository, resource | `SubmitApplicationUseCase` | **yes** |
+| Countries | controller, repository, seeder, spec | `CountryController` — a *controller* | no, see below |
+| Evaluations | repository and its contract only | **nothing** | no |
+| Media | repository and its contract only | **nothing** | no |
+| Notifications | repository and its contract only | **nothing** | no |
+| Streaming | repository and its contract only | **nothing** | no |
+| Videos | repository and its contract only | **nothing** | no |
+
+For five of the seven, **there is no code path in which the event could be released, because the
+aggregate is never constructed and saved by application code at all.** Their controllers work
+directly on Eloquent models — which is precisely why they populate
+`ModuleBoundary::CONTROLLER_MODEL_BASELINE`. The aggregate, its `recordEvent()` calls and its event
+classes are unreached code.
+
+This reframes the problem rather than shrinking it. Those events are not being *thrown away* at
+runtime; **they never happen.** A log that omits them omits nothing that occurred. The gap is an
+absent application layer in five modules, not an absent dispatch loop — and building five
+application layers is a refactor across five modules, which this epic is not.
+
+`Countries` is the awkward case: the aggregate *is* used and *is* saved, but by
+`CountryController`. Releasing events there would put dispatch in the presentation layer, trading a
+missing log entry for a layering violation the architecture guards now actually detect. It needs a
+use case, which is the same refactor at smaller scale.
+
+**So Story 1 releases Applications, and records the other six as blocked on an application layer
+they do not have.** The activity log will cover five modules — Competition, Core, Organization,
+Contestants and Applications — and the report says so plainly rather than implying completeness.
+
+Recorded as an open question for a later epic: whether the five model-only modules get an
+application layer, which would make their events real and their controllers compliant in the same
+stroke.
 
 **Releasing them is safe before the listener exists**, and that is why Story 1 precedes Story 2:
 `event()` with no listener is a no-op. The order makes the behavioural change and the consumer two
