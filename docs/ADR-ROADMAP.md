@@ -269,3 +269,5 @@ ADR-001 (System Architecture)
 | 17   | **OpenAPI 3.1 Specification Export**   | Auto-generated OpenAPI 3.1 (`api.json`) via Scramble (`scramble:export`) | ✅ Generated |
 | 17 | **Production Readiness** | ADR-007 (Backup & Disaster Recovery) | ⏳ Before go-live |
 | 16   | **Organisational Structure & Admin Identity** | Circles, Centres, admin profiles, Activity Log, and the 13-epic order after Identity | ✅ Accepted 2026-08-18 — Q2/Q7 decided; Q1, Q3–Q6 deferred to their epics |
+| 17   | **Activity Log** | Business-change log: own store, wildcard listener, string-keyed event registry | ✅ Accepted 2026-08-22 — closes ADR-016 Q1 (replace, not reuse) |
+| 18   | **Account Security** | MFA management, trusted devices in the database, login history read from `audit_logs` | ✅ Accepted 2026-08-28 — records ADR-016 D12 |
