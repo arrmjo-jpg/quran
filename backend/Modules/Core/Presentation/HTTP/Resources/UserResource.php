@@ -54,6 +54,15 @@ final class UserResource extends JsonResource
                 'status' => $resource->isActive() ? 'active' : 'inactive',
                 'is_active' => $resource->isActive(),
                 'email_verified' => true,
+                // ADR-018 D4. The security screen cannot offer to turn MFA off
+                // without knowing it is on. Safe to add HERE and nowhere else:
+                // as the note above records, every caller of this resource is
+                // a single-account auth context, so this reports an account's
+                // own posture to itself. Admin lists use AdminUserResource and
+                // are unaffected. This is not the ResolvedUserDTO that ADR-016
+                // D18 governs -- that is the cross-module shape, and it stays
+                // at four fields.
+                'mfa_enabled' => (bool) ($model?->mfa_enabled ?? false),
                 'avatar' => null,
                 'roles' => $model === null ? [] : self::authorization()->rolesOf($model),
                 'permissions' => $model === null ? [] : self::authorization()->permissionsOf($model),
@@ -72,6 +81,7 @@ final class UserResource extends JsonResource
             'status' => ($resource->is_active ?? true) ? 'active' : 'inactive',
             'is_active' => (bool) ($resource->is_active ?? true),
             'email_verified' => true,
+            'mfa_enabled' => (bool) ($resource->mfa_enabled ?? false),
             'avatar' => null,
             'roles' => $resource instanceof UserModel ? self::authorization()->rolesOf($resource) : [],
             'permissions' => $resource instanceof UserModel ? self::authorization()->permissionsOf($resource) : [],
