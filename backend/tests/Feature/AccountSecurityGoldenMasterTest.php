@@ -238,11 +238,21 @@ test('GOLDEN MASTER: audit_logs already records login attempts, and nothing read
     expect($rows)->toHaveCount(2);
     expect($rows->pluck('response_status')->all())->toEqualCanonicalizing([200, 401]);
 
-    // ...and device_id is null, because nothing sends the header (D7).
+    // BEFORE: device_id was null because nothing sent the header, and
+    // actor_id was null because a login has no $request->user().
+    // AFTER (D7, D10): the header is sent by the admin client, and the
+    // handler declares the account it resolved. These rows come from the test
+    // client, which sends no X-Device-ID, so device_id stays null here -- but
+    // actor_id no longer does, and that is the change worth pinning.
     expect($rows->pluck('device_id')->unique()->all())->toBe([null]);
+    expect($rows->pluck('actor_id')->filter()->count())->toBe(2);
 
-    // No endpoint serves any of it.
+    // BEFORE Epic 6: no endpoint served any of it.
+    // AFTER (ADR-018 D2/D3): the history reads these very rows, behind
+    // security.view. The account here holds it, so this is 200 rather than
+    // the 404 it used to be -- the rows did not change, only whether anything
+    // could read them.
     $this->actingAs($user)
         ->getJson('/api/v1/admin/security/login-history')
-        ->assertNotFound();
+        ->assertOk();
 })->group('golden-master');
