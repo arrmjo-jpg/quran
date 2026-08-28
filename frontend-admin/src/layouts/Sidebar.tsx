@@ -18,6 +18,8 @@ import {
   Search,
   BookOpen,
   ShieldCheck,
+  ShieldAlert,
+  History,
   UserCog,
   Building2,
   Users2,
@@ -56,6 +58,8 @@ const navItems: NavItem[] = [
   { path: '/users',         labelKey: 'users',         icon: UserCog },
   { path: '/roles',         labelKey: 'roles',         icon: ShieldCheck },
   { path: '/search',        labelKey: 'search',        icon: Search },
+  { path: '/security',      labelKey: 'security',      icon: ShieldAlert },
+  { path: '/security/login-history', labelKey: 'login_history', icon: History },
 ];
 
 export default function Sidebar(): React.JSX.Element {
