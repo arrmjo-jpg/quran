@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
 use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;

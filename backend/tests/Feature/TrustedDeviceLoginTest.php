@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Testing\TestResponse;
 use Modules\Core\Infrastructure\Database\Models\TrustedDeviceModel;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
@@ -57,7 +58,7 @@ function trustTokenFor(UserModel $user, string $deviceId = 'browser-1'): string
         ->json('data.trust_token');
 }
 
-function loginWith(?string $trustToken): Illuminate\Testing\TestResponse
+function loginWith(?string $trustToken): TestResponse
 {
     $headers = $trustToken === null ? [] : ['X-Device-Trust-Token' => $trustToken];
 

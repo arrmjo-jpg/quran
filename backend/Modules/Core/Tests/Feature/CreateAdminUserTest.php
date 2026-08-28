@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Modules\Core\Application\UseCases\AssignRoleToUserUseCase;
 use Modules\Core\Application\UseCases\CreateRoleUseCase;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\ValueObjects\UserType;
@@ -200,7 +201,7 @@ test('creating a user requires users.create', function (): void {
     ]);
 
     $role = app(CreateRoleUseCase::class)->execute('user_viewer', ['users.view'], (string) $admin->id);
-    app(Modules\Core\Application\UseCases\AssignRoleToUserUseCase::class)
+    app(AssignRoleToUserUseCase::class)
         ->execute((string) $viewer->id, $role->id->value, (string) $admin->id);
 
     $this->actingAs($viewer)->getJson('/api/v1/admin/users')->assertOk();
@@ -226,7 +227,7 @@ test('an actor cannot create a user holding roles beyond their own', function ()
 
     $weak = app(CreateRoleUseCase::class)
         ->execute('inviter_only', ['users.view', 'users.create', 'users.assign_roles'], (string) $admin->id);
-    app(Modules\Core\Application\UseCases\AssignRoleToUserUseCase::class)
+    app(AssignRoleToUserUseCase::class)
         ->execute((string) $limited->id, $weak->id->value, (string) $admin->id);
 
     $superAdminId = app(RoleRepositoryContract::class)->findByName('super_admin')->id->value;

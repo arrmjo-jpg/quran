@@ -28,7 +28,7 @@ uses()->group('core', 'architecture', 'identity', 'permissions');
 |     fix it because the permission cannot be granted.
 */
 
-/** @return array<int, \Illuminate\Routing\Route> */
+/** @return array<int, Illuminate\Routing\Route> */
 function adminApiRoutes(): array
 {
     return array_values(array_filter(
@@ -44,7 +44,7 @@ function adminApiRoutes(): array
 }
 
 /** The permission a route's `can:` middleware names, if it has one. */
-function routePermission(\Illuminate\Routing\Route $route): ?string
+function routePermission(Illuminate\Routing\Route $route): ?string
 {
     foreach ($route->gatherMiddleware() as $middleware) {
         if (is_string($middleware) && str_starts_with($middleware, 'can:')) {
