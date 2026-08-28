@@ -19,6 +19,14 @@ export interface AuthUser {
    */
   permissions: string[];
   type:  string;
+  /**
+   * Whether THIS account carries a second factor — ADR-018 D4.
+   *
+   * A fact about the signed-in account itself, not about anyone else: the
+   * server sends it only on single-account auth responses. Nothing gates a
+   * screen on it; the security page uses it to know which buttons apply.
+   */
+  mfa_enabled?: boolean;
 }
 
 interface AuthContextValue {

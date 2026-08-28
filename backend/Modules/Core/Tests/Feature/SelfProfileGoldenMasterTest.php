@@ -52,13 +52,21 @@ test('GET /me requires authentication', function (): void {
 test('GET /me returns the account, and the shape Story 3 gave it', function (): void {
     // The list it has always returned, plus `profile` at the end. `avatar`
     // keeps its eighth place: adding a field is not licence to retire one.
+    //
+    // AFTER Epic 6 (ADR-018 D4): `mfa_enabled` joins it, between
+    // `email_verified` and `avatar`. The security screen cannot offer to turn
+    // MFA off without knowing whether it is on, and every caller of
+    // UserResource is a single-account auth context -- so this reports an
+    // account's own posture to itself. Admin lists use AdminUserResource and
+    // are untouched, and ADR-016 D18's four-field cross-module DTO is a
+    // different shape that stays at four.
     $user = selfProfileUser();
 
     $response = $this->actingAs($user)->getJson('/api/v1/me')->assertOk();
 
     expect(array_keys($response->json('data')))->toBe([
         'id', 'name', 'email', 'type', 'status', 'is_active',
-        'email_verified', 'avatar', 'roles', 'permissions', 'preferred_locale', 'profile',
+        'email_verified', 'mfa_enabled', 'avatar', 'roles', 'permissions', 'preferred_locale', 'profile',
     ]);
 });
 

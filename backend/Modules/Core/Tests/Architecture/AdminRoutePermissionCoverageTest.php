@@ -28,7 +28,7 @@ uses()->group('core', 'architecture', 'identity', 'permissions');
 |     fix it because the permission cannot be granted.
 */
 
-/** @return array<int, \Illuminate\Routing\Route> */
+/** @return array<int, Illuminate\Routing\Route> */
 function adminApiRoutes(): array
 {
     return array_values(array_filter(
@@ -44,7 +44,7 @@ function adminApiRoutes(): array
 }
 
 /** The permission a route's `can:` middleware names, if it has one. */
-function routePermission(\Illuminate\Routing\Route $route): ?string
+function routePermission(Illuminate\Routing\Route $route): ?string
 {
     foreach ($route->gatherMiddleware() as $middleware) {
         if (is_string($middleware) && str_starts_with($middleware, 'can:')) {
@@ -85,6 +85,13 @@ const SELF_SERVICE_ROUTES = [
     'admin.auth.mfa.setup',
     'admin.auth.mfa.verify',
     'admin.auth.mfa.recovery',
+    // ADR-018 D4. Self-service for the same reason setup and verify are: an
+    // account manages its OWN second factor. Both re-check the password
+    // server-side, which is the control that matters here -- a permission
+    // would say which ROLE may turn MFA off, and the answer is "the account
+    // whose MFA it is", which no role can express.
+    'admin.auth.mfa.disable',
+    'admin.auth.mfa.recovery_codes.regenerate',
     'admin.auth.login.mfa_challenge',
     'admin.auth.sessions.list',
     'admin.auth.sessions.revoke_other',

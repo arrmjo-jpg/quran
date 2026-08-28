@@ -30,6 +30,8 @@ const NotificationsPage = lazy(() => import('@/features/notifications/pages/Noti
 const ReportsPage      = lazy(() => import('@/features/reports/pages/ReportsPage'));
 const SearchPage       = lazy(() => import('@/features/search/pages/SearchPage'));
 const ActivityLogPage  = lazy(() => import('@/features/activity/pages/ActivityLogPage'));
+const SecuritySettingsPage = lazy(() => import('@/features/security/pages/SecuritySettingsPage'));
+const LoginHistoryPage     = lazy(() => import('@/features/security/pages/LoginHistoryPage'));
 const AboutDiagnosticsPage = lazy(() => import('@/features/dashboard/pages/AboutDiagnosticsPage'));
 const ActiveSessionsPage = lazy(() => import('@/features/auth/pages/ActiveSessionsPage'));
 const ProfilePage      = lazy(() => import('@/features/profile/pages/ProfilePage'));
@@ -77,6 +79,8 @@ const router = createBrowserRouter([
           page('circles', <CirclesPage />),
           page('memberships', <MembershipsPage />),
           page('roles', <RolesPage />),
+          page('security', <SecuritySettingsPage />),
+          page('security/login-history', <LoginHistoryPage />),
           page('users', <UsersPage />),
           page('users/:id', <UserDetailPage />),
           page('contestants', <ContestantsPage />),

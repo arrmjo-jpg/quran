@@ -221,9 +221,18 @@ final class PermissionCatalog
         'notifications' => ['view', 'retry'],
         'reports' => ['view', 'export'],
         'search' => ['view', 'reindex'],
-        // NO ENDPOINT YET — the admin panel calls /admin/system/audit-logs,
-        // which is not routed.
+        // Made live by Epic 5: GET /admin/activity-logs. The stale note that
+        // stood here -- "NO ENDPOINT YET, the admin panel calls
+        // /admin/system/audit-logs" -- described a screen that has since been
+        // deleted along with the route it invented.
         'audit' => ['view'],
+        // ADR-018 D3. Login history and the security screens, NOT folded into
+        // audit.view: Epic 5 gave that permission one specific meaning three
+        // commits earlier, and overloading it would let a grant intended for
+        // the activity feed silently confer a view of every login attempt on
+        // the platform. super_admin receives this automatically -- RolesSeeder
+        // seeds that role from PermissionCatalog::all().
+        'security' => ['view'],
         // NO ENDPOINT YET — only a public settings read exists.
         'settings' => ['view', 'update'],
     ];

@@ -49,10 +49,34 @@ final class AuthController extends Controller
         ], 201);
     }
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, DeviceTrustService $trustService): JsonResponse
     {
         /** @var UserModel|null $user */
         $user = UserModel::query()->where('email', $request->validated('email'))->first();
+
+        // Declare who this attempt was against, for the audit row -- ADR-018
+        // D10. The guard cannot resolve it: authentication ends with a token
+        // being issued, so $request->user() is null for the whole request and
+        // actor_id was null on every login ever recorded.
+        //
+        // Declared BEFORE the password is checked, deliberately. A failed
+        // attempt on a real account is the row a login history most needs to
+        // show -- "somebody has been trying my account from an address I do
+        // not recognise" is unanswerable without it. An unknown email leaves
+        // it null, because there is no account to name.
+        // WRITTEN TO request(), NOT TO $request. A FormRequest is a separate
+        // object: Request::createFrom() copies the attribute bag by value, so
+        // anything set on $request here never reaches the middleware, which
+        // holds the container's request. request() returns that one.
+        //
+        // Injecting `Illuminate\Http\Request` as a second parameter does not
+        // work either -- the controller dispatcher silently drops it when a
+        // FormRequest is already in the signature, and the next argument slides
+        // into its place.
+        if ($user !== null) {
+            request()->attributes->set('audit_actor_id', $user->id);
+            request()->attributes->set('audit_actor_type', $user->type);
+        }
 
         if (! $user || ! password_verify($request->validated('password'), $user->password_hash)) {
             return response()->json([
@@ -76,18 +100,35 @@ final class AuthController extends Controller
             ], 403);
         }
 
-        // Enforcement: If MFA is enabled, issue challenge token instead of full auth token
+        // Enforcement: If MFA is enabled, issue challenge token instead of full
+        // auth token -- UNLESS this device has been trusted (ADR-018 D5).
+        //
+        // The trust token arrives in a header because login is unauthenticated:
+        // there is no session yet to carry it. It is verified against this
+        // account's live grants only, so a token belonging to another user
+        // proves nothing here.
+        //
+        // This is the point where trust stops being decorative. It is also,
+        // stated plainly, where MFA is deliberately weakened for 30 days on
+        // this browser -- see D5's trade-off.
         if ($user->mfa_enabled) {
-            $challengeToken = $user->createToken('mfa_challenge', ['mfa-challenge'])->plainTextToken;
+            $trusted = $trustService->verifyTrust(
+                $user,
+                $request->header('X-Device-Trust-Token')
+            );
 
-            return response()->json([
-                'success' => true,
-                'message' => __('MFA verification required.'),
-                'data' => [
-                    'mfa_required' => true,
-                    'challenge_token' => $challengeToken,
-                ],
-            ]);
+            if (! $trusted) {
+                $challengeToken = $user->createToken('mfa_challenge', ['mfa-challenge'])->plainTextToken;
+
+                return response()->json([
+                    'success' => true,
+                    'message' => __('MFA verification required.'),
+                    'data' => [
+                        'mfa_required' => true,
+                        'challenge_token' => $challengeToken,
+                    ],
+                ]);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -484,6 +525,112 @@ final class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('Device trust revoked successfully.'),
+        ]);
+    }
+
+    /**
+     * Turn MFA off — ADR-018 D4.
+     *
+     * Without this, enabling MFA was permanent, which is not what "optional"
+     * means. The password is required again here: an unlocked laptop should
+     * not be enough to remove somebody's second factor, and this is the one
+     * operation that lowers the account's own protection.
+     *
+     * Every trusted device is revoked at the same time. Those grants exist
+     * only to skip the MFA challenge (D5); once there is no challenge to skip
+     * they are credentials that buy nothing and could outlive the decision
+     * that created them.
+     */
+    public function mfaDisable(Request $request, DeviceTrustService $trustService): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        /** @var UserModel $user */
+        $user = $request->user();
+
+        if (! password_verify($request->input('password'), $user->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'INVALID_CREDENTIALS',
+                    'message' => __('Invalid login credentials.'),
+                    'correlation_id' => $request->header('X-Correlation-ID'),
+                ],
+            ], 422);
+        }
+
+        if (! $user->mfa_enabled) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'MFA_NOT_ENABLED', 'message' => __('MFA is not enabled on this account.')],
+            ], 422);
+        }
+
+        $trustService->revokeAll($user);
+
+        $user->update([
+            'mfa_enabled' => false,
+            'mfa_secret' => null,
+            'mfa_recovery_codes' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('MFA disabled successfully.'),
+            'data' => ['mfa_enabled' => false],
+        ]);
+    }
+
+    /**
+     * Issue a fresh set of recovery codes — ADR-018 D4.
+     *
+     * mfaRecovery() burns a code on each use and there was no way to get more,
+     * so an account that used all eight was one lost phone from being locked
+     * out. The old codes are replaced, not appended to: a code the user
+     * believes they have spent must not still work.
+     */
+    public function mfaRegenerateRecoveryCodes(Request $request, TotpService $totpService): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        /** @var UserModel $user */
+        $user = $request->user();
+
+        if (! password_verify($request->input('password'), $user->password_hash)) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'INVALID_CREDENTIALS',
+                    'message' => __('Invalid login credentials.'),
+                    'correlation_id' => $request->header('X-Correlation-ID'),
+                ],
+            ], 422);
+        }
+
+        if (! $user->mfa_enabled) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'MFA_NOT_ENABLED', 'message' => __('MFA is not enabled on this account.')],
+            ], 422);
+        }
+
+        $recoveryCodes = $totpService->generateRecoveryCodes(8);
+
+        $user->update([
+            'mfa_recovery_codes' => array_map(
+                fn (string $c): string => password_hash($c, PASSWORD_BCRYPT),
+                $recoveryCodes
+            ),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Recovery codes regenerated.'),
+            'data' => ['recovery_codes' => $recoveryCodes],
         ]);
     }
 

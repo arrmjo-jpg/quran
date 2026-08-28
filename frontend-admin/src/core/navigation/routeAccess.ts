@@ -55,6 +55,10 @@ export const ROUTE_PERMISSIONS: Readonly<Record<string, PermissionKey>> = {
   '/roles': 'roles.view',
   '/search': 'search.view',
   '/audit-logs': 'audit.view',
+  // ADR-018 D3 -- its own permission, not audit.view. `/security` itself is
+  // absent deliberately: it is self-service, acting on the signed-in account
+  // only, so holding an account IS the authorisation.
+  '/security/login-history': 'security.view',
 };
 
 /**

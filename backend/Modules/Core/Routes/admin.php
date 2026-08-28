@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\Presentation\HTTP\Controllers\ActivityLogController;
+use Modules\Core\Presentation\HTTP\Controllers\LoginHistoryController;
 use Modules\Core\Presentation\HTTP\Controllers\PermissionController;
 use Modules\Core\Presentation\HTTP\Controllers\RoleController;
 use Modules\Core\Presentation\HTTP\Controllers\UserController;
@@ -116,3 +117,15 @@ Route::patch('users/{id}/deactivate', [UserController::class, 'deactivate'])
 Route::get('activity-logs', [ActivityLogController::class, 'index'])
     ->name('admin.activity-logs.index')
     ->middleware('can:audit.view');
+
+// The login history -- ADR-018 D2, D3. Read-only, over audit_logs: the rows
+// have been landing there since the platform booted, and a second table would
+// mean writing a second row for an event already recorded.
+//
+// THIS MAKES `security.view` LIVE. Deliberately NOT audit.view, which Epic 5
+// gave a specific meaning three commits ago -- one permission governing both
+// screens would let a grant issued for the activity feed silently confer a
+// view of every login attempt on the platform.
+Route::get('security/login-history', [LoginHistoryController::class, 'index'])
+    ->name('admin.security.login-history.index')
+    ->middleware('can:security.view');

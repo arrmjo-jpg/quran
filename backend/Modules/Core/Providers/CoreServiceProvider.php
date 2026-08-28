@@ -15,6 +15,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Core\Contracts\CoreServiceContract;
 use Modules\Core\Domain\Repositories\ActivityLogRepositoryContract;
 use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
+use Modules\Core\Domain\Repositories\LoginHistoryRepositoryContract;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserProfileRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
@@ -22,6 +23,7 @@ use Modules\Core\Infrastructure\ActivityLog\RecordActivity;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Repositories\ActivityLogRepository;
 use Modules\Core\Infrastructure\Database\Repositories\InvitationRepository;
+use Modules\Core\Infrastructure\Database\Repositories\LoginHistoryRepository;
 use Modules\Core\Infrastructure\Database\Repositories\RoleRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserProfileRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
@@ -62,6 +64,13 @@ final class CoreServiceProvider extends ServiceProvider
         $this->app->singleton(
             ActivityLogRepositoryContract::class,
             ActivityLogRepository::class
+        );
+
+        // Read-only, over audit_logs (ADR-018 D2). Bound so the controller
+        // depends on the contract rather than on Eloquent.
+        $this->app->singleton(
+            LoginHistoryRepositoryContract::class,
+            LoginHistoryRepository::class
         );
 
         // The module's boundary, per ADR-002. Bound like every other

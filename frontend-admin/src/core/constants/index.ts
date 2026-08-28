@@ -1,8 +1,12 @@
 export const STORAGE_KEYS = {
-  token:     'qp_admin_token',
-  user:      'qp_admin_user',
-  theme:     'qp_theme',
-  language:  'qp_language',
+  token:      'qp_admin_token',
+  user:       'qp_admin_user',
+  theme:      'qp_theme',
+  language:   'qp_language',
+  /** ADR-018 D7. Identifies this browser to the audit log. NOT a credential. */
+  deviceId:   'qp_device_id',
+  /** ADR-018 D5. The trust grant. This one IS a credential. */
+  trustToken: 'qp_device_trust_token',
 } as const;
 
 /** Type-safe TanStack Query Keys Factory */
@@ -40,6 +44,11 @@ export const queryKeys = {
   activity: {
     all:  () => ['activity'] as const,
     list: (filters: unknown) => ['activity', 'list', filters] as const,
+  },
+  security: {
+    all:          () => ['security'] as const,
+    loginHistory: (filters: unknown) => ['security', 'login-history', filters] as const,
+    devices:      () => ['security', 'devices'] as const,
   },
   permissions: {
     all: () => ['permissions'] as const,

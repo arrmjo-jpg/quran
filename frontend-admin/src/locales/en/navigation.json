@@ -38,5 +38,7 @@
   "command_audit_logs": "Audit log explorer",
   "command_about": "System diagnostics and info",
   "roles": "Roles & Permissions",
-  "users": "Users"
+  "users": "Users",
+  "security": "Account security",
+  "login_history": "Login history"
 }

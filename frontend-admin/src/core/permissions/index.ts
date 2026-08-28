@@ -138,6 +138,8 @@ export const PERMISSIONS = [
   'search.reindex',
   // audit
   'audit.view',
+  // security
+  'security.view',
   // settings
   'settings.view',
   'settings.update',

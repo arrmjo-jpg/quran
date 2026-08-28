@@ -55,6 +55,18 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin/auth')->group(functi
     Route::post('mfa/recovery', [AuthController::class, 'mfaRecovery'])->middleware('throttle:recovery-code')->name('admin.auth.mfa.recovery');
     Route::post('login/mfa-challenge', [AuthController::class, 'loginMfaChallenge'])->name('admin.auth.login.mfa_challenge');
 
+    // ADR-018 D4 -- what makes "MFA is optional" true. Before these, enabling
+    // MFA was permanent and a user who spent all eight recovery codes had no
+    // way to get more. Both re-check the password: they are the two operations
+    // that lower an account's own protection, so an unlocked laptop must not
+    // be enough. Throttled like the other credential-checking routes.
+    Route::post('mfa/disable', [AuthController::class, 'mfaDisable'])
+        ->middleware('throttle:mfa-verify')
+        ->name('admin.auth.mfa.disable');
+    Route::post('mfa/recovery-codes', [AuthController::class, 'mfaRegenerateRecoveryCodes'])
+        ->middleware('throttle:recovery-code')
+        ->name('admin.auth.mfa.recovery_codes.regenerate');
+
     Route::get('sessions', [AuthController::class, 'listSessions'])->name('admin.auth.sessions.list');
     Route::delete('sessions/other', [AuthController::class, 'revokeOtherSessions'])->name('admin.auth.sessions.revoke_other');
     Route::delete('sessions/{id}', [AuthController::class, 'revokeSession'])->name('admin.auth.sessions.revoke');
