@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **Proposed — 2026-08-28.** Awaiting the board. |
+| **Status** | **Accepted — 2026-08-28.** Q1 closed by the board: reuse `PATCH /me`. |
 | **Date** | 2026-08-28 |
 | **Depends on** | ADR-014 (presentation layer), ADR-015 (identity & access), ADR-016 (epic order), ADR-018 (account security — the screen this menu links to) |
 | **Relates to** | ADR-016 epic table row 7 |
@@ -100,11 +100,38 @@ with no consumer.
 
 ---
 
-## Open question
+## Q1 — CLOSED: reuse `PATCH /me`
 
-**Q1 — does the language write go through `PATCH /me`, or does the menu need
-its own endpoint?** `PATCH /me` already accepts `preferred_locale` and is
-already the self-service write path, so reusing it needs no new route and no
-new permission. Recorded as a question rather than assumed because it is the
-only place this epic touches the server, and a golden master over that contract
-is the first story either way.
+**Decided 2026-08-28.** The language write goes through the existing
+`PATCH /me`. **No new endpoint and no new permission.**
+
+That route is already the self-service write path, already validates
+`preferred_locale` against `in:ar,en,es`, and already persists it through
+`UpdateUserProfileUseCase`. A second endpoint would mean two ways to write one
+column, which is the same failure D4 avoids on the front end.
+
+Recorded as **D10** for citation from code:
+
+| # | Decision | Rationale |
+|---|---|---|
+| **D10** | **The menu writes language through `PATCH /me`.** | The whole server chain exists and is measured. This epic adds no route, no request class, no use case and no permission on the backend — the only backend artefact it produces is a golden master over a contract it is about to depend on |
+
+---
+
+## Testing reality, recorded because it bounds what S1 can prove
+
+**There is no frontend test runner.** No `vitest`, `jest`, `testing-library`,
+`playwright` or `cypress` is installed, and `src/` contains no test file. So
+the frontend half of this epic — i18n boot order, the switcher, the menu — is
+**not pinnable by an automated test**, and this ADR does not pretend otherwise.
+
+Worse, three scripts named like gates are not gates: `gate:e2e`,
+`gate:reliability` and `gate:observability` are `echo` statements that exit 0.
+Only `gate:functional` does real work (typecheck, authz model, permissions
+mirror, build).
+
+**Consequence for S1:** the golden master covers the `PATCH /me` contract,
+which is real and testable. The frontend's current behaviour is characterised
+in prose in that file and verified by hand against the running app. Building a
+frontend test framework is a separate epic already on the backlog, and
+inventing one here would be exactly the scope expansion this epic forbids.
