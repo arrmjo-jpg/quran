@@ -1,18 +1,46 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
-import { STORAGE_KEYS } from '@/core/constants';
-import { SUPPORTED_LANGUAGES, applyDirection, type LanguageCode } from '@/core/config/i18n';
+import { SUPPORTED_LANGUAGES, type LanguageCode } from '@/core/config/i18n';
+import { applyLanguage, persistLanguage } from '@/core/i18n/accountLanguage';
+import { useAuth } from '@/core/auth/AuthContext';
 
 export default function LanguageSwitcher(): React.JSX.Element {
   const { i18n } = useTranslation();
+  const { isAuthed, updateUser } = useAuth();
 
-  // The language list and the direction rule live with the i18n config, so
-  // the switcher and the boot path cannot disagree about them.
+  /**
+   * ADR-019 D2: the choice belongs to the account, not the browser.
+   *
+   * Applied first and saved second, deliberately. The interface responds to
+   * the click immediately, and the write happens behind it -- reversing the
+   * order would make every language change wait on a round trip.
+   *
+   * Only saved when there is an account to save it to. This component is
+   * currently mounted inside the authenticated shell only, but that is a fact
+   * about today's layout rather than a guarantee, and a PATCH /me from a
+   * signed-out page would 401 and trip the forced-logout interceptor.
+   */
   const handleLanguageChange = (langCode: LanguageCode) => {
-    i18n.changeLanguage(langCode);
-    applyDirection(langCode);
-    localStorage.setItem(STORAGE_KEYS.language, langCode);
+    applyLanguage(langCode);
+
+    if (!isAuthed) {
+      return;
+    }
+
+    // The stored user is a snapshot taken at login, and reconcileLanguage()
+    // reads it on the next reload. Without this the snapshot keeps the OLD
+    // language and the reload reverts the choice that was just saved -- found
+    // by hand, because nothing here is covered by an automated test.
+    updateUser({ preferred_locale: langCode });
+
+    void persistLanguage(langCode).catch(() => {
+      // Deliberately quiet, and deliberately not reverted. The language the
+      // operator asked for is already on screen and in localStorage, so it
+      // survives a reload on this browser; what failed is only its spread to
+      // their other devices. Undoing the visible change to report a
+      // background failure would be the worse trade.
+    });
   };
 
   return (
