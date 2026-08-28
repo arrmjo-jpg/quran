@@ -85,6 +85,13 @@ const SELF_SERVICE_ROUTES = [
     'admin.auth.mfa.setup',
     'admin.auth.mfa.verify',
     'admin.auth.mfa.recovery',
+    // ADR-018 D4. Self-service for the same reason setup and verify are: an
+    // account manages its OWN second factor. Both re-check the password
+    // server-side, which is the control that matters here -- a permission
+    // would say which ROLE may turn MFA off, and the answer is "the account
+    // whose MFA it is", which no role can express.
+    'admin.auth.mfa.disable',
+    'admin.auth.mfa.recovery_codes.regenerate',
     'admin.auth.login.mfa_challenge',
     'admin.auth.sessions.list',
     'admin.auth.sessions.revoke_other',

@@ -97,6 +97,22 @@ final class DeviceTrustService
     }
 
     /**
+     * Drop every grant this account holds — ADR-018 D4.
+     *
+     * Called when MFA is turned off: the grants existed only to skip a
+     * challenge that will no longer be issued, so leaving them would leave
+     * credentials that buy nothing and outlive the decision that made them.
+     *
+     * Lives here rather than in the controller because a controller that
+     * queries TrustedDeviceModel is a controller reaching past its own
+     * application layer -- which the architecture guard fails, and did.
+     */
+    public function revokeAll(UserModel $user): int
+    {
+        return TrustedDeviceModel::query()->where('user_id', $user->id)->delete();
+    }
+
+    /**
      * The login path — ADR-018 D5.
      *
      * Verifies a plaintext token against this account's live grants. Compared

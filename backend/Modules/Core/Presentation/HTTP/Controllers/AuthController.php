@@ -19,7 +19,6 @@ use Modules\Core\Domain\ValueObjects\PasswordHash;
 use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
-use Modules\Core\Infrastructure\Database\Models\TrustedDeviceModel;
 use Modules\Core\Infrastructure\Security\DeviceTrustService;
 use Modules\Core\Infrastructure\Security\FirebaseOtpService;
 use Modules\Core\Infrastructure\Security\TotpService;
@@ -542,7 +541,7 @@ final class AuthController extends Controller
      * they are credentials that buy nothing and could outlive the decision
      * that created them.
      */
-    public function mfaDisable(Request $request): JsonResponse
+    public function mfaDisable(Request $request, DeviceTrustService $trustService): JsonResponse
     {
         $request->validate([
             'password' => ['required', 'string'],
@@ -569,7 +568,7 @@ final class AuthController extends Controller
             ], 422);
         }
 
-        TrustedDeviceModel::query()->where('user_id', $user->id)->delete();
+        $trustService->revokeAll($user);
 
         $user->update([
             'mfa_enabled' => false,
