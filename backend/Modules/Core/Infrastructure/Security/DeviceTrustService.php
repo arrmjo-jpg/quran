@@ -75,13 +75,15 @@ final class DeviceTrustService
      */
     public function listDevices(UserModel $user): array
     {
-        return TrustedDeviceModel::query()
+        /** @var array<int, TrustedDeviceModel> $devices */
+        $devices = TrustedDeviceModel::query()
             ->where('user_id', $user->id)
             ->where('expires_at', '>', now())
             ->orderByDesc('trusted_at')
             ->get()
-            ->map(fn (TrustedDeviceModel $d): array => $this->present($d))
             ->all();
+
+        return array_map(fn (TrustedDeviceModel $d): array => $this->present($d), $devices);
     }
 
     /**
