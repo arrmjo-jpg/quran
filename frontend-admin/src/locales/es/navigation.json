@@ -40,5 +40,8 @@
   "roles": "Roles y permisos",
   "users": "Usuarios",
   "security": "Seguridad",
-  "login_history": "Historial de accesos"
+  "login_history": "Historial de accesos",
+  "menu_language": "Idioma",
+  "theme_light": "Tema claro",
+  "theme_dark": "Tema oscuro"
 }
