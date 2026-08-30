@@ -147,9 +147,19 @@ test('Notifications 16.10.7 — Admin can retry a failed notification', function
         ->postJson("/api/v1/admin/notifications/{$log->id}/retry")
         ->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.status', 'retrying');
+        // BEFORE Epic 8: 'retrying' -- a fourth status the domain never
+        // modelled, which this test pinned as correct because it asserted the
+        // response rather than the effect. It passed over an inert feature.
+        // AFTER (ADR-020 D6): a retry returns the row to `queued`, the
+        // aggregate's own starting state.
+        //
+        // What this test still cannot see is whether anything is DISPATCHED.
+        // That is asserted in NotificationDeliveryGoldenMasterTest, which
+        // fakes the queue -- deliberately kept there rather than duplicated
+        // here.
+        ->assertJsonPath('data.status', 'queued');
 
-    $this->assertDatabaseHas('notification_logs', ['id' => $log->id, 'status' => 'retrying']);
+    $this->assertDatabaseHas('notification_logs', ['id' => $log->id, 'status' => 'queued']);
 });
 
 test('Notifications 16.10.8 — Admin cannot retry a non-failed notification (409)', function (): void {

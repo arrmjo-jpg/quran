@@ -53,6 +53,24 @@ final class NotificationLog
         return $this->status;
     }
 
+    /**
+     * ADR-020 D2/D10. These existed on the aggregate and had no readers, so
+     * the repository could not persist them: `save()` wrote status and
+     * dropped both, meaning markSent()'s timestamp and markFailed()'s reason
+     * never reached the database. D10 requires the reason to survive, since
+     * `failed` without it tells an operator that something broke and nothing
+     * about what.
+     */
+    public function getSentAtIso(): ?string
+    {
+        return $this->sentAtIso;
+    }
+
+    public function getErrorMessage(): ?string
+    {
+        return $this->errorMessage;
+    }
+
     public function markSent(string $sentAtIso): void
     {
         $this->status = 'sent';

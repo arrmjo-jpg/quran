@@ -115,10 +115,10 @@ test('GOLDEN MASTER: the retry writes a status the domain does not model', funct
 
     // BEFORE Epic 8: 'retrying'. The controller reaches NotificationLogModel
     // directly, past its own repository and aggregate, which is the only
-    // reason it can write a state no invariant permits.
-    // AFTER (D6): a retry returns the row to `queued`, and `retrying` ceases
-    // to exist anywhere.
-    expect($log->fresh()->status)->toBe('retrying');
+    // reason it could write a state no invariant permits.
+    // AFTER (D6): a retry returns the row to `queued`, and `retrying` exists
+    // nowhere in the codebase.
+    expect($log->fresh()->status)->toBe('queued');
 
     // The aggregate's own vocabulary, pinned beside it so the divergence is
     // visible in one place: these are the only statuses it can produce.
@@ -153,7 +153,18 @@ test('GOLDEN MASTER: the one real send writes no notification log', function ():
     ])->assertCreated();
 
     // BEFORE Epic 8: mail was sent and nothing was logged — the table the
-    // module exists to fill stays empty.
-    // AFTER (D2): this send is logged, and the count becomes 1.
-    expect(NotificationLogModel::query()->count())->toBe(0);
+    // module exists to fill stayed empty.
+    // AFTER (D2): the send is recorded through the module's contract before it
+    // is attempted, and marked sent once it succeeds.
+    expect(NotificationLogModel::query()->count())->toBe(1);
+
+    $row = NotificationLogModel::query()->sole();
+    expect($row->channel)->toBe('email')
+        ->and($row->template_key)->toBe('invitation.created')
+        ->and($row->status)->toBe('sent')
+        ->and($row->sent_at)->not->toBeNull();
+
+    // The recipient's address is not stored. The log is read by administrators
+    // looking at other people's notifications, and it already carries user_id.
+    expect(json_encode($row->payload))->not->toContain('invited-golden@quran.test');
 })->group('golden-master');

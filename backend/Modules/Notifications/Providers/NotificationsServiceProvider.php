@@ -10,8 +10,10 @@ namespace Modules\Notifications\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Notifications\Contracts\NotificationsServiceContract;
 use Modules\Notifications\Domain\Repositories\NotificationLogRepositoryContract;
 use Modules\Notifications\Infrastructure\Database\Repositories\NotificationLogRepository;
+use Modules\Notifications\Infrastructure\Services\NotificationsService;
 
 final class NotificationsServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,14 @@ final class NotificationsServiceProvider extends ServiceProvider
         $this->app->singleton(
             NotificationLogRepositoryContract::class,
             NotificationLogRepository::class
+        );
+
+        // ADR-020 D7. The contract was never bound, so resolving it would
+        // have failed -- one reason nothing outside this module could have
+        // used it even had it declared methods.
+        $this->app->singleton(
+            NotificationsServiceContract::class,
+            NotificationsService::class
         );
     }
 

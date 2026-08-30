@@ -27,7 +27,7 @@ final class AdminNotificationController extends Controller
      *
      * Filters:
      *   ?channel=email|sms|push
-     *   ?status=queued|sent|failed|retrying
+     *   ?status=queued|sent|failed          (ADR-020 D6: no `retrying`)
      *   ?user_id=uuid
      *   ?template_key=application.approved
      *   ?per_page=20
@@ -102,12 +102,25 @@ final class AdminNotificationController extends Controller
             ], 409);
         }
 
+        // BACK TO `queued`, NOT `retrying` -- ADR-020 D6.
+        //
+        // `retrying` was a fourth status the domain never modelled: the
+        // aggregate produces queued, sent and failed, and this controller
+        // could write anything only because it reaches NotificationLogModel
+        // directly, past its own repository. A retry returns the row to
+        // `queued`, which is what a retry IS.
+        //
+        // The error is cleared because it described the attempt that has just
+        // been superseded; the next attempt writes its own.
         $log->update([
-            'status' => 'retrying',
+            'status' => 'queued',
             'error' => null,
         ]);
 
-        // TODO: dispatch RetryNotificationJob::dispatch($log->id)
+        // STILL DISPATCHES NOTHING. D3 puts the send on the queue and D5 makes
+        // this re-dispatch it; until then this narrows the lie rather than
+        // ending it, and NotificationDeliveryGoldenMasterTest keeps asserting
+        // that nothing is pushed so the remaining gap stays visible.
 
         return response()->json([
             'success' => true,

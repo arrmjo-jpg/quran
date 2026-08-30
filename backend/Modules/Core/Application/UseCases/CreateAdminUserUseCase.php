@@ -13,6 +13,8 @@ use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Mail\InvitationMail;
+use Modules\Notifications\Contracts\NotificationsServiceContract;
+use Throwable;
 
 /**
  * Creates an administrator account and invites its owner — ADR-016 Q7, D14.
@@ -34,6 +36,11 @@ use Modules\Core\Infrastructure\Mail\InvitationMail;
  * this accepts. It leaves an account visible in the users list as pending with
  * an invitation that can be resent (Epic 12), which is recoverable. The other
  * ordering is not.
+ *
+ * ADR-020 D2 makes that accepted failure VISIBLE rather than merely tolerated:
+ * the send is recorded before it is attempted and marked sent or failed after,
+ * so "the account was created and the mail did not go" is a row somebody can
+ * find instead of a silence.
  */
 final class CreateAdminUserUseCase
 {
@@ -41,6 +48,9 @@ final class CreateAdminUserUseCase
         private UserRepositoryContract $users,
         private IssueInvitationUseCase $issueInvitation,
         private SyncUserRolesUseCase $syncRoles,
+        // The Notifications module's public boundary, never its internals --
+        // ADR-002, ADR-020 D7.
+        private NotificationsServiceContract $notifications,
     ) {}
 
     /**
@@ -79,11 +89,43 @@ final class CreateAdminUserUseCase
             return [$user, $issued['token']];
         });
 
-        Mail::to($email)->send(new InvitationMail(
-            name: $name,
-            acceptUrl: rtrim((string) config('core.admin_url'), '/').'/invitations/accept?token='.$token,
-            expiresInDays: IssueInvitationUseCase::TTL_DAYS,
-        ));
+        // ADR-020 D2. The platform's only real send, and until now it wrote
+        // no record: notification_logs held zero rows while mail went out.
+        // Recorded through the module's contract (D7), never by touching its
+        // tables -- ADR-002.
+        //
+        // The invitation is MANDATORY (D9): it is the only way an account can
+        // be claimed, so no preference is consulted before sending it. That is
+        // deliberate and is the reason preferences are a list of what may be
+        // declined rather than a switch over everything.
+        $notificationId = $this->notifications->record(
+            userId: (string) $user->id,
+            channel: 'email',
+            templateKey: 'invitation.created',
+            payload: ['name' => $name, 'expires_in_days' => IssueInvitationUseCase::TTL_DAYS],
+        );
+
+        // The recipient address is deliberately NOT in the payload. The log is
+        // read by administrators looking at other people's notifications, and
+        // it already carries user_id -- storing the address as well would put
+        // an email in a screen that has no reason to show one.
+        try {
+            Mail::to($email)->send(new InvitationMail(
+                name: $name,
+                acceptUrl: rtrim((string) config('core.admin_url'), '/').'/invitations/accept?token='.$token,
+                expiresInDays: IssueInvitationUseCase::TTL_DAYS,
+            ));
+
+            $this->notifications->markSent($notificationId);
+        } catch (Throwable $e) {
+            // The account exists and its invitation token is valid -- the
+            // transaction above already committed. Failing the whole request
+            // now would leave an account nobody can reach AND report failure,
+            // when the truth is narrower: the account was created and the mail
+            // did not go. That is exactly what a failed log row says, and what
+            // the retry exists to act on.
+            $this->notifications->markFailed($notificationId, $e->getMessage());
+        }
 
         return $user;
     }
