@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Notifications\Infrastructure\Services;
 
+use Illuminate\Mail\Mailable;
+use Modules\Notifications\Application\Jobs\SendNotificationJob;
 use Modules\Notifications\Contracts\NotificationsServiceContract;
 use Modules\Notifications\Domain\Entities\NotificationLog;
 use Modules\Notifications\Domain\Repositories\NotificationLogRepositoryContract;
@@ -39,6 +41,24 @@ final class NotificationsService implements NotificationsServiceContract
         $this->logs->save($log);
 
         return $log->id->value;
+    }
+
+    public function queue(
+        string $userId,
+        string $channel,
+        string $templateKey,
+        array $payload,
+        string $recipient,
+        Mailable $mail
+    ): string {
+        // Recorded FIRST, then dispatched. The row exists at `queued` before
+        // anything can act on it, so a job that runs immediately still finds
+        // the log it is meant to update.
+        $id = $this->record($userId, $channel, $templateKey, $payload);
+
+        SendNotificationJob::dispatch($id, $recipient, $mail);
+
+        return $id;
     }
 
     public function markSent(string $notificationId): void

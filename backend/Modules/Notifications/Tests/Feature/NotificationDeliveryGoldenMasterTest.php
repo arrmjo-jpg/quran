@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Queue;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Seeders\PermissionsSeeder;
 use Modules\Core\Infrastructure\Database\Seeders\RolesSeeder;
+use Modules\Notifications\Application\Jobs\SendNotificationJob;
 use Modules\Notifications\Domain\Entities\NotificationLog;
 use Modules\Notifications\Domain\ValueObjects\NotificationChannel;
 use Modules\Notifications\Domain\ValueObjects\NotificationId;
@@ -139,6 +140,7 @@ test('GOLDEN MASTER: the retry writes a status the domain does not model', funct
 
 test('GOLDEN MASTER: the one real send writes no notification log', function (): void {
     Mail::fake();
+    Queue::fake();
 
     $admin = goldenNotifAdmin();
 
@@ -154,15 +156,19 @@ test('GOLDEN MASTER: the one real send writes no notification log', function ():
 
     // BEFORE Epic 8: mail was sent and nothing was logged — the table the
     // module exists to fill stayed empty.
-    // AFTER (D2): the send is recorded through the module's contract before it
-    // is attempted, and marked sent once it succeeds.
+    // AFTER (D2, D3): the send is recorded at `queued` and handed to a job.
+    // The row is NOT `sent` at this point, and that is the correct answer
+    // rather than a gap: the request returns before delivery is attempted.
     expect(NotificationLogModel::query()->count())->toBe(1);
 
     $row = NotificationLogModel::query()->sole();
     expect($row->channel)->toBe('email')
         ->and($row->template_key)->toBe('invitation.created')
-        ->and($row->status)->toBe('sent')
-        ->and($row->sent_at)->not->toBeNull();
+        ->and($row->status)->toBe('queued')
+        ->and($row->sent_at)->toBeNull();
+
+    // AFTER (D3): the delivery is on the queue rather than in the request.
+    Queue::assertPushed(SendNotificationJob::class);
 
     // The recipient's address is not stored. The log is read by administrators
     // looking at other people's notifications, and it already carries user_id.

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Notifications\Contracts;
 
+use Illuminate\Mail\Mailable;
+
 /**
  * Public boundary interface for the Notifications module.
  * Per ADR-002: Other modules MUST only depend on this interface,
@@ -36,6 +38,31 @@ interface NotificationsServiceContract
      *                                         follow.
      */
     public function record(string $userId, string $channel, string $templateKey, array $payload): string;
+
+    /**
+     * Record a notification AND queue its delivery — ADR-020 D3.
+     *
+     * The path callers should use. `record()` remains for anything that must
+     * report its own outcome, but delivery belongs off the request: a
+     * synchronous send makes the caller wait on SMTP, and a retry has nothing
+     * to re-dispatch unless a job exists.
+     *
+     * Takes a Mailable rather than a template name because templating is out
+     * of ADR-020's scope — the caller builds the message it already knows how
+     * to build. `Mailable` is a framework type, so this boundary still names
+     * no other module's concrete class.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return string The log id, already at `queued`.
+     */
+    public function queue(
+        string $userId,
+        string $channel,
+        string $templateKey,
+        array $payload,
+        string $recipient,
+        Mailable $mail
+    ): string;
 
     /** Delivery succeeded. Records when, which `save()` used to discard. */
     public function markSent(string $notificationId): void;
