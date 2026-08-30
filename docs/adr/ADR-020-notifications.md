@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **Proposed — 2026-08-31.** Awaiting the board. |
+| **Status** | **Accepted — 2026-08-31.** Q1 and Q2 closed by the board; recorded as D9 and D10. |
 | **Date** | 2026-08-31 |
 | **Depends on** | ADR-001 (the module and its promise), ADR-002 (module boundaries), ADR-005 D2 (UUIDs), ADR-008 (domain events), ADR-012 (application layer), ADR-017 (activity log — the store taxonomy) |
 | **Relates to** | ADR-016 epic table row 8 |
@@ -76,7 +76,7 @@ a state no invariant allows. That controller is in `CONTROLLER_MODEL_BASELINE`.
 | **D1** | **Email only. SMS and push are deferred, and the seam that admits them is kept.** | `NotificationChannel` already allows all three, and the log already carries a `channel` column, so nothing needs redesigning to add one later. What SMS and push would need is a provider, credentials, and a running cost — decisions with a bill attached that nobody has taken. Implementing a channel with no provider would produce a fourth thing that claims to work and does not, which is the defect this epic exists to remove. **Trade-off:** ADR-001's "multi-channel" stays formally unmet; it is met in shape, not in delivery |
 | **D2** | **Every notification the platform sends is logged, through the module.** | The log is the point of the module and it has never held a row, because the one real send bypasses it. Today that is one site — the invitation — so "every" is small and verifiable now, which is precisely when the rule is cheap to establish |
 | **D3** | **Sending moves onto the queue. `SendNotificationJob` is the first job in the repository.** | Two reasons, and only the second is about notifications. `Mail::send()` is synchronous, so a slow or failing SMTP server today delays or fails the HTTP request that triggered it — user creation blocks on mail. And **a retry cannot exist without it**: retrying is re-dispatching, so D5 has no meaning until there is something to dispatch. The infrastructure is already provisioned and idle — Redis, the three tables, Horizon supervising `default`. **Trade-off:** an async send can fail after the request succeeded, which is exactly what the log and the retry are for |
-| **D4** | **Preferences are per account and per notification type, stored in their own table.** | ADR-001 promises them and nothing implements them. They belong beside the account rather than inside `users`: they are a growing list keyed by type, and a column per type is a migration per type — the same reasoning ADR-016 D2 used for social links. **What they are NOT:** a way to opt out of everything. Which notifications may be declined is a product question (see Q1) |
+| **D4** | **Preferences are per account and per notification type, stored in their own table.** | ADR-001 promises them and nothing implements them. They belong beside the account rather than inside `users`: they are a growing list keyed by type, and a column per type is a migration per type — the same reasoning ADR-016 D2 used for social links. **What they are NOT:** a way to opt out of everything. Which notifications may be declined is settled by D9: the invitation is mandatory, everything else is declinable |
 | **D5** | **Retry re-dispatches, or the button goes.** | A control that reports success without acting is worse than a missing one. Under D3 there is a job to re-dispatch, so retry becomes real: it re-queues the send and the log records the new attempt. The panel's button is wired to the endpoint it has always pretended to call |
 | **D6** | **`'retrying'` is not introduced as a status. The vocabulary stays `queued`, `sent`, `failed`.** | The controller invented it by writing through Eloquent past its own aggregate. A retry moves a row back to `queued`, which is what a retry IS — there is no fourth state, and adding one would mean every reader learning a word the domain does not use |
 | **D7** | **`NotificationsServiceContract` gains the methods other modules call, and is bound.** | It is an empty, unbound interface today, which is why nothing consumes it: there is nothing to consume, and resolving it would fail. D2 requires a way in from Core, and ADR-002 says that way is the contract |
@@ -103,17 +103,24 @@ a state no invariant allows. That controller is in `CONTROLLER_MODEL_BASELINE`.
 
 ---
 
-## Open questions
+## Q1 — CLOSED, and Q2 — CLOSED
 
-**Q1 — which notifications may be declined?** Preferences are meaningless
-without an answer, and the answer is a product decision, not a technical one:
-an invitation almost certainly may not be switched off, because it is the only
-way an account can be claimed. The board should say which types are
-**mandatory** and which are **optional** before D4 is built, or preferences
-will be built around a guess.
+Both decided by the board 2026-08-31 and recorded here for citation from code.
 
-**Q2 — what happens after the last retry?** A failed send that is retried and
-fails again must end somewhere. Laravel's `failed_jobs` catches the job, but
-the *notification* row's final state, and whether anyone is told, is undecided.
-Recorded rather than assumed because "it stays failed forever and nobody looks"
-is a decision if taken deliberately and a defect if taken by default.
+| # | Decision | Rationale |
+|---|---|---|
+| **D9** | **The account-creation invitation is mandatory and cannot be declined. Every other notification is subject to the account's preferences.** | The invitation is the only way an account can be claimed — ADR-016 D14 makes accounts Pending Activation until it is accepted, and no administrator ever sets another user's password. A preference that could switch it off would let somebody lock themselves out of an account they have not yet entered. So preferences are a table of what MAY be declined, not a switch over everything, and the mandatory set is expressed in the code rather than left to the data |
+| **D10** | **When retries are exhausted the log ends at `failed`, keeping the reason. Manual retry stays available. Nothing is sent to announce the failure.** | Consistent with D6: `failed` is a status the domain already models, and no new word enters the vocabulary for "failed for the last time". The `error` column exists and holds the reason, so a human can see why rather than that. Manual retry stays because a failure is often environmental — SMTP down for an hour — and the operator is the one who knows it has been fixed. **No automatic failure notification**, deliberately: notifying about a broken notification channel through that same channel is the one message least likely to arrive, and building an alerting path is a larger decision than this epic. **Trade-off, stated:** a failed notification is only discovered by somebody looking at the screen |
+
+---
+
+## Consequences
+
+* The invitation send becomes queued, so user creation stops blocking on SMTP —
+  and starts being able to fail after the request has already succeeded, which
+  is what the log and the manual retry exist to make visible.
+* `notification_logs` starts holding rows for the first time.
+* The panel's retry button starts calling the endpoint it has always claimed to
+  call.
+* A notification that exhausts its retries sits at `failed` until a person acts.
+  That is a deliberate choice, not an oversight — see D10.
