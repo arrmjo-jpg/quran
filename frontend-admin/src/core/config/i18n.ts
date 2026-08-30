@@ -56,9 +56,16 @@ const namespaces = [
 ];
 
 /**
- * The language the admin last chose. LanguageSwitcher writes it to
- * localStorage; without reading it back here the app booted in Arabic every
- * time and the choice was lost on every reload.
+ * The language this BROWSER last used — ADR-019 D3.
+ *
+ * Written by applyLanguage(); without reading it back here the app booted in
+ * Arabic every time and the choice was lost on every reload.
+ *
+ * It is the boot value, not the source of truth. The account's
+ * `preferred_locale` is that (D2), and it cannot be consulted here: this
+ * module runs at import time, before React mounts and before any request. The
+ * account reconciles immediately afterwards, and applyLanguage keeps this key
+ * in step so the next boot is already correct and does not flash.
  */
 function initialLanguage(): LanguageCode {
   const stored = localStorage.getItem(STORAGE_KEYS.language);

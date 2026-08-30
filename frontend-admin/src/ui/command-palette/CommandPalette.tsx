@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, Calendar, Users, Award, FileCheck, FolderKanban, Video, Radio, FileText, Settings, Shield } from 'lucide-react';
+import { requiredPermissionFor } from '@/core/navigation/routeAccess';
+import { useAuth } from '@/core/auth/AuthContext';
 
 /**
  * Longer, searchable descriptions of the same routes the sidebar lists tersely.
@@ -25,6 +27,7 @@ const commands = [
 
 export function CommandPalette(): React.JSX.Element | null {
   const { t } = useTranslation('navigation');
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -43,8 +46,31 @@ export function CommandPalette(): React.JSX.Element | null {
 
   if (!isOpen) return null;
 
-  // Resolve first, then filter: the operator searches what they can see.
+  /**
+   * Permission first, then text — ADR-019 D7.
+   *
+   * The comment that stood here said "the operator searches what they can
+   * see", and only a text match followed it: every destination was offered to
+   * everyone. The route guard then refused on arrival, which is the worst
+   * order to discover it in — after the operator has decided to act.
+   *
+   * `requiredPermissionFor` is the same function the sidebar passes to
+   * PermissionWrapper, so the two surfaces cannot drift into disagreeing
+   * about who may see what. A path with no rule is open by design (the
+   * dashboard, the about page) and stays visible.
+   *
+   * NOT A SECURITY BOUNDARY: the server refuses unauthorized requests
+   * whatever this renders. It keeps what is offered matching what is
+   * permitted.
+   */
+  const permitted = user?.permissions ?? [];
+
   const filteredCommands = commands
+    .filter((cmd) => {
+      const required = requiredPermissionFor(cmd.path);
+
+      return required === undefined || permitted.includes(required);
+    })
     .map((cmd) => ({ ...cmd, label: t(cmd.labelKey) }))
     .filter((cmd) => cmd.label.toLowerCase().includes(query.toLowerCase()));
 

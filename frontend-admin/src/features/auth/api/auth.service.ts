@@ -20,6 +20,8 @@ export interface AuthUserData {
   permissions: string[];
   /** This account's own MFA state — ADR-018 D4. Never anyone else's. */
   mfa_enabled?: boolean;
+  /** The account's language — ADR-019 D2. The interface follows it. */
+  preferred_locale?: string;
 }
 
 export interface AuthResponseData {

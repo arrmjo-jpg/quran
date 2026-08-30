@@ -40,5 +40,8 @@
   "roles": "الأدوار والصلاحيات",
   "users": "المستخدمون",
   "security": "أمان الحساب",
-  "login_history": "سجل الدخول"
+  "login_history": "سجل الدخول",
+  "menu_language": "اللغة",
+  "theme_light": "المظهر الفاتح",
+  "theme_dark": "المظهر الداكن"
 }
