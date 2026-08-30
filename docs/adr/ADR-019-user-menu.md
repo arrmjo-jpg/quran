@@ -84,6 +84,13 @@ with no consumer.
 
 * **`Docker Live API: :8080`** is hardcoded into the admin header — a development artifact in the shell. Untouched: it is not a user-menu concern, and removing it is a visible change nobody asked for.
 * **`/about` exposes PHP, Laravel, MySQL and FFmpeg versions plus the build commit, with no permission rule.** Whether system diagnostics should be open is a decision for whoever owns that screen.
+* **The admin shell is not responsive below roughly 600px.** `aside` is a fixed
+  `w-64 shrink-0` (256px), so on a narrow viewport the header is crushed and its
+  contents are pushed off-screen — measured during S4, where the user menu's
+  TRIGGER sat at x = -1 while the menu aligned correctly with it. The previous
+  header carried more controls in that same space, so this predates the epic and
+  is not made worse by it. Fixing it is a layout change to the shell, which a
+  user-menu epic has no business making.
 * **The command palette lists 12 of 22 destinations.** D7 reconciles it with routes that exist; deciding which destinations *belong* in a palette is a navigation question, not this one.
 
 ---
