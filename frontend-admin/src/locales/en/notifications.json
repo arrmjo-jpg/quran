@@ -1,22 +1,24 @@
 {
   "title": "Notifications and messages centre",
-  "subtitle": "Track the email, SMS and Firebase OTP push queues",
+  "subtitle": "Every notification the platform has logged, and why any of them failed",
   "empty": "No notifications have been logged yet.",
 
-  "stat_total": "Notifications sent",
-  "stat_email_queue": "Email queue",
-  "stat_sms_queue": "Firebase SMS queue",
-  "stat_failed": "Failed jobs",
-  "stat_pending_value": "0 pending",
-  "stat_failed_value": "0 failed",
+  "stat_total": "Logged (latest entries)",
+  "stat_queued": "Waiting to be sent",
+  "stat_failed": "Failed",
 
-  "col_type": "Type and channel",
-  "col_recipient": "Recipient",
-  "col_sent_at": "Sent on",
+  "col_type": "Notification and channel",
+  "col_account": "Account",
+  "col_created_at": "Logged on",
+  "col_sent_at": "Delivered on",
   "col_status": "Delivery status",
   "col_retry": "Retry",
 
-  "status_delivered": "Delivered",
+  "status_queued": "Queued",
+  "status_sent": "Delivered",
+  "status_failed": "Failed",
+
   "retry_button": "Send again",
-  "retry_success": "The notification was queued again"
+  "retry_success": "The notification was queued again",
+  "retry_error": "The notification could not be sent again"
 }

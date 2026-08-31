@@ -1,0 +1,10 @@
+{
+  "gate": "suite",
+  "status": "FAIL",
+  "started_at": "2026-08-30T19:44:06.843Z",
+  "finished_at": "2026-08-30T20:03:00.955Z",
+  "duration_ms": 1134112,
+  "artifacts": [
+    "artifacts/reports/suite/result.json"
+  ]
+}

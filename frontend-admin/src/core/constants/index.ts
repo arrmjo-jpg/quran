@@ -92,7 +92,8 @@ export const queryKeys = {
     announcements: () => ['content', 'announcements'] as const,
   },
   notifications: {
-    all: () => ['notifications'] as const,
+    all:  () => ['notifications'] as const,
+    list: (filters: unknown) => ['notifications', 'list', filters] as const,
   },
   reports: {
     summary: () => ['reports', 'summary'] as const,
