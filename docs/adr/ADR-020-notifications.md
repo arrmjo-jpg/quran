@@ -100,6 +100,16 @@ a state no invariant allows. That controller is in `CONTROLLER_MODEL_BASELINE`.
   controller is refactored off the baseline is a separate cleanup.
 * `ContestantNotificationController` exposes a contestant-facing read of the same
   table. It is outside this epic's admin scope and is left alone.
+* **The notifications table does not live-update while a retry runs.** The
+  response returns as soon as the job is queued, so the row reads `queued`
+  until somebody refreshes and Horizon has finished. Polling or a websocket is
+  a larger decision than this epic; the refresh control is already there.
+* **`meta.total` is not used by the panel's counters.** The three cards count
+  the loaded page, which is the first twenty rows, and say so in their labels.
+  Real totals need either filtered count requests or a summary endpoint.
+* **Test fixtures still use `template_key` values nothing sends** —
+  `application.approved` among them. Harmless, and now visibly so: retrying one
+  is refused with a reason rather than silently succeeding.
 
 ---
 
@@ -114,6 +124,24 @@ Both decided by the board 2026-08-31 and recorded here for citation from code.
 
 ---
 
+## D11 — decided during S4, because implementation asked a question the ADR had not
+
+D5 says a retry re-dispatches. Building it surfaced the question underneath:
+**re-dispatch what?** The job carries a `Mailable`, and nothing stores one.
+
+For the platform's only real template, nothing could. `IssueInvitationUseCase`
+returns the plaintext accept token once, never stores it, and states so in its
+own docblock; only the sha256 is in the database. The log deliberately holds
+neither the token nor the recipient's address, because administrators read
+other people's rows. **The original invitation mail is unreproducible by
+design.**
+
+| # | Decision | Rationale |
+|---|---|---|
+| **D11** | **A retry REBUILDS the message rather than replaying it, through a per-template factory that the owning module registers. Retrying an invitation issues a fresh invitation, which REPLACES the open one. A template with no registered factory is refused with `409 NOT_RETRYABLE`.** | Decided by the board 2026-08-31 after the measurement above. Rebuilding is the only option that exists, and the module that owns a template is the only thing that knows how — so the dependency runs from Core into Notifications, never the other way (ADR-002), and Core hands back the address along with the message. **This is not the templating engine this epic excludes:** nothing here renders, stores or edits a message; the registry records which module can rebuild which `template_key`. **The consequence that had to be closed first:** `InvitationRepository::save()` is an `updateOrCreate` keyed on the invitation id, so a naive second issue ADDED a row — two unaccepted invitations, two working tokens, and `findOpenForUser` breaking the `created_at` tie in favour of the superseded one. Re-issuing now reuses the open invitation's id, so one account keeps one invitation and the old token dies. **Refusing out loud** is the alternative to the failure this epic exists to remove: a template nobody can rebuild would otherwise return success and queue nothing, one template at a time |
+
+---
+
 ## Consequences
 
 * The invitation send becomes queued, so user creation stops blocking on SMTP —
@@ -121,6 +149,12 @@ Both decided by the board 2026-08-31 and recorded here for citation from code.
   is what the log and the manual retry exist to make visible.
 * `notification_logs` starts holding rows for the first time.
 * The panel's retry button starts calling the endpoint it has always claimed to
-  call.
+  call, and shows only on a row that can actually be retried.
+* **Retrying an invitation invalidates the previous accept link.** If the first
+  mail eventually arrives after a retry, its link is dead. That is the correct
+  trade — the alternative is two live ways into one account — but it is a
+  behaviour change worth knowing about (D11).
+* A module that adds mail later must register a factory before its
+  notifications can be retried. Until it does, a retry says so.
 * A notification that exhausts its retries sits at `failed` until a person acts.
   That is a deliberate choice, not an oversight — see D10.
