@@ -110,6 +110,16 @@ a state no invariant allows. That controller is in `CONTROLLER_MODEL_BASELINE`.
 * **Test fixtures still use `template_key` values nothing sends** —
   `application.approved` among them. Harmless, and now visibly so: retrying one
   is refused with a reason rather than silently succeeding.
+* **No preferences screen.** The endpoints exist and are tested; the UI would
+  render an empty list while every notification the platform sends is
+  mandatory. See D12.
+* **Style is unguarded.** `pint --test` fails on 7 files, none of them touched
+  by this epic, and Pint appears in no CI step and no gate script. Formatting
+  therefore drifts silently; whether to add it as a gate is a repository-wide
+  decision, not this epic's.
+* **`docker-compose.yml` still declares `version: '3.8'`**, which Compose warns
+  about on every single command. Cosmetic, untouched here to keep the
+  environment change to the one thing it is about.
 
 ---
 
