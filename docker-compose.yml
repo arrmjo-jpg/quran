@@ -101,6 +101,13 @@ services:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
+    # Same Dockerfile and same context as `app`, so it is the SAME IMAGE.
+    # Without this tag Compose built a second, separately-named image from the
+    # identical Dockerfile -- so a change to the PHP configuration reached
+    # whichever service happened to be rebuilt and silently missed the others.
+    # That is how the memory_limit fix landed in `app` at 512M while this
+    # container was still running on 128M.
+    image: quran-platform-app:latest
     container_name: quran_platform_horizon
     restart: unless-stopped
     working_dir: /var/www/backend
@@ -129,6 +136,13 @@ services:
     build:
       context: ./docker/php
       dockerfile: Dockerfile
+    # Same Dockerfile and same context as `app`, so it is the SAME IMAGE.
+    # Without this tag Compose built a second, separately-named image from the
+    # identical Dockerfile -- so a change to the PHP configuration reached
+    # whichever service happened to be rebuilt and silently missed the others.
+    # That is how the memory_limit fix landed in `app` at 512M while this
+    # container was still running on 128M.
+    image: quran-platform-app:latest
     container_name: quran_platform_scheduler
     restart: unless-stopped
     working_dir: /var/www/backend
