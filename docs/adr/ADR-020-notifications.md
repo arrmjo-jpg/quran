@@ -142,6 +142,25 @@ design.**
 
 ---
 
+## D12 — decided during S5, building D4 and D9
+
+| # | Decision | Rationale |
+|---|---|---|
+| **D12** | **A declined notification produces NO log row and no job. Absence of a preference row means enabled. Which types are mandatory lives in a code catalogue that modules register into, not in the data. A retry asks the same question the send path asks.** | Decided by the board 2026-08-31. **No row**, because D6 has no status for "suppressed" and inventing one teaches every reader a word the domain does not use — while writing `queued` and dispatching nothing is the exact defect this epic removed. **Absence means enabled**, so the table holds refusals rather than settings: an account that never opens the screen has no rows, and a new notification type starts working for every existing account without a backfill. **Mandatory in code** is D9's own wording made literal — rows can be seeded, migrated or written by a future screen, and one row saying `false` against `invitation.created` would leave an account permanently unable to receive the only message that can let it in. **Retry asks too**, because it is the second path that pushes a job, and a rule enforced on one of two paths is a rule with a hole in it; unlike an ordinary send it refuses out loud, since a person is waiting for an answer. **Trade-off, stated:** the log cannot distinguish "declined" from "never triggered" — the preference is the record |
+
+**Measured while building it:** `invitation.created` is the only template key in
+production code, and D9 makes it mandatory — so **the set of notifications an
+account may actually decline is empty today**. The machinery is in the send
+path regardless, and the tests prove it through the same catalogue seam a
+module will use when it first notifies about something optional.
+
+**No preferences screen was built.** It would render an empty list, and adding
+a route, a menu entry and three locales to display nothing is not a saving for
+anyone. The self-service endpoints exist and are tested, so the screen is a
+small piece of work on the day there is a second notification type.
+
+---
+
 ## Consequences
 
 * The invitation send becomes queued, so user creation stops blocking on SMTP —
@@ -156,5 +175,15 @@ design.**
   behaviour change worth knowing about (D11).
 * A module that adds mail later must register a factory before its
   notifications can be retried. Until it does, a retry says so.
+* **`queue()` now returns `?string`.** Null means the account declined the
+  notification, so no row was written and nothing was dispatched. Callers that
+  need to know whether something was sent must check it.
+* A module that adds mail later must also declare its type in the catalogue.
+  Until it does, the type is unknown: it still sends — silently dropping mail
+  nobody declared would be worse — but no account can decline it.
+* **Notification types contain a dot.** Dot-path accessors (Laravel's
+  `assertJsonPath`, lodash `get`) read `digest.weekly` as nesting. The
+  vocabulary is not changing — `template_key` has always been dotted — but a
+  consumer reading the preferences object should index it directly.
 * A notification that exhausts its retries sits at `failed` until a person acts.
   That is a deliberate choice, not an oversight — see D10.

@@ -52,8 +52,18 @@ interface NotificationsServiceContract
      * to build. `Mailable` is a framework type, so this boundary still names
      * no other module's concrete class.
      *
+     * PREFERENCES ARE CONSULTED HERE, before the log row and before the job
+     * (D4). A declined notification produces NOTHING -- no row, no dispatch --
+     * because a notification that was never attempted is not an attempt that
+     * failed, and D6 has no status for "suppressed". Mandatory types skip the
+     * check entirely, so no stored preference can affect them (D9).
+     *
+     * `record()` does NOT consult preferences: it records, it does not decide.
+     * This is the enforcing path, and the one every sender should use.
+     *
      * @param  array<string, mixed>  $payload
-     * @return string The log id, already at `queued`.
+     * @return string|null The log id, already at `queued` -- or null when the
+     *                     account has declined this notification type.
      */
     public function queue(
         string $userId,
@@ -62,7 +72,7 @@ interface NotificationsServiceContract
         array $payload,
         string $recipient,
         Mailable $mail
-    ): string;
+    ): ?string;
 
     /**
      * Send a failed notification again -- ADR-020 D5.
@@ -71,6 +81,11 @@ interface NotificationsServiceContract
      * and announces it to nobody, so a human finds it on the screen and asks
      * for this. It returns the log to `queued` and dispatches the send job.
      *
+     * IT RESPECTS PREFERENCES TOO (D4). An operator retrying a notification
+     * the account declined after it failed would be overriding the account's
+     * decision by hand, so this refuses. A retry pushes a job, and every path
+     * that pushes a job asks the same question first.
+     *
      * THE MESSAGE IS REBUILT, NOT REPLAYED. Nothing keeps the original
      * Mailable, and for the platform's only real template nothing could: an
      * invitation's accept token exists for one moment and is never stored. The
@@ -78,9 +93,32 @@ interface NotificationsServiceContract
      * NotificationMailRegistryContract, and refuses if it cannot.
      *
      * @throws \\Modules\\Notifications\\Domain\\Exceptions\\NotificationNotRetryableException when the log is not `failed`
+     * @throws \\Modules\\Notifications\\Domain\\Exceptions\\NotificationDeclinedException when the account has since declined this type
      * @throws \\Modules\\Notifications\\Domain\\Exceptions\\TemplateNotRetryableException when no module can rebuild the message
      */
     public function retry(string $notificationId): void;
+
+    /**
+     * What this account has decided about optional notifications -- ADR-020 D4.
+     *
+     * Keyed by notification type, and it lists only what MAY be declined:
+     * mandatory types are absent rather than present-and-locked, because a
+     * control that cannot be operated is a question the reader answers twice.
+     *
+     * Absence of a stored row means enabled, so a fresh account gets every
+     * declinable type set to `true` without a single row existing.
+     *
+     * @return array<string, bool>
+     */
+    public function preferencesFor(string $userId): array;
+
+    /**
+     * Turn one notification type on or off for one account -- ADR-020 D4, D9.
+     *
+     * @throws \\Modules\\Notifications\\Domain\\Exceptions\\MandatoryNotificationException when the type may never be declined -- today the invitation
+     * @throws \\Modules\\Notifications\\Domain\\Exceptions\\UnknownNotificationTypeException when no module has declared the type
+     */
+    public function setPreference(string $userId, string $type, bool $enabled): void;
 
     /** Delivery succeeded. Records when, which `save()` used to discard. */
     public function markSent(string $notificationId): void;

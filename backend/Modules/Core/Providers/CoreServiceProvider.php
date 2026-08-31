@@ -35,6 +35,7 @@ use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 use Modules\Core\Infrastructure\Services\CoreService;
 use Modules\Notifications\Contracts\NotificationMailRegistryContract;
 use Modules\Notifications\Contracts\NotificationRetryEnvelope;
+use Modules\Notifications\Contracts\NotificationTypeCatalogContract;
 
 final class CoreServiceProvider extends ServiceProvider
 {
@@ -95,6 +96,31 @@ final class CoreServiceProvider extends ServiceProvider
         $this->registerGates();
         $this->registerActivityLog();
         $this->registerRetryableMail();
+        $this->registerNotificationTypes();
+    }
+
+    /**
+     * Declare Core's notification types -- ADR-020 D4, D9.
+     *
+     * `invitation.created` is MANDATORY, and that word is here in code rather
+     * than in a `notification_preferences` row saying `enabled = true`. D9 is
+     * explicit that the mandatory set is expressed in code: rows can be
+     * edited, seeded or written by a future admin screen, and one row saying
+     * `false` would leave an account unable to receive the only message that
+     * can ever let it in (ADR-016 D14 keeps accounts Pending Activation until
+     * the invitation is accepted, and no administrator sets another user's
+     * password).
+     *
+     * IT IS THE ONLY TYPE THE PLATFORM SENDS. That is a measurement, not a
+     * placeholder -- `invitation.created` is the sole template key in
+     * production code. So the declinable list is empty today, and the
+     * preference machinery sits in the send path waiting for the first module
+     * that notifies about something optional.
+     */
+    private function registerNotificationTypes(): void
+    {
+        $this->app->make(NotificationTypeCatalogContract::class)
+            ->register('invitation.created', mandatory: true);
     }
 
     /**
