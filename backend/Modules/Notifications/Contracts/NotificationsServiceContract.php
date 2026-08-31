@@ -64,6 +64,24 @@ interface NotificationsServiceContract
         Mailable $mail
     ): string;
 
+    /**
+     * Send a failed notification again -- ADR-020 D5.
+     *
+     * Manual and deliberate: D10 ends an exhausted notification at `failed`
+     * and announces it to nobody, so a human finds it on the screen and asks
+     * for this. It returns the log to `queued` and dispatches the send job.
+     *
+     * THE MESSAGE IS REBUILT, NOT REPLAYED. Nothing keeps the original
+     * Mailable, and for the platform's only real template nothing could: an
+     * invitation's accept token exists for one moment and is never stored. The
+     * module that owns the template rebuilds it through
+     * NotificationMailRegistryContract, and refuses if it cannot.
+     *
+     * @throws \\Modules\\Notifications\\Domain\\Exceptions\\NotificationNotRetryableException when the log is not `failed`
+     * @throws \\Modules\\Notifications\\Domain\\Exceptions\\TemplateNotRetryableException when no module can rebuild the message
+     */
+    public function retry(string $notificationId): void;
+
     /** Delivery succeeded. Records when, which `save()` used to discard. */
     public function markSent(string $notificationId): void;
 

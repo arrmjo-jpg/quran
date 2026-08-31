@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Notifications\Presentation\HTTP\Controllers;
 
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\Notifications\Contracts\NotificationsServiceContract;
+use Modules\Notifications\Domain\Exceptions\NotificationNotRetryableException;
+use Modules\Notifications\Domain\Exceptions\TemplateNotRetryableException;
 use Modules\Notifications\Infrastructure\Database\Models\NotificationLogModel;
 use Modules\Notifications\Presentation\HTTP\Resources\NotificationLogResource;
 
@@ -85,42 +89,55 @@ final class AdminNotificationController extends Controller
     /**
      * POST /api/v1/admin/notifications/{id}/retry
      *
-     * Manually retries a failed notification.
-     * Only allowed on status=failed; returns 409 otherwise.
+     * Sends a failed notification again -- ADR-020 D5.
+     *
+     * IT NOW ACTUALLY SENDS. Until this story the handler wrote a status and
+     * returned "Notification queued for retry" with nothing queued: the line
+     * after the write was a literal
+     * `// TODO: dispatch RetryNotificationJob::dispatch($log->id)`.
+     * NotificationDeliveryGoldenMasterTest recorded that, and now asserts the
+     * job is pushed.
+     *
+     * EVERY DECISION MOVED OUT OF HERE. The status guard belongs to the
+     * aggregate and the dispatch to the service, so this handler only turns
+     * two domain refusals into two status codes. The old version reached
+     * NotificationLogModel directly, past its own repository, which is the
+     * only reason it was able to write a `retrying` status the domain does
+     * not model (D6).
      */
-    public function retry(string $id): JsonResponse
+    public function retry(string $id, NotificationsServiceContract $notifications): JsonResponse
     {
+        // Kept so an unknown id is still a 404 rather than a 500 from the
+        // repository, and so the refreshed row can be returned below.
         $log = NotificationLogModel::query()->findOrFail($id);
 
-        if ($log->status !== 'failed') {
+        try {
+            $notifications->retry($id);
+        } catch (NotificationNotRetryableException $e) {
             return response()->json([
                 'success' => false,
-                'error' => [
-                    'code' => 'NOT_FAILED',
-                    'message' => 'Only failed notifications can be retried. Current status: '.$log->status,
-                ],
+                'error' => ['code' => 'NOT_FAILED', 'message' => $e->getMessage()],
+            ], 409);
+        } catch (TemplateNotRetryableException $e) {
+            // 409 as well, and deliberately not 500: nothing is broken. The
+            // platform is being asked for something it has never been taught
+            // how to do, and saying so is the whole point of the exception.
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'NOT_RETRYABLE', 'message' => $e->getMessage()],
+            ], 409);
+        } catch (DomainException $e) {
+            // The rebuild itself refused. Core's factory re-issues the
+            // invitation, and IssueInvitationUseCase declines an account that
+            // has since been claimed -- an invitation to an activated account
+            // is a password reset wearing an invitation's clothes. That is a
+            // legitimate no, not a fault, so it is a 409 carrying the reason
+            // rather than a 500 carrying a stack trace.
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'CANNOT_REBUILD', 'message' => $e->getMessage()],
             ], 409);
         }
-
-        // BACK TO `queued`, NOT `retrying` -- ADR-020 D6.
-        //
-        // `retrying` was a fourth status the domain never modelled: the
-        // aggregate produces queued, sent and failed, and this controller
-        // could write anything only because it reaches NotificationLogModel
-        // directly, past its own repository. A retry returns the row to
-        // `queued`, which is what a retry IS.
-        //
-        // The error is cleared because it described the attempt that has just
-        // been superseded; the next attempt writes its own.
-        $log->update([
-            'status' => 'queued',
-            'error' => null,
-        ]);
-
-        // STILL DISPATCHES NOTHING. D3 puts the send on the queue and D5 makes
-        // this re-dispatch it; until then this narrows the lie rather than
-        // ending it, and NotificationDeliveryGoldenMasterTest keeps asserting
-        // that nothing is pushed so the remaining gap stays visible.
 
         return response()->json([
             'success' => true,

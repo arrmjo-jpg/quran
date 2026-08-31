@@ -10,9 +10,11 @@ namespace Modules\Notifications\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Notifications\Contracts\NotificationMailRegistryContract;
 use Modules\Notifications\Contracts\NotificationsServiceContract;
 use Modules\Notifications\Domain\Repositories\NotificationLogRepositoryContract;
 use Modules\Notifications\Infrastructure\Database\Repositories\NotificationLogRepository;
+use Modules\Notifications\Infrastructure\Services\NotificationMailRegistry;
 use Modules\Notifications\Infrastructure\Services\NotificationsService;
 
 final class NotificationsServiceProvider extends ServiceProvider
@@ -30,6 +32,17 @@ final class NotificationsServiceProvider extends ServiceProvider
         $this->app->singleton(
             NotificationsServiceContract::class,
             NotificationsService::class
+        );
+
+        // A SINGLETON BECAUSE REGISTRATION HAPPENS ONCE -- ADR-020 D5.
+        //
+        // Owning modules teach it about their templates during boot(). A
+        // per-resolution instance would be empty by the time a retry asked it
+        // anything, and an empty registry fails in the way that looks like a
+        // missing feature rather than a wiring mistake.
+        $this->app->singleton(
+            NotificationMailRegistryContract::class,
+            NotificationMailRegistry::class
         );
     }
 

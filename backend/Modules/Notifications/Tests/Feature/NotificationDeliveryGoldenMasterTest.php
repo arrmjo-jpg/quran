@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
@@ -70,6 +69,23 @@ function goldenNotifAdmin(): UserModel
     ]));
 }
 
+/**
+ * The person an `invitation.created` notification is ABOUT -- never the
+ * administrator reading the screen. Pending by definition: an invitation
+ * exists precisely because the account has not been claimed.
+ */
+function goldenInvitee(): UserModel
+{
+    return UserModel::query()->create([
+        'id' => (string) Uuid::v7(),
+        'email' => 'notif-invitee@quran.test',
+        'name' => 'Invited Person',
+        'type' => 'admin',
+        'password_hash' => null,
+        'is_active' => false,
+    ]);
+}
+
 function goldenFailedLog(string $userId): NotificationLogModel
 {
     return NotificationLogModel::query()->create([
@@ -84,31 +100,37 @@ function goldenFailedLog(string $userId): NotificationLogModel
     ]);
 }
 
-test('GOLDEN MASTER: retrying a notification queues nothing at all', function (): void {
+test('GOLDEN MASTER: retrying a notification actually queues the send', function (): void {
+    // Queue::fake() alone, deliberately. Bus::fake() was here while the
+    // assertion was `nothing dispatched`; it would now intercept the dispatch
+    // BEFORE the queue fake sees it, and Queue::assertPushed would fail
+    // against working code.
     Queue::fake();
-    Bus::fake();
 
     $admin = goldenNotifAdmin();
-    $log = goldenFailedLog($admin->id);
+    $log = goldenFailedLog(goldenInvitee()->id);
 
     $this->actingAs($admin)
         ->postJson("/api/v1/admin/notifications/{$log->id}/retry")
         ->assertOk()
         ->assertJsonPath('success', true);
 
-    // BEFORE Epic 8: the response says "Notification queued for retry" and
-    // nothing is queued. This is the assertion the existing readiness test
-    // does not make, and the reason that suite cannot see the defect.
+    // BEFORE Epic 8: the response said "Notification queued for retry" and
+    // nothing was queued -- the line after the status write was a literal
+    // `// TODO: dispatch RetryNotificationJob::dispatch($log->id)`. This is
+    // the assertion the existing readiness test does not make, and the reason
+    // that suite could see neither the defect nor its repair.
     //
-    // AFTER (ADR-020 D5) this must fail and be inverted to assert the send
-    // job WAS pushed.
-    Queue::assertNothingPushed();
-    Bus::assertNothingDispatched();
+    // AFTER (ADR-020 D5): the send job is pushed, so the message the response
+    // has always claimed is now true.
+    Queue::assertPushed(SendNotificationJob::class);
 })->group('golden-master');
 
-test('GOLDEN MASTER: the retry writes a status the domain does not model', function (): void {
+test('GOLDEN MASTER: the retry writes only a status the domain models', function (): void {
+    Queue::fake();
+
     $admin = goldenNotifAdmin();
-    $log = goldenFailedLog($admin->id);
+    $log = goldenFailedLog(goldenInvitee()->id);
 
     $this->actingAs($admin)
         ->postJson("/api/v1/admin/notifications/{$log->id}/retry")
@@ -138,7 +160,7 @@ test('GOLDEN MASTER: the retry writes a status the domain does not model', funct
     expect($entity->getStatus())->toBe('failed');
 })->group('golden-master');
 
-test('GOLDEN MASTER: the one real send writes no notification log', function (): void {
+test('GOLDEN MASTER: the one real send is both logged and queued', function (): void {
     Mail::fake();
     Queue::fake();
 

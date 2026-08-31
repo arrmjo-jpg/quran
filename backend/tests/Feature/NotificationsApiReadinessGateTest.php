@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Notifications\Infrastructure\Database\Models\NotificationLogModel;
 
@@ -139,9 +140,34 @@ test('Notifications 16.10.6 — Admin gets 404 for non-existent log', function (
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('Notifications 16.10.7 — Admin can retry a failed notification', function (): void {
+    // THE QUEUE IS FAKED SO THE RESPONSE CAN BE PINNED. Under test
+    // QUEUE_CONNECTION is `sync`, so a real dispatch would run the job inline,
+    // mark the row `sent`, and this endpoint would answer `sent` -- a state
+    // that never occurs against the Redis queue the platform actually runs.
+    // The contract being pinned here is the one production sees.
+    Queue::fake();
+
     $admin = notif_user('admin-retry-notif@test.test', 'admin');
-    $user = notif_user('contestant-notif7@test.test');
-    $log = notif_log($user->id, 'email', 'failed');
+
+    // A PENDING ACCOUNT AND A REAL TEMPLATE, changed in this story.
+    //
+    // The fixture used to be a claimed contestant with `application.approved`,
+    // a template nothing sends and nothing can rebuild. That was harmless
+    // while the endpoint only wrote a status; now that a retry actually
+    // re-sends, it stands for a case the platform has to refuse, and the
+    // success path needs a notification that can genuinely be sent again.
+    //
+    // `invitation.created` about an unclaimed account is what a retryable
+    // notification looks like -- it is the only mail the platform sends.
+    $user = UserModel::query()->create([
+        'id' => fake()->uuid(),
+        'email' => 'invitee-notif7@test.test',
+        'name' => 'Notif Test',
+        'type' => 'admin',
+        'password_hash' => null,
+        'is_active' => false,
+    ]);
+    $log = notif_log($user->id, 'email', 'failed', 'invitation.created');
 
     $this->actingAs($admin)
         ->postJson("/api/v1/admin/notifications/{$log->id}/retry")
@@ -154,9 +180,10 @@ test('Notifications 16.10.7 — Admin can retry a failed notification', function
         // aggregate's own starting state.
         //
         // What this test still cannot see is whether anything is DISPATCHED.
-        // That is asserted in NotificationDeliveryGoldenMasterTest, which
-        // fakes the queue -- deliberately kept there rather than duplicated
-        // here.
+        // That is asserted in NotificationDeliveryGoldenMasterTest and in
+        // NotificationRetryTest, both of which fake the queue -- deliberately
+        // kept there rather than duplicated here, because this file is about
+        // the API's shapes.
         ->assertJsonPath('data.status', 'queued');
 
     $this->assertDatabaseHas('notification_logs', ['id' => $log->id, 'status' => 'queued']);

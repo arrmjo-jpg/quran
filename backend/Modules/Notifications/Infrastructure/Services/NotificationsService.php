@@ -6,6 +6,7 @@ namespace Modules\Notifications\Infrastructure\Services;
 
 use Illuminate\Mail\Mailable;
 use Modules\Notifications\Application\Jobs\SendNotificationJob;
+use Modules\Notifications\Contracts\NotificationMailRegistryContract;
 use Modules\Notifications\Contracts\NotificationsServiceContract;
 use Modules\Notifications\Domain\Entities\NotificationLog;
 use Modules\Notifications\Domain\Repositories\NotificationLogRepositoryContract;
@@ -23,6 +24,7 @@ final class NotificationsService implements NotificationsServiceContract
 {
     public function __construct(
         private readonly NotificationLogRepositoryContract $logs,
+        private readonly NotificationMailRegistryContract $mail,
     ) {}
 
     public function record(string $userId, string $channel, string $templateKey, array $payload): string
@@ -59,6 +61,26 @@ final class NotificationsService implements NotificationsServiceContract
         SendNotificationJob::dispatch($id, $recipient, $mail);
 
         return $id;
+    }
+
+    public function retry(string $notificationId): void
+    {
+        $log = $this->logs->findOrFail(new NotificationId($notificationId));
+
+        // The guard is the aggregate's -- retry() refuses anything that is not
+        // `failed`. Asking here as well would put the same rule in two places
+        // and let them drift.
+        $log->retry();
+
+        // Rebuilt BEFORE the state changes. If no module can produce the
+        // message, this throws and the log stays `failed` with its reason
+        // intact, rather than being moved to `queued` for a delivery that was
+        // never dispatched -- which would be a new version of the same lie.
+        $envelope = $this->mail->rebuild($log->templateKey, $log->userId, $log->payload);
+
+        $this->logs->save($log);
+
+        SendNotificationJob::dispatch($notificationId, $envelope->recipient, $envelope->mail);
     }
 
     public function markSent(string $notificationId): void
