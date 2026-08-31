@@ -1,22 +1,24 @@
 {
   "title": "Centro de notificaciones y mensajes",
-  "subtitle": "Siga las colas de correo electrónico, SMS y notificaciones push de Firebase OTP",
+  "subtitle": "Todas las notificaciones registradas por la plataforma, y por qué falló alguna",
   "empty": "Todavía no hay notificaciones registradas.",
 
-  "stat_total": "Notificaciones enviadas",
-  "stat_email_queue": "Cola de correo",
-  "stat_sms_queue": "Cola de SMS de Firebase",
-  "stat_failed": "Tareas fallidas",
-  "stat_pending_value": "0 pendientes",
-  "stat_failed_value": "0 fallidas",
+  "stat_total": "Registradas (últimas entradas)",
+  "stat_queued": "Pendientes de envío",
+  "stat_failed": "Fallidas",
 
-  "col_type": "Tipo y canal",
-  "col_recipient": "Destinatario",
-  "col_sent_at": "Fecha de envío",
+  "col_type": "Notificación y canal",
+  "col_account": "Cuenta",
+  "col_created_at": "Fecha de registro",
+  "col_sent_at": "Fecha de entrega",
   "col_status": "Estado de entrega",
   "col_retry": "Reintentar",
 
-  "status_delivered": "Entregada",
+  "status_queued": "En cola",
+  "status_sent": "Entregada",
+  "status_failed": "Fallida",
+
   "retry_button": "Volver a enviar",
-  "retry_success": "La notificación se volvió a poner en cola"
+  "retry_success": "La notificación se volvió a poner en cola",
+  "retry_error": "No se pudo volver a enviar la notificación"
 }

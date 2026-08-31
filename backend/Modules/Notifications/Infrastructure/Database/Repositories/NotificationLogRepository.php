@@ -36,6 +36,12 @@ final class NotificationLogRepository implements NotificationLogRepositoryContra
                 'template_key' => $log->templateKey,
                 'payload' => $log->payload,
                 'status' => $log->getStatus(),
+                // ADR-020 D2/D10. Both were absent, so a round trip through
+                // save() silently discarded markSent()'s timestamp and
+                // markFailed()'s reason -- toDomain() read columns that
+                // nothing ever wrote.
+                'sent_at' => $log->getSentAtIso(),
+                'error' => $log->getErrorMessage(),
             ]
         );
     }

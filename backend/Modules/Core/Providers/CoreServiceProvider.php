@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\Application\UseCases\IssueInvitationUseCase;
 use Modules\Core\Contracts\CoreServiceContract;
 use Modules\Core\Domain\Repositories\ActivityLogRepositoryContract;
 use Modules\Core\Domain\Repositories\InvitationRepositoryContract;
@@ -19,6 +20,7 @@ use Modules\Core\Domain\Repositories\LoginHistoryRepositoryContract;
 use Modules\Core\Domain\Repositories\RoleRepositoryContract;
 use Modules\Core\Domain\Repositories\UserProfileRepositoryContract;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
+use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Infrastructure\ActivityLog\RecordActivity;
 use Modules\Core\Infrastructure\Database\Models\UserModel;
 use Modules\Core\Infrastructure\Database\Repositories\ActivityLogRepository;
@@ -27,9 +29,13 @@ use Modules\Core\Infrastructure\Database\Repositories\LoginHistoryRepository;
 use Modules\Core\Infrastructure\Database\Repositories\RoleRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserProfileRepository;
 use Modules\Core\Infrastructure\Database\Repositories\UserRepository;
+use Modules\Core\Infrastructure\Mail\InvitationMail;
 use Modules\Core\Infrastructure\Permissions\AuthorizationService;
 use Modules\Core\Infrastructure\Permissions\PermissionCatalog;
 use Modules\Core\Infrastructure\Services\CoreService;
+use Modules\Notifications\Contracts\NotificationMailRegistryContract;
+use Modules\Notifications\Contracts\NotificationRetryEnvelope;
+use Modules\Notifications\Contracts\NotificationTypeCatalogContract;
 
 final class CoreServiceProvider extends ServiceProvider
 {
@@ -89,6 +95,82 @@ final class CoreServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerGates();
         $this->registerActivityLog();
+        $this->registerRetryableMail();
+        $this->registerNotificationTypes();
+    }
+
+    /**
+     * Declare Core's notification types -- ADR-020 D4, D9.
+     *
+     * `invitation.created` is MANDATORY, and that word is here in code rather
+     * than in a `notification_preferences` row saying `enabled = true`. D9 is
+     * explicit that the mandatory set is expressed in code: rows can be
+     * edited, seeded or written by a future admin screen, and one row saying
+     * `false` would leave an account unable to receive the only message that
+     * can ever let it in (ADR-016 D14 keeps accounts Pending Activation until
+     * the invitation is accepted, and no administrator sets another user's
+     * password).
+     *
+     * IT IS THE ONLY TYPE THE PLATFORM SENDS. That is a measurement, not a
+     * placeholder -- `invitation.created` is the sole template key in
+     * production code. So the declinable list is empty today, and the
+     * preference machinery sits in the send path waiting for the first module
+     * that notifies about something optional.
+     */
+    private function registerNotificationTypes(): void
+    {
+        $this->app->make(NotificationTypeCatalogContract::class)
+            ->register('invitation.created', mandatory: true);
+    }
+
+    /**
+     * Teach Notifications how to rebuild an invitation -- ADR-020 D5.
+     *
+     * A RETRY OF AN INVITATION ISSUES A NEW ONE. It cannot do otherwise: the
+     * accept token exists for the single moment IssueInvitationUseCase returns
+     * it and is never stored, so the original mail is unreproducible by
+     * design. Re-issuing replaces the open invitation in place rather than
+     * adding a second live token -- see the comment at that use case's issue()
+     * call, and InvitationReissueGoldenMasterTest.
+     *
+     * THE DEPENDENCY RUNS THIS WAY ROUND ON PURPOSE. Notifications must not
+     * import Core to rebuild Core's mail, so Core registers itself here
+     * (ADR-002). Core hands back the address as well as the message, because
+     * the notification log deliberately stores user_id and never an email:
+     * administrators read other people's rows.
+     *
+     * Resolved lazily inside the closure. Touching the container or the
+     * database during boot() would run on every artisan command, migrations
+     * included.
+     */
+    private function registerRetryableMail(): void
+    {
+        $this->app->make(NotificationMailRegistryContract::class)->register(
+            'invitation.created',
+            function (string $userId, array $payload): NotificationRetryEnvelope {
+                $user = $this->app->make(UserRepositoryContract::class)
+                    ->findOrFail(new UserId($userId));
+
+                // Throws if the account has since been claimed, which is the
+                // right answer: an invitation to an activated account is a
+                // password reset wearing an invitation's clothes. The
+                // controller turns that refusal into a 409.
+                $issued = $this->app->make(IssueInvitationUseCase::class)->execute($userId);
+
+                return new NotificationRetryEnvelope(
+                    recipient: (string) $user->getEmail(),
+                    mail: new InvitationMail(
+                        // From the account, not the payload. The log's payload
+                        // is a record of what was sent once; the name on the
+                        // account is what is true now.
+                        name: $user->getName(),
+                        acceptUrl: rtrim((string) config('core.admin_url'), '/')
+                            .'/invitations/accept?token='.$issued['token'],
+                        expiresInDays: IssueInvitationUseCase::TTL_DAYS,
+                    ),
+                );
+            }
+        );
     }
 
     /**

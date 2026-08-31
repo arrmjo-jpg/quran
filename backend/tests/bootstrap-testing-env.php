@@ -61,6 +61,29 @@ $testingEnv = [
 
     'DB_URL' => '',
 
+    /*
+     * SYNC, AND NOT BECAUSE phpunit.xml SAYS SO.
+     *
+     * phpunit.xml line 43 has said <env name="QUEUE_CONNECTION" value="sync">
+     * since before there were any jobs, and it never took effect: the
+     * quran_platform_app container injects QUEUE_CONNECTION=redis as a real
+     * process variable, PHP copies it into $_SERVER, and Laravel's env() reads
+     * $_SERVER first. Exactly the defect this file was created to fix for
+     * DB_CONNECTION, on a second variable, still open.
+     *
+     * It was harmless while nothing dispatched. ADR-020 D3 introduced the
+     * repository's first job, and the consequence was immediate and measured:
+     * a test run pushed real jobs onto the development Redis, Horizon consumed
+     * them against the DEVELOPMENT database, sent the mail, and then failed
+     * with ModelNotFoundException because the notification row existed only in
+     * the test database — leaving ten rows in the dev failed_jobs table.
+     *
+     * `sync` runs a dispatched job inline, so a test sees the whole path
+     * without any of it leaving the process. Tests that want to inspect the
+     * dispatch instead call Queue::fake() themselves.
+     */
+    'QUEUE_CONNECTION' => 'sync',
+
     // ENFORCED, as Laravel's own default already is.
     //
     // This read 'false' from the first commit of the repository, arriving in

@@ -24,8 +24,13 @@ use Modules\Core\Domain\ValueObjects\UserId;
  *
  * Returns the plaintext token to its caller. That is the only moment it
  * exists: it is not stored, not logged, and cannot be recovered afterwards.
- * If it is lost, Epic 12's resend issues a new one rather than reproducing
- * the old.
+ * If it is lost, a new one is issued rather than the old one reproduced.
+ *
+ * ADR-020 D5 is the first caller to invoke this twice for one account: a
+ * retry of a failed invitation mail has nothing to re-send, precisely because
+ * the token cannot be recovered, so it re-issues. Calling twice therefore
+ * REPLACES the open invitation rather than adding a second one -- see the
+ * comment at the issue() call.
  */
 final class IssueInvitationUseCase
 {
@@ -63,11 +68,26 @@ final class IssueInvitationUseCase
 
             $token = InvitationToken::generate();
 
+            // RE-ISSUING REPLACES -- ADR-020 D5.
+            //
+            // Reusing the open invitation's id turns the repository's
+            // updateOrCreate into an update, so the account keeps exactly one
+            // invitation and the superseded token stops matching. Without
+            // this, a retry would leave two live tokens for one account, and
+            // "the open invitation" would be decided by a created_at tie
+            // between two rows written in the same second.
+            //
+            // Until retry existed this branch was unreachable: the use case
+            // was called once per account, at creation. So nothing that works
+            // today changes shape -- only the second call, which is new.
+            $open = $this->invitations->findOpenForUser($id);
+
             $invitation = Invitation::issue(
                 userId: $id,
                 token: $token,
                 expiresAt: now()->addDays(self::TTL_DAYS)->toIso8601String(),
                 invitedBy: $byUserId === null ? null : new UserId($byUserId),
+                id: $open?->id,
             );
 
             $this->invitations->save($invitation);

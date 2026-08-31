@@ -99,6 +99,13 @@ const SELF_SERVICE_ROUTES = [
     'admin.auth.devices.trust',
     'admin.auth.devices.list',
     'admin.auth.devices.revoke',
+    // ADR-020 D4/D9. An account's own notification preferences. Self-service
+    // for the reason MFA is: a permission names which ROLE may act, and the
+    // answer here is "the account whose preferences these are". The controller
+    // reads the account from the token and never from the payload, so there is
+    // no other account these routes can reach.
+    'admin.notifications.preferences.index',
+    'admin.notifications.preferences.update',
 ];
 
 test('every admin route checks a permission, except self-service', function (): void {

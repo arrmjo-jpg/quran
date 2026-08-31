@@ -10,8 +10,16 @@ namespace Modules\Notifications\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Notifications\Contracts\NotificationMailRegistryContract;
+use Modules\Notifications\Contracts\NotificationsServiceContract;
+use Modules\Notifications\Contracts\NotificationTypeCatalogContract;
 use Modules\Notifications\Domain\Repositories\NotificationLogRepositoryContract;
+use Modules\Notifications\Domain\Repositories\NotificationPreferenceRepositoryContract;
 use Modules\Notifications\Infrastructure\Database\Repositories\NotificationLogRepository;
+use Modules\Notifications\Infrastructure\Database\Repositories\NotificationPreferenceRepository;
+use Modules\Notifications\Infrastructure\Services\NotificationMailRegistry;
+use Modules\Notifications\Infrastructure\Services\NotificationsService;
+use Modules\Notifications\Infrastructure\Services\NotificationTypeCatalog;
 
 final class NotificationsServiceProvider extends ServiceProvider
 {
@@ -20,6 +28,40 @@ final class NotificationsServiceProvider extends ServiceProvider
         $this->app->singleton(
             NotificationLogRepositoryContract::class,
             NotificationLogRepository::class
+        );
+
+        // ADR-020 D7. The contract was never bound, so resolving it would
+        // have failed -- one reason nothing outside this module could have
+        // used it even had it declared methods.
+        $this->app->singleton(
+            NotificationsServiceContract::class,
+            NotificationsService::class
+        );
+
+        // A SINGLETON BECAUSE REGISTRATION HAPPENS ONCE -- ADR-020 D5.
+        //
+        // Owning modules teach it about their templates during boot(). A
+        // per-resolution instance would be empty by the time a retry asked it
+        // anything, and an empty registry fails in the way that looks like a
+        // missing feature rather than a wiring mistake.
+        $this->app->singleton(
+            NotificationMailRegistryContract::class,
+            NotificationMailRegistry::class
+        );
+
+        // ADR-020 D4/D9. A singleton for the same reason: modules declare
+        // their notification types during boot, and a per-resolution instance
+        // would be empty when asked. An empty catalogue answers "not
+        // mandatory" to everything, which would make the invitation
+        // declinable -- the one outcome D9 exists to prevent.
+        $this->app->singleton(
+            NotificationTypeCatalogContract::class,
+            NotificationTypeCatalog::class
+        );
+
+        $this->app->singleton(
+            NotificationPreferenceRepositoryContract::class,
+            NotificationPreferenceRepository::class
         );
     }
 

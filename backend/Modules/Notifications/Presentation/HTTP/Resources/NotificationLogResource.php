@@ -25,7 +25,7 @@ final class NotificationLogResource extends JsonResource
             'user_id' => $this->user_id,
             'channel' => $this->channel,       // email | sms | push
             'template_key' => $this->template_key,
-            'status' => $this->status,        // queued | sent | failed | retrying
+            'status' => $this->status,        // queued | sent | failed -- ADR-020 D6
             'sent_at' => $this->sent_at?->toIso8601String(),
             'error' => $this->error,
             'created_at' => $this->created_at?->toIso8601String(),

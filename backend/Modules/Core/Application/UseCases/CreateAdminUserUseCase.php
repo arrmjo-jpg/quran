@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Core\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Modules\Core\Domain\Entities\User;
 use Modules\Core\Domain\Repositories\UserRepositoryContract;
 use Modules\Core\Domain\ValueObjects\Email;
@@ -13,6 +12,7 @@ use Modules\Core\Domain\ValueObjects\Locale;
 use Modules\Core\Domain\ValueObjects\UserId;
 use Modules\Core\Domain\ValueObjects\UserType;
 use Modules\Core\Infrastructure\Mail\InvitationMail;
+use Modules\Notifications\Contracts\NotificationsServiceContract;
 
 /**
  * Creates an administrator account and invites its owner — ADR-016 Q7, D14.
@@ -34,6 +34,12 @@ use Modules\Core\Infrastructure\Mail\InvitationMail;
  * this accepts. It leaves an account visible in the users list as pending with
  * an invitation that can be resent (Epic 12), which is recoverable. The other
  * ordering is not.
+ *
+ * ADR-020 D2/D3 make that accepted failure VISIBLE rather than merely
+ * tolerated: the send is recorded at `queued` before the request returns, and
+ * a job marks it sent or failed afterwards. "The account was created and the
+ * mail did not go" is a row somebody can find instead of a silence — and the
+ * request no longer waits on SMTP to discover it.
  */
 final class CreateAdminUserUseCase
 {
@@ -41,6 +47,9 @@ final class CreateAdminUserUseCase
         private UserRepositoryContract $users,
         private IssueInvitationUseCase $issueInvitation,
         private SyncUserRolesUseCase $syncRoles,
+        // The Notifications module's public boundary, never its internals --
+        // ADR-002, ADR-020 D7.
+        private NotificationsServiceContract $notifications,
     ) {}
 
     /**
@@ -79,11 +88,33 @@ final class CreateAdminUserUseCase
             return [$user, $issued['token']];
         });
 
-        Mail::to($email)->send(new InvitationMail(
-            name: $name,
-            acceptUrl: rtrim((string) config('core.admin_url'), '/').'/invitations/accept?token='.$token,
-            expiresInDays: IssueInvitationUseCase::TTL_DAYS,
-        ));
+        // ADR-020 D2, D3. Recorded and QUEUED -- not sent here.
+        //
+        // Until this story the send was synchronous, so creating an
+        // administrator waited on SMTP and failed with it. Now the row is
+        // written at `queued`, the job carries the delivery, and the request
+        // returns as soon as the account exists.
+        //
+        // The invitation is MANDATORY (D9): it is the only way an account can
+        // be claimed, so no preference is consulted before queueing it. That
+        // is why preferences are a list of what may be declined rather than a
+        // switch over everything.
+        //
+        // The recipient's address is passed for delivery but deliberately NOT
+        // put in the payload: the log is read by administrators looking at
+        // other people's notifications, and it already carries user_id.
+        $this->notifications->queue(
+            userId: (string) $user->id,
+            channel: 'email',
+            templateKey: 'invitation.created',
+            payload: ['name' => $name, 'expires_in_days' => IssueInvitationUseCase::TTL_DAYS],
+            recipient: $email,
+            mail: new InvitationMail(
+                name: $name,
+                acceptUrl: rtrim((string) config('core.admin_url'), '/').'/invitations/accept?token='.$token,
+                expiresInDays: IssueInvitationUseCase::TTL_DAYS,
+            ),
+        );
 
         return $user;
     }
