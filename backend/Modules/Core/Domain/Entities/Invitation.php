@@ -40,15 +40,27 @@ final class Invitation
     /**
      * A fresh invitation. The returned token carries the only copy of the
      * plaintext that will ever exist.
+     *
+     * `$id` REPLACES RATHER THAN ADDS -- ADR-020 D5. Passing the id of an
+     * invitation that is already open re-issues it in place: the repository's
+     * save() is an updateOrCreate keyed on this id, so the previous token hash
+     * is overwritten and the superseded token stops matching anything.
+     *
+     * Left to generate its own id, a second issue for one account produced a
+     * SECOND live token rather than a replacement, and the platform's notion
+     * of "the open invitation" then came down to a created_at tie-break
+     * between two rows written in the same second. Retry is what made that
+     * reachable; InvitationReissueGoldenMasterTest records it.
      */
     public static function issue(
         UserId $userId,
         InvitationToken $token,
         string $expiresAt,
         ?UserId $invitedBy = null,
+        ?InvitationId $id = null,
     ): self {
         return new self(
-            id: InvitationId::generate(),
+            id: $id ?? InvitationId::generate(),
             userId: $userId,
             token: $token,
             expiresAt: $expiresAt,

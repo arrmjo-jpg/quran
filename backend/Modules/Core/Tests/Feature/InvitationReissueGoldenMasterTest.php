@@ -58,20 +58,20 @@ function issueFor(UserModel $user): string
     return app(IssueInvitationUseCase::class)->execute((string) $user->id)['token'];
 }
 
-test('GOLDEN MASTER: issuing twice leaves two invitation rows, not one', function (): void {
+test('GOLDEN MASTER: issuing twice replaces the invitation instead of adding one', function (): void {
     $user = reissueTarget();
 
     issueFor($user);
     issueFor($user);
 
     // BEFORE: 2. save() keys on the invitation id and issue() generates a new
-    // one, so the second issue inserts rather than replaces.
+    // one, so the second issue inserted rather than replaced.
     // AFTER (ADR-020 D5): 1 -- a pending account has at most one open
     // invitation, and re-issuing replaces it in place.
-    expect(InvitationModel::query()->where('user_id', $user->id)->count())->toBe(2);
+    expect(InvitationModel::query()->where('user_id', $user->id)->count())->toBe(1);
 })->group('golden-master');
 
-test('GOLDEN MASTER: the superseded token still opens the account', function (): void {
+test('GOLDEN MASTER: the superseded token stops opening the account', function (): void {
     $user = reissueTarget();
 
     $first = issueFor($user);
@@ -79,15 +79,16 @@ test('GOLDEN MASTER: the superseded token still opens the account', function ():
 
     expect($first)->not->toBe($second);
 
-    // BEFORE: both match. A retry would therefore leave two live credentials
-    // for one account, and the older one lives out its full seven days in
-    // whatever mailbox eventually receives it.
-    // AFTER: the first token matches nothing -- re-issuing supersedes.
-    expect(invitationsRepo()->findByToken($first))->not->toBeNull()
-        ->and(invitationsRepo()->findByToken($second))->not->toBeNull();
+    // BEFORE: both matched. A retry would have left two live credentials for
+    // one account, and the older would have lived out its full seven days in
+    // whatever mailbox eventually received it.
+    // AFTER: only the current one matches. Re-issuing supersedes, so a retry
+    // does not multiply the ways into an account.
+    expect(invitationsRepo()->findByToken($second))->not->toBeNull()
+        ->and(invitationsRepo()->findByToken($first))->toBeNull();
 })->group('golden-master');
 
-test('GOLDEN MASTER: with two rows open, nothing decides which one counts', function (): void {
+test('GOLDEN MASTER: which invitation is open is now an invariant, not a tie-break', function (): void {
     $user = reissueTarget();
 
     $first = issueFor($user);
@@ -95,25 +96,24 @@ test('GOLDEN MASTER: with two rows open, nothing decides which one counts', func
 
     $rows = InvitationModel::query()->where('user_id', $user->id)->get();
 
-    // THE CAUSE, asserted rather than described. findOpenForUser orders by
-    // created_at DESC and takes the first row. Both issues land in the same
-    // second, so DESC has nothing to order BY: the tie is broken by whatever
-    // the storage engine happens to return.
-    expect($rows->pluck('created_at')->map->toIso8601String()->unique())->toHaveCount(1);
+    // BEFORE: two rows sharing a created_at, so findOpenForUser's
+    // `orderByDesc('created_at')` had nothing to order by and the row it
+    // returned was a storage-engine tie-break -- which resolved to the
+    // SUPERSEDED invitation. A retry on that code would have minted a token
+    // the platform did not consider current, while the one it did consider
+    // current was the one already known not to have arrived.
+    // AFTER: one row. The ordering never has to break a tie because there is
+    // never a tie.
+    expect($rows)->toHaveCount(1);
 
     $open = invitationsRepo()->findOpenForUser(new UserId((string) $user->id));
 
-    // And it is not the newer one. The invitation the platform treats as open
-    // is the SUPERSEDED one -- so a retry built on today's code would mint a
-    // token that the rest of the system does not consider current, while the
-    // token it does consider current is the one already known to have failed
-    // to arrive.
     expect($open)->not->toBeNull()
-        ->and($open->tokenMatches($first))->toBeTrue()
-        ->and($open->tokenMatches($second))->toBeFalse();
-
-    // AFTER (ADR-020 D5): the question stops existing. One row, re-issued in
-    // place, so "the open one" is an invariant rather than a tie-break.
+        ->and($open->tokenMatches($second))->toBeTrue()
+        ->and($open->tokenMatches($first))->toBeFalse()
+        // The id survives the re-issue. That is the mechanism: same row,
+        // new token hash and new expiry written over the old.
+        ->and($open->id->value)->toBe((string) $rows->first()->id);
 })->group('golden-master');
 
 function invitationsRepo(): InvitationRepositoryContract
